@@ -4,47 +4,26 @@
 
 import { z } from 'zod';
 
+// 共通のプロンプトアイテムスキーマ
+const promptItemSchema = z.object({
+  predefinedId: z.string().nullable(),
+  customText: z.string().nullable().optional(),
+});
+
+// 順序付きプロンプトアイテムスキーマ
+const promptItemWithOrderSchema = promptItemSchema.extend({
+  order: z.number(),
+});
+
 // プロンプト生成リクエストのバリデーションスキーマ
 export const generatePromptSchema = z.object({
   promptData: z.object({
-    category: z.object({
-      predefinedId: z.string().nullable(),
-      customText: z.string().nullable().optional(),
-    }),
-    details: z.array(
-      z.object({
-        predefinedId: z.string().nullable(),
-        customText: z.string().nullable().optional(),
-        order: z.number(),
-      })
-    ),
-    colors: z.array(
-      z.object({
-        predefinedId: z.string().nullable(),
-        customText: z.string().nullable().optional(),
-      })
-    ),
-    style: z
-      .object({
-        predefinedId: z.string().nullable(),
-        customText: z.string().nullable().optional(),
-      })
-      .nullable()
-      .optional(),
-    mood: z
-      .object({
-        predefinedId: z.string().nullable(),
-        customText: z.string().nullable().optional(),
-      })
-      .nullable()
-      .optional(),
-    lighting: z
-      .object({
-        predefinedId: z.string().nullable(),
-        customText: z.string().nullable().optional(),
-      })
-      .nullable()
-      .optional(),
+    category: promptItemSchema,
+    details: z.array(promptItemWithOrderSchema),
+    colors: z.array(promptItemSchema),
+    style: promptItemSchema.nullable().optional(),
+    mood: promptItemSchema.nullable().optional(),
+    lighting: promptItemSchema.nullable().optional(),
   }),
   options: z.object({
     language: z.enum(['ja', 'en']),
