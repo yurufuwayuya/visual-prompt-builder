@@ -7,9 +7,15 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
     "clean": "rm -rf dist node_modules"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "vitest": "^1.6.0",
+    "@vitest/coverage-v8": "^1.6.0"
+  }
 }

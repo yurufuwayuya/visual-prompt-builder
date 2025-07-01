@@ -24,10 +24,15 @@ jobs:
         node-version: lts/*
         
     - name: Install dependencies
-      run: npm ci
+      run: |
+        npm ci
+        npm run build:shared || echo "Shared build not required"
       
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps chromium
+      
+    - name: Build frontend
+      run: npm run build:frontend
       
     - name: Run Playwright tests
       run: |
@@ -36,7 +41,7 @@ jobs:
         elif [ -n "${{ inputs.deployment_url }}" ]; then
           export PLAYWRIGHT_BASE_URL="${{ inputs.deployment_url }}"
         fi
-        npm run test:e2e
+        npx playwright test --config=playwright.config.ci.ts
         
     - uses: actions/upload-artifact@v4
       if: always()

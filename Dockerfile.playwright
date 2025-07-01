@@ -1,0 +1,16 @@
+FROM mcr.microsoft.com/playwright:v1.53.0-noble
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY */package*.json ./*/
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Run tests
+CMD ["npm", "run", "test:e2e"]

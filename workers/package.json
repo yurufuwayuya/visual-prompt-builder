@@ -15,14 +15,18 @@
     "clean": "rm -rf dist node_modules .wrangler"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.2.2",
     "@visual-prompt-builder/shared": "*",
-    "hono": "^4.4.10"
+    "hono": "^4.4.10",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240614.0",
     "@types/node": "^20.14.9",
+    "@vitest/coverage-v8": "^3.0.0",
     "miniflare": "^3.20240610.1",
-    "vitest": "^1.6.0",
+    "vitest": "^3.0.0",
+    "vitest-environment-miniflare": "^2.14.4",
     "wrangler": "^3.61.0"
   }
 }

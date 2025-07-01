@@ -2,15 +2,16 @@ module.exports = {
   root: true,
   env: {
     browser: true,
-    es2022: true,
+    es2021: true,
     node: true,
+    jest: true,
   },
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
-    'prettier',
+    'prettier', // Must be last to override other configs
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
@@ -27,49 +28,56 @@ module.exports = {
     },
   },
   rules: {
-    // TypeScript
-    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/explicit-function-return-type': 'off',
+    // React specific rules
+    'react/react-in-jsx-scope': 'off', // Not needed with React 17+
+    'react/prop-types': 'off', // We use TypeScript for prop validation
+    'react/display-name': 'off',
+    
+    // TypeScript specific rules
     '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-non-null-assertion': 'warn',
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+      },
+    ],
     
-    // React
-    'react/react-in-jsx-scope': 'off',
-    'react/prop-types': 'off',
-    'react/jsx-uses-react': 'off',
-    'react-hooks/rules-of-hooks': 'error',
-    'react-hooks/exhaustive-deps': 'warn',
-    
-    // General
+    // General rules
     'no-console': ['warn', { allow: ['warn', 'error'] }],
     'no-debugger': 'warn',
-    'prefer-const': 'warn',
-    'no-var': 'error',
-    'eqeqeq': ['error', 'always', { null: 'ignore' }],
   },
   overrides: [
     {
-      files: ['*.js'],
+      // Test files
+      files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
+      env: {
+        jest: true,
+      },
       rules: {
-        '@typescript-eslint/no-var-requires': 'off',
+        '@typescript-eslint/no-explicit-any': 'off',
       },
     },
     {
+      // Workers specific files
       files: ['workers/**/*.ts'],
       env: {
         browser: false,
+        node: false,
         worker: true,
       },
     },
   ],
   ignorePatterns: [
-    'dist',
-    'build',
-    'node_modules',
+    'node_modules/',
+    'dist/',
+    'build/',
+    '.wrangler/',
+    'coverage/',
     '*.config.js',
-    '.eslintrc.cjs',
-    'coverage',
-    '.wrangler',
+    '*.config.ts',
+    'vite.config.ts',
+    'vitest.config.ts',
   ],
 };

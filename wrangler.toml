@@ -16,20 +16,23 @@ port = 8787
 local_protocol = "http"
 
 # Default environment (development)
-[env.development]
-name = "visual-prompt-builder-dev"
 vars = { ENVIRONMENT = "development" }
 
 # KV namespaces for development
-[[env.development.kv_namespaces]]
+[[kv_namespaces]]
 binding = "CACHE"
 id = "dev_cache_namespace"
 preview_id = "dev_cache_preview"
 
-[[env.development.kv_namespaces]]
+[[kv_namespaces]]
 binding = "SESSION"
 id = "dev_session_namespace" 
 preview_id = "dev_session_preview"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "dev_rate_limit_namespace"
+preview_id = "dev_rate_limit_preview"
 
 # Staging environment
 [env.staging]
@@ -44,6 +47,10 @@ id = "staging_cache_namespace"
 binding = "SESSION"
 id = "staging_session_namespace"
 
+[[env.staging.kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "staging_rate_limit_namespace"
+
 # Production environment
 [env.production]
 name = "visual-prompt-builder"
@@ -51,11 +58,15 @@ vars = { ENVIRONMENT = "production" }
 
 [[env.production.kv_namespaces]]
 binding = "CACHE"
-id = "prod_cache_namespace"
+id = "ac4cfe9a60374e0982097a6dda928044"
 
 [[env.production.kv_namespaces]]
 binding = "SESSION"
-id = "prod_session_namespace"
+id = "bc2a774a46324cdab41089aa659ece23"
+
+[[env.production.kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "f4948d4c905944cbbd95aa798985179a"
 
 # Routes (will be configured later)
 # [[env.production.routes]]

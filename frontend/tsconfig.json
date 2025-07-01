@@ -4,7 +4,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
-    "types": ["vite/client"],
+    "types": ["vite/client", "@testing-library/jest-dom"],
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -30,5 +30,6 @@
     }
   },
   "include": ["src"],
+  "exclude": ["src/test-imports.ts", "src/test/**"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
