@@ -2,9 +2,9 @@ name: Playwright Tests
 on:
   deployment_status:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
     inputs:
       deployment_url:
@@ -17,36 +17,60 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    
-    - uses: actions/setup-node@v4
-      with:
-        node-version: lts/*
-        
-    - name: Install dependencies
-      run: |
-        npm ci
-        npm run build:shared || echo "Shared build not required"
-      
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps chromium
-      
-    - name: Build frontend
-      run: npm run build:frontend
-      
-    - name: Run Playwright tests
-      run: |
-        if [ "${{ github.event_name }}" = "deployment_status" ] && [ "${{ github.event.deployment_status.state }}" = "success" ]; then
-          export PLAYWRIGHT_BASE_URL="${{ github.event.deployment_status.target_url }}"
-        elif [ -n "${{ inputs.deployment_url }}" ]; then
-          export PLAYWRIGHT_BASE_URL="${{ inputs.deployment_url }}"
-        fi
-        echo "Testing against URL: ${PLAYWRIGHT_BASE_URL:-http://localhost:5173}"
-        npx playwright test tests/e2e/smoke.spec.ts --config=playwright.config.ci.ts --reporter=list || (echo "Test failed, showing debug info:" && cat playwright-report/index.html 2>/dev/null || true && exit 1)
-        
-    - uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: playwright-report
-        path: playwright-report/
-        retention-days: 30
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run build:shared || echo "Shared build not required"
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build frontend
+        run: npm run build:frontend
+
+      - name: Install serve
+        run: npm install -g serve
+
+      - name: Run Playwright tests
+        run: |
+          # デプロイメントURLの設定
+          if [ "${{ github.event_name }}" = "deployment_status" ] && [ "${{ github.event.deployment_status.state }}" = "success" ]; then
+            export PLAYWRIGHT_BASE_URL="${{ github.event.deployment_status.target_url }}"
+          elif [ -n "${{ inputs.deployment_url }}" ]; then
+            export PLAYWRIGHT_BASE_URL="${{ inputs.deployment_url }}"
+          fi
+
+          # ローカルテストの場合はserveでホスト
+          if [ -z "$PLAYWRIGHT_BASE_URL" ]; then
+            echo "Starting local server..."
+            npx serve frontend/dist -p 5173 -s &
+            SERVER_PID=$!
+            sleep 10
+            export PLAYWRIGHT_BASE_URL="http://localhost:5173"
+          fi
+
+          echo "Testing against URL: $PLAYWRIGHT_BASE_URL"
+
+          # 全てのテストを実行
+          npx playwright test --config=playwright.config.ci.ts --reporter=list
+          TEST_RESULT=$?
+
+          # ローカルサーバーを停止
+          if [ ! -z "$SERVER_PID" ]; then
+            kill $SERVER_PID || true
+          fi
+
+          exit $TEST_RESULT
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
