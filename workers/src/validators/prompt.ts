@@ -9,29 +9,42 @@ export const generatePromptSchema = z.object({
   promptData: z.object({
     category: z.object({
       predefinedId: z.string().nullable(),
-      customText: z.string().nullable(),
+      customText: z.string().nullable().optional(),
     }),
-    details: z.array(z.object({
-      predefinedId: z.string().nullable(),
-      customText: z.string().nullable(),
-      order: z.number(),
-    })),
-    colors: z.array(z.object({
-      predefinedId: z.string().nullable(),
-      customText: z.string().nullable(),
-    })),
-    style: z.object({
-      predefinedId: z.string().nullable(),
-      customText: z.string().nullable(),
-    }).optional(),
-    mood: z.object({
-      predefinedId: z.string().nullable(),
-      customText: z.string().nullable(),
-    }).optional(),
-    lighting: z.object({
-      predefinedId: z.string().nullable(),
-      customText: z.string().nullable(),
-    }).optional(),
+    details: z.array(
+      z.object({
+        predefinedId: z.string().nullable(),
+        customText: z.string().nullable().optional(),
+        order: z.number(),
+      })
+    ),
+    colors: z.array(
+      z.object({
+        predefinedId: z.string().nullable(),
+        customText: z.string().nullable().optional(),
+      })
+    ),
+    style: z
+      .object({
+        predefinedId: z.string().nullable(),
+        customText: z.string().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    mood: z
+      .object({
+        predefinedId: z.string().nullable(),
+        customText: z.string().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    lighting: z
+      .object({
+        predefinedId: z.string().nullable(),
+        customText: z.string().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
   }),
   options: z.object({
     language: z.enum(['ja', 'en']),
