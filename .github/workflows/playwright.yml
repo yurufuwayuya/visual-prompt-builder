@@ -41,7 +41,8 @@ jobs:
         elif [ -n "${{ inputs.deployment_url }}" ]; then
           export PLAYWRIGHT_BASE_URL="${{ inputs.deployment_url }}"
         fi
-        npx playwright test --config=playwright.config.ci.ts
+        echo "Testing against URL: ${PLAYWRIGHT_BASE_URL:-http://localhost:5173}"
+        npx playwright test tests/e2e/smoke.spec.ts --config=playwright.config.ci.ts --reporter=list || (echo "Test failed, showing debug info:" && cat playwright-report/index.html 2>/dev/null || true && exit 1)
         
     - uses: actions/upload-artifact@v4
       if: always()

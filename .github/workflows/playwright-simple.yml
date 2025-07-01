@@ -1,0 +1,50 @@
+name: Playwright Simple Test
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Install Playwright
+      run: npx playwright install --with-deps chromium
+      
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+        
+    - name: Serve built files and test
+      run: |
+        # ビルドされたファイルを簡易サーバーでホスト
+        cd frontend/dist
+        npx serve -p 5173 &
+        SERVER_PID=$!
+        
+        # サーバーが起動するまで待機
+        sleep 10
+        
+        # テスト実行
+        cd ../..
+        PLAYWRIGHT_BASE_URL=http://localhost:5173 npx playwright test tests/e2e/smoke.spec.ts --config=playwright.config.ci.ts --reporter=list
+        
+        # サーバーを停止
+        kill $SERVER_PID
+        
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 7

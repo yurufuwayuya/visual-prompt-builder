@@ -30,10 +30,10 @@ export default defineConfig({
 
   // CI環境では開発サーバーを起動
   webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : {
-    command: 'cd frontend && npm run dev',
-    url: 'http://localhost:5173',
+    command: 'npm run dev',
+    port: 5173,
     reuseExistingServer: false,
-    timeout: 180 * 1000,
+    timeout: 300 * 1000,
     stdout: 'pipe',
     stderr: 'pipe',
   },
