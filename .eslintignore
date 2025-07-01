@@ -1,0 +1,10 @@
+dist/
+build/
+coverage/
+node_modules/
+*.config.js
+*.config.ts
+vite.config.ts
+playwright.config.ts
+commitlint.config.js
+tests/

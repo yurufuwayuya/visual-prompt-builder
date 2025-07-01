@@ -1,0 +1,23 @@
+# Dependencies
+node_modules
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Build outputs
+dist
+build
+.wrangler
+*.tsbuildinfo
+
+# Generated files
+coverage
+.nyc_output
+
+# Misc
+*.min.js
+*.min.css
+*.map
+
+# Markdown files (optional - remove if you want to format markdown)
+# *.md

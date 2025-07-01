@@ -1,0 +1,67 @@
+name = "visual-prompt-builder"
+main = "workers/src/index.ts"
+compatibility_date = "2024-06-24"
+
+# Account settings
+# account_id = "YOUR_ACCOUNT_ID" # Set via environment variable CLOUDFLARE_ACCOUNT_ID
+
+# Build settings
+[build]
+command = ""
+watch_paths = ["workers/src"]
+
+# Development settings
+[dev]
+port = 8787
+local_protocol = "http"
+
+# Default environment (development)
+[env.development]
+name = "visual-prompt-builder-dev"
+vars = { ENVIRONMENT = "development" }
+
+# KV namespaces for development
+[[env.development.kv_namespaces]]
+binding = "CACHE"
+id = "dev_cache_namespace"
+preview_id = "dev_cache_preview"
+
+[[env.development.kv_namespaces]]
+binding = "SESSION"
+id = "dev_session_namespace" 
+preview_id = "dev_session_preview"
+
+# Staging environment
+[env.staging]
+name = "visual-prompt-builder-staging"
+vars = { ENVIRONMENT = "staging" }
+
+[[env.staging.kv_namespaces]]
+binding = "CACHE"
+id = "staging_cache_namespace"
+
+[[env.staging.kv_namespaces]]
+binding = "SESSION"
+id = "staging_session_namespace"
+
+# Production environment
+[env.production]
+name = "visual-prompt-builder"
+vars = { ENVIRONMENT = "production" }
+
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+id = "prod_cache_namespace"
+
+[[env.production.kv_namespaces]]
+binding = "SESSION"
+id = "prod_session_namespace"
+
+# Routes (will be configured later)
+# [[env.production.routes]]
+# pattern = "api.example.com/*"
+# zone_name = "example.com"
+
+# Secrets (set via wrangler secret)
+# - TRANSLATION_API_KEY
+# - LOGFLARE_API_KEY (optional)

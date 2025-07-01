@@ -1,71 +1,65 @@
 # Visual Prompt Builder
 
-就労継続支援B型事業所向けビジュアルプロンプトビルダー
+就労継続支援B型事業所向けのビジュアルプロンプトビルダー
 
 ## 概要
 
-このプロジェクトは、就労継続支援B型事業所で働く方々のために、視覚的なプロンプトを作成・管理するためのツールです。直感的なインターフェースを通じて、個々のニーズに合わせたビジュアルプロンプトを簡単に作成できます。
-
-## 機能
-
-- ビジュアルプロンプトの作成
-- プロンプトテンプレートの管理
-- 利用者向けカスタマイズ機能
-- プロンプトの保存・共有
+このプロジェクトは、障害を持つ方でも簡単にAI画像生成用のプロンプトを作成できるツールです。
+直感的なUIで選択肢から選ぶだけで、高品質なプロンプトを生成できます。
 
 ## プロジェクト構造
 
 ```
 visual-prompt-builder/
-├── src/
-│   ├── components/     # UIコンポーネント
-│   ├── pages/         # ページコンポーネント
-│   ├── utils/         # ユーティリティ関数
-│   └── types/         # TypeScript型定義
-├── docs/              # プロジェクトドキュメント
-├── assets/            # 静的リソース
-│   ├── images/        # 画像ファイル
-│   └── icons/         # アイコンファイル
-└── tests/             # テストファイル
+├── frontend/               # React フロントエンドアプリケーション
+├── workers/               # Cloudflare Workers バックエンド
+├── shared/                # 共有型定義とユーティリティ
+├── tests/                 # E2Eテスト
+└── docs/                  # ドキュメント
 ```
 
-## 開発環境のセットアップ
+## 技術スタック
 
-### 前提条件
+- **フロントエンド**: React + TypeScript + Vite + Tailwind CSS
+- **バックエンド**: Cloudflare Workers + Hono
+- **状態管理**: Zustand
+- **デプロイ**: Cloudflare Pages & Workers
 
-- Node.js (推奨バージョン: 18.x以上)
-- npm または yarn
+## 開発環境セットアップ
+
+### 必要条件
+
+- Node.js v18以上
+- npm v9以上
+- Wrangler CLI
 
 ### インストール
 
 ```bash
-# リポジトリのクローン
-git clone https://github.com/yurufuwayuya/visual-prompt-builder.git
-cd visual-prompt-builder
-
 # 依存関係のインストール
 npm install
 
 # 開発サーバーの起動
 npm run dev
+
+# Workers開発サーバーの起動
+npm run dev:worker
 ```
 
-## 使用方法
+### ビルド
 
-詳細な使用方法については、[docs](./docs/)フォルダ内のドキュメントを参照してください。
+```bash
+# 全ワークスペースのビルド
+npm run build
+```
 
-## 貢献
+### テスト
 
-プロジェクトへの貢献を歓迎します。バグレポートや機能要求は、GitHubのIssuesを通じてお知らせください。
+```bash
+# 全ワークスペースのテスト実行
+npm run test
+```
 
 ## ライセンス
 
-このプロジェクトはMITライセンスの下で公開されています。詳細は[LICENSE](./LICENSE)ファイルを参照してください。
-
-## 作者
-
-- [@yurufuwayuya](https://github.com/yurufuwayuya)
-
-## サポート
-
-質問やサポートが必要な場合は、GitHubのIssuesまたはDiscussionsをご利用ください。
+MIT License
