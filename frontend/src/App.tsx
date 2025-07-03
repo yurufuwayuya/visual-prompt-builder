@@ -7,8 +7,17 @@ import { KeyboardShortcutsHelp } from './components/layout/KeyboardShortcutsHelp
 
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50" role="application" aria-label="ビジュアルプロンプトビルダー">
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
+      <div
+        className="min-h-screen bg-gray-50"
+        role="application"
+        aria-label="ビジュアルプロンプトビルダー"
+      >
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/builder" element={<PromptBuilder />} />

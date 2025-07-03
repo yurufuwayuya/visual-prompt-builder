@@ -1,17 +1,17 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/common/Button';
-import { ChevronLeft, Copy, Heart, Clock } from 'lucide-react';
+import { ChevronLeft, Copy, Clock } from 'lucide-react';
 import { usePromptStore } from '@/stores/promptStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export function History() {
-  const { history, toggleFavorite } = usePromptStore();
+  const { history } = usePromptStore();
   const { addToast } = useToastStore();
-  
+
   // キーボードショートカット
   useKeyboardShortcuts({
-    'escape': () => window.history.back(),
+    escape: () => window.history.back(),
     'cmd+c': () => {
       const firstPrompt = history[0];
       if (firstPrompt) {
@@ -44,7 +44,7 @@ export function History() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container max-w-7xl">
-        <header className="py-4 sm:py-6 lg:py-8 border-b" role="banner">
+        <header className="py-4 sm:py-6 lg:py-8 border-b">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">作成履歴</h1>
             <Link to="/">
@@ -56,15 +56,19 @@ export function History() {
           </div>
         </header>
 
-        <main className="py-6 sm:py-8 lg:py-12" role="main" aria-label="プロンプト履歴">
+        <main className="py-6 sm:py-8 lg:py-12" aria-label="プロンプト履歴">
           {history.length === 0 ? (
-            <div className="rounded-lg bg-white p-8 sm:p-12 text-center shadow-sm" role="status" aria-live="polite">
+            <div
+              className="rounded-lg bg-white p-8 sm:p-12 text-center shadow-sm"
+              role="status"
+              aria-live="polite"
+            >
               <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" aria-hidden="true" />
-              <p className="text-base sm:text-lg text-gray-500">まだプロンプトが作成されていません。</p>
+              <p className="text-base sm:text-lg text-gray-500">
+                まだプロンプトが作成されていません。
+              </p>
               <Link to="/builder">
-                <Button className="mt-6">
-                  プロンプトを作成する
-                </Button>
+                <Button className="mt-6">プロンプトを作成する</Button>
               </Link>
             </div>
           ) : (
@@ -74,31 +78,27 @@ export function History() {
                   key={item.id}
                   className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4 hover:shadow-md transition-shadow"
                   role="listitem"
-                  aria-label={`${item.category.displayName}のプロンプト`}
+                  aria-label={`${item.category.name}のプロンプト`}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-medium text-sm sm:text-base text-gray-900">{item.category.displayName}</h3>
-                    <button
-                      onClick={() => toggleFavorite(item.id)}
-                      className={`p-1 rounded hover:bg-gray-100 focus-visible-ring ${
-                        item.isFavorite ? 'text-red-500' : 'text-gray-400'
-                      }`}
-                      aria-label={item.isFavorite ? 'お気に入りから外す' : 'お気に入りに追加'}
-                      aria-pressed={item.isFavorite}
-                    >
-                      <Heart className="h-4 w-4" fill={item.isFavorite ? 'currentColor' : 'none'} aria-hidden="true" />
-                    </button>
+                  <div className="mb-3">
+                    <h3 className="font-medium text-sm sm:text-base text-gray-900">
+                      {item.category.name}
+                    </h3>
                   </div>
 
                   <div className="space-y-2">
                     <div className="text-xs sm:text-sm text-gray-600">
                       {item.details.length > 0 && (
                         <p>
-                          詳細: {item.details.slice(0, 3).map(d => d.displayName).join(', ')}
+                          詳細:{' '}
+                          {item.details
+                            .slice(0, 3)
+                            .map((d) => d.name)
+                            .join(', ')}
                           {item.details.length > 3 && ` 他${item.details.length - 3}件`}
                         </p>
                       )}
-                      {item.style && <p>スタイル: {item.style.displayName}</p>}
+                      {item.style && <p>スタイル: {item.style.name}</p>}
                     </div>
 
                     {item.generatedPrompt && (
@@ -111,13 +111,18 @@ export function History() {
                   </div>
 
                   <div className="mt-3 sm:mt-4 flex items-center justify-between">
-                    <time className="text-[10px] sm:text-xs text-gray-500" dateTime={item.createdAt}>
+                    <time
+                      className="text-[10px] sm:text-xs text-gray-500"
+                      dateTime={item.createdAt}
+                    >
                       {new Date(item.createdAt).toLocaleDateString('ja-JP')}
                     </time>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => copyToClipboard(item.generatedPrompt || item.generatedPromptJa || '')}
+                      onClick={() =>
+                        copyToClipboard(item.generatedPrompt || item.generatedPromptJa || '')
+                      }
                       aria-label="プロンプトをコピー"
                     >
                       <Copy className="h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true" />

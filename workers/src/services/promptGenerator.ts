@@ -2,7 +2,11 @@
  * プロンプト生成サービス
  */
 
-import type { PromptGenerationOptions, ApiPromptData, ApiSelectionItem } from '@visual-prompt-builder/shared';
+import type {
+  PromptGenerationOptions,
+  ApiPromptData,
+  ApiSelectionItem,
+} from '@visual-prompt-builder/shared';
 import {
   CATEGORIES,
   CATEGORY_DETAILS,
@@ -18,31 +22,34 @@ export async function generatePrompt(
   options: PromptGenerationOptions
 ): Promise<string> {
   const parts: string[] = [];
-  
+
+  // 常に英語でプロンプトを生成する
+  const language = 'en';
+
   // カテゴリ
   if (promptData.category) {
-    const categoryText = getCategoryText(promptData.category, options.language);
+    const categoryText = getCategoryText(promptData.category, language);
     if (categoryText) {
       parts.push(categoryText);
     }
   }
-  
+
   // 詳細
   if (promptData.details && promptData.details.length > 0) {
     const sortedDetails = [...promptData.details].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     for (const detail of sortedDetails) {
-      const detailText = getDetailText(detail, options.language);
+      const detailText = getDetailText(detail, language);
       if (detailText) {
         parts.push(detailText);
       }
     }
   }
-  
+
   // スタイル
   if (promptData.style) {
-    const styleText = getStyleText(promptData.style, options.language);
+    const styleText = getStyleText(promptData.style, language);
     if (styleText) {
-      const style = STYLES.find(s => s.id === promptData.style?.predefinedId);
+      const style = STYLES.find((s) => s.id === promptData.style?.predefinedId);
       if (style && style.keywords) {
         parts.push(...style.keywords);
       } else {
@@ -50,22 +57,22 @@ export async function generatePrompt(
       }
     }
   }
-  
+
   // 色
   if (promptData.colors && promptData.colors.length > 0) {
     const colorTexts = promptData.colors
-      .map(color => getColorText(color, options.language))
+      .map((color) => getColorText(color, language))
       .filter(Boolean);
     if (colorTexts.length > 0) {
       parts.push(colorTexts.join(' and '));
     }
   }
-  
+
   // 雰囲気
   if (promptData.mood) {
-    const moodText = getMoodText(promptData.mood, options.language);
+    const moodText = getMoodText(promptData.mood, language);
     if (moodText) {
-      const mood = MOODS.find(m => m.id === promptData.mood?.predefinedId);
+      const mood = MOODS.find((m) => m.id === promptData.mood?.predefinedId);
       if (mood && mood.keywords) {
         parts.push(...mood.keywords);
       } else {
@@ -73,12 +80,12 @@ export async function generatePrompt(
       }
     }
   }
-  
+
   // 照明
   if (promptData.lighting) {
-    const lightingText = getLightingText(promptData.lighting, options.language);
+    const lightingText = getLightingText(promptData.lighting, language);
     if (lightingText) {
-      const lighting = LIGHTINGS.find(l => l.id === promptData.lighting?.predefinedId);
+      const lighting = LIGHTINGS.find((l) => l.id === promptData.lighting?.predefinedId);
       if (lighting && lighting.keywords) {
         parts.push(...lighting.keywords);
       } else {
@@ -86,15 +93,15 @@ export async function generatePrompt(
       }
     }
   }
-  
+
   // 品質修飾子
   if (options.quality) {
     parts.push(...getQualityKeywords(options.quality));
   }
-  
+
   // 基本的な品質向上キーワード
   parts.push('high quality', 'detailed', 'masterpiece');
-  
+
   return parts.join(', ');
 }
 
@@ -113,7 +120,7 @@ function getSelectionText<T extends { id: string; name: string; nameEn: string }
     return selection.customText;
   }
   if (selection.predefinedId) {
-    const item = masterData.find(m => m.id === selection.predefinedId);
+    const item = masterData.find((m) => m.id === selection.predefinedId);
     if (item) {
       return language === 'ja' ? item.name : item.nameEn;
     }
@@ -121,45 +128,27 @@ function getSelectionText<T extends { id: string; name: string; nameEn: string }
   return '';
 }
 
-function getCategoryText(
-  category: ApiSelectionItem,
-  language: 'ja' | 'en'
-): string {
+function getCategoryText(category: ApiSelectionItem, language: 'ja' | 'en'): string {
   return getSelectionText(category, CATEGORIES, language);
 }
 
-function getDetailText(
-  detail: ApiSelectionItem,
-  language: 'ja' | 'en'
-): string {
+function getDetailText(detail: ApiSelectionItem, language: 'ja' | 'en'): string {
   return getSelectionText(detail, CATEGORY_DETAILS, language);
 }
 
-function getColorText(
-  color: ApiSelectionItem,
-  language: 'ja' | 'en'
-): string {
+function getColorText(color: ApiSelectionItem, language: 'ja' | 'en'): string {
   return getSelectionText(color, COLORS, language);
 }
 
-function getStyleText(
-  style: ApiSelectionItem,
-  language: 'ja' | 'en'
-): string {
+function getStyleText(style: ApiSelectionItem, language: 'ja' | 'en'): string {
   return getSelectionText(style, STYLES, language);
 }
 
-function getMoodText(
-  mood: ApiSelectionItem,
-  language: 'ja' | 'en'
-): string {
+function getMoodText(mood: ApiSelectionItem, language: 'ja' | 'en'): string {
   return getSelectionText(mood, MOODS, language);
 }
 
-function getLightingText(
-  lighting: ApiSelectionItem,
-  language: 'ja' | 'en'
-): string {
+function getLightingText(lighting: ApiSelectionItem, language: 'ja' | 'en'): string {
   return getSelectionText(lighting, LIGHTINGS, language);
 }
 

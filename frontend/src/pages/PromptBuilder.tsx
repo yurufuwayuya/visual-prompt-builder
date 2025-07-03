@@ -18,7 +18,7 @@ export function PromptBuilder() {
     detail: false,
     style: false,
   });
-  
+
   const categoryRef = useRef<HTMLDivElement>(null);
   const detailRef = useRef<HTMLDivElement>(null);
   const styleRef = useRef<HTMLDivElement>(null);
@@ -29,17 +29,17 @@ export function PromptBuilder() {
   };
 
   const handleCategoryComplete = () => {
-    setCompletedSteps(prev => ({ ...prev, category: true }));
+    setCompletedSteps((prev) => ({ ...prev, category: true }));
     setTimeout(() => scrollToSection(detailRef), 100);
   };
 
   const handleDetailComplete = () => {
-    setCompletedSteps(prev => ({ ...prev, detail: true }));
+    setCompletedSteps((prev) => ({ ...prev, detail: true }));
     setTimeout(() => scrollToSection(styleRef), 100);
   };
 
   const handleStyleComplete = () => {
-    setCompletedSteps(prev => ({ ...prev, style: true }));
+    setCompletedSteps((prev) => ({ ...prev, style: true }));
     setTimeout(() => scrollToSection(resultRef), 100);
   };
 
@@ -60,7 +60,7 @@ export function PromptBuilder() {
         detail: false,
         style: false,
       });
-      scrollToSection(categoryRef);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -74,7 +74,7 @@ export function PromptBuilder() {
   // カテゴリが選択されたら詳細セクションを有効化
   useEffect(() => {
     if (currentPrompt.category && !completedSteps.category) {
-      setCompletedSteps(prev => ({ ...prev, category: true }));
+      setCompletedSteps((prev) => ({ ...prev, category: true }));
     }
   }, [currentPrompt.category, completedSteps.category]);
 
@@ -94,18 +94,16 @@ export function PromptBuilder() {
         handleComplete();
       }
     },
-    'escape': () => handleCancel(),
+    escape: () => handleCancel(),
   });
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container max-w-4xl lg:max-w-6xl">
-        <header className="sticky top-0 z-10 bg-white shadow-sm" role="banner">
+        <header className="sticky top-0 z-10 bg-white shadow-sm">
           <div className="px-4 py-3 sm:py-4 lg:py-5">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                プロンプト作成
-              </h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">プロンプト作成</h1>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={handleReset}>
                   リセット
@@ -115,7 +113,11 @@ export function PromptBuilder() {
                 </Button>
               </div>
             </div>
-            <nav className="mt-3 sm:mt-4 flex gap-2 sm:gap-4 text-xs sm:text-sm lg:text-base overflow-x-auto" role="navigation" aria-label="プロンプト作成ステップ">
+            <nav
+              className="mt-3 sm:mt-4 flex gap-2 sm:gap-4 text-xs sm:text-sm lg:text-base overflow-x-auto"
+              role="navigation"
+              aria-label="プロンプト作成ステップ"
+            >
               <button
                 onClick={() => scrollToSection(categoryRef)}
                 className="font-medium text-primary-600 hover:underline"
@@ -162,7 +164,7 @@ export function PromptBuilder() {
           </div>
         </header>
 
-        <main className="px-4 py-6 sm:py-8 lg:py-12 space-y-8 sm:space-y-12 lg:space-y-16" role="main">
+        <main className="px-4 py-6 sm:py-8 lg:py-12 space-y-8 sm:space-y-12 lg:space-y-16">
           {/* カテゴリ選択 */}
           <section ref={categoryRef} className="scroll-mt-32">
             <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
@@ -170,9 +172,7 @@ export function PromptBuilder() {
                 <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary-600 text-white font-bold">
                   1
                 </span>
-                <span className="ml-2 text-lg font-semibold text-gray-900">
-                  カテゴリ選択
-                </span>
+                <span className="ml-2 text-lg font-semibold text-gray-900">カテゴリ選択</span>
               </div>
               <CategoryStep onNext={handleCategoryComplete} />
             </div>
@@ -187,20 +187,18 @@ export function PromptBuilder() {
           >
             <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
               <div className="mb-6">
-                <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
-                  completedSteps.category 
-                    ? 'bg-primary-600 text-white' 
-                    : 'bg-gray-300 text-gray-500'
-                }`}>
+                <span
+                  className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
+                    completedSteps.category
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-gray-300 text-gray-500'
+                  }`}
+                >
                   2
                 </span>
-                <span className="ml-2 text-lg font-semibold text-gray-900">
-                  詳細選択
-                </span>
+                <span className="ml-2 text-lg font-semibold text-gray-900">詳細選択</span>
               </div>
-              <DetailStep 
-                onNext={handleDetailComplete}
-              />
+              <DetailStep onNext={handleDetailComplete} />
             </div>
           </section>
 
@@ -213,20 +211,18 @@ export function PromptBuilder() {
           >
             <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
               <div className="mb-6">
-                <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
-                  completedSteps.detail 
-                    ? 'bg-primary-600 text-white' 
-                    : 'bg-gray-300 text-gray-500'
-                }`}>
+                <span
+                  className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
+                    completedSteps.detail
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-gray-300 text-gray-500'
+                  }`}
+                >
                   3
                 </span>
-                <span className="ml-2 text-lg font-semibold text-gray-900">
-                  スタイル設定
-                </span>
+                <span className="ml-2 text-lg font-semibold text-gray-900">スタイル設定</span>
               </div>
-              <StyleStep
-                onNext={handleStyleComplete}
-              />
+              <StyleStep onNext={handleStyleComplete} />
             </div>
           </section>
 
@@ -239,20 +235,16 @@ export function PromptBuilder() {
           >
             <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
               <div className="mb-6">
-                <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
-                  completedSteps.style 
-                    ? 'bg-primary-600 text-white' 
-                    : 'bg-gray-300 text-gray-500'
-                }`}>
+                <span
+                  className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
+                    completedSteps.style ? 'bg-primary-600 text-white' : 'bg-gray-300 text-gray-500'
+                  }`}
+                >
                   4
                 </span>
-                <span className="ml-2 text-lg font-semibold text-gray-900">
-                  生成結果
-                </span>
+                <span className="ml-2 text-lg font-semibold text-gray-900">生成結果</span>
               </div>
-              <ResultStep
-                onNew={handleComplete}
-              />
+              <ResultStep onNew={handleComplete} />
             </div>
           </section>
         </main>

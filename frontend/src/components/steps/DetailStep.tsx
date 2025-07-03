@@ -13,23 +13,26 @@ interface DetailStepProps {
 export function DetailStep({ onNext }: DetailStepProps) {
   const { currentPrompt, addDetail, removeDetail } = usePromptStore();
   const [customDetail, setCustomDetail] = useState('');
-  
+
   const category = currentPrompt.category;
-  if (!category?.predefinedId) return null;
-  
+  if (!category?.predefinedId) {
+    return null;
+  }
+
   const categoryData = getCategoryById(category.predefinedId);
   const availableDetails = getDetailsByCategoryId(category.predefinedId);
   const selectedDetails = currentPrompt.details || [];
 
   const handleAddDetail = (detailId: string) => {
     if (selectedDetails.length >= 5) return;
-    
+
     const detail = availableDetails.find((d) => d.id === detailId);
     if (!detail) return;
-    
+
     addDetail({
       predefinedId: detail.id,
-      displayName: detail.name,
+      name: detail.name,
+      nameEn: detail.nameEn,
       order: selectedDetails.length,
     });
   };
@@ -37,10 +40,10 @@ export function DetailStep({ onNext }: DetailStepProps) {
   const handleAddCustomDetail = () => {
     const sanitized = sanitizeInput(customDetail.trim());
     if (!sanitized || selectedDetails.length >= 5) return;
-    
+
     addDetail({
       predefinedId: `custom-${Date.now()}`,
-      displayName: sanitized,
+      name: sanitized,
       order: selectedDetails.length,
     });
     setCustomDetail('');
@@ -56,10 +59,10 @@ export function DetailStep({ onNext }: DetailStepProps) {
 
   return (
     <div className="space-y-6" role="group" aria-labelledby="detail-heading">
-      <h2 id="detail-heading" className="sr-only">詳細選択</h2>
-      <p className="text-gray-600 mb-4">
-        {categoryData?.name}の詳細を最大5つまで選択できます
-      </p>
+      <h2 id="detail-heading" className="sr-only">
+        詳細選択
+      </h2>
+      <p className="text-gray-600 mb-4">{categoryData?.name}の詳細を最大5つまで選択できます</p>
 
       {/* 選択済みの詳細 */}
       {selectedDetails.length > 0 && (
@@ -76,13 +79,11 @@ export function DetailStep({ onNext }: DetailStepProps) {
                   className="flex items-center gap-2 bg-white rounded-md px-2 sm:px-3 py-1.5 sm:py-2"
                 >
                   <GripVertical className="h-4 w-4 text-gray-400 cursor-move" aria-hidden="true" />
-                  <span className="flex-1 text-xs sm:text-sm">
-                    {detail.displayName}
-                  </span>
+                  <span className="flex-1 text-xs sm:text-sm">{detail.name}</span>
                   <button
                     onClick={() => removeDetail(detail.predefinedId)}
                     className="p-1 hover:bg-gray-100 rounded focus-visible-ring"
-                    aria-label={`${detail.displayName}を削除`}
+                    aria-label={`${detail.name}を削除`}
                   >
                     <X className="h-4 w-4 text-gray-500" aria-hidden="true" />
                   </button>
@@ -97,11 +98,13 @@ export function DetailStep({ onNext }: DetailStepProps) {
         <h3 className="font-medium text-gray-900 mb-3" id="available-options">
           利用可能なオプション
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4" role="list" aria-labelledby="available-options">
+        <div
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4"
+          role="list"
+          aria-labelledby="available-options"
+        >
           {availableDetails.map((detail) => {
-            const isSelected = selectedDetails.some(
-              (d) => d.predefinedId === detail.id
-            );
+            const isSelected = selectedDetails.some((d) => d.predefinedId === detail.id);
             return (
               <button
                 key={detail.id}
@@ -112,8 +115,8 @@ export function DetailStep({ onNext }: DetailStepProps) {
                   isSelected
                     ? 'border-gray-200 bg-gray-100 text-gray-400'
                     : selectedDetails.length >= 5
-                    ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'border-gray-300 hover:border-primary-600 hover:bg-primary-50'
+                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'border-gray-300 hover:border-primary-600 hover:bg-primary-50'
                 )}
                 role="listitem"
                 aria-pressed={isSelected}
@@ -155,11 +158,7 @@ export function DetailStep({ onNext }: DetailStepProps) {
       </div>
 
       <div className="flex justify-end">
-        <Button
-          onClick={onNext}
-          disabled={selectedDetails.length === 0}
-          size="lg"
-        >
+        <Button onClick={onNext} disabled={selectedDetails.length === 0} size="lg">
           スタイル設定へ進む
         </Button>
       </div>

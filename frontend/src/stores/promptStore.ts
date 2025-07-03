@@ -13,10 +13,10 @@ import type {
 interface PromptStore {
   // 現在の選択状態
   currentPrompt: Partial<PromptData>;
-  
+
   // 履歴
   history: PromptData[];
-  
+
   // アクション
   setCategory: (category: CategorySelection) => void;
   addDetail: (detail: DetailSelection) => void;
@@ -27,9 +27,8 @@ interface PromptStore {
   setMood: (mood: MoodSelection | undefined) => void;
   setLighting: (lighting: LightingSelection | undefined) => void;
   setGeneratedPrompt: (prompt: string, promptJa: string, negativePrompt?: string) => void;
-  
+
   saveToHistory: () => void;
-  toggleFavorite: (id: string) => void;
   reset: () => void;
   clearSelectionsFromDetails: () => void;
 }
@@ -61,9 +60,7 @@ export const usePromptStore = create<PromptStore>()(
         set((state) => ({
           currentPrompt: {
             ...state.currentPrompt,
-            details: state.currentPrompt.details?.filter(
-              (d) => d.predefinedId !== detailId
-            ),
+            details: state.currentPrompt.details?.filter((d) => d.predefinedId !== detailId),
           },
         })),
 
@@ -119,7 +116,6 @@ export const usePromptStore = create<PromptStore>()(
           generatedPrompt: currentPrompt.generatedPrompt,
           generatedPromptJa: currentPrompt.generatedPromptJa,
           negativePrompt: currentPrompt.negativePrompt,
-          isFavorite: false,
         };
 
         set({
@@ -127,13 +123,6 @@ export const usePromptStore = create<PromptStore>()(
           currentPrompt: {},
         });
       },
-
-      toggleFavorite: (id) =>
-        set((state) => ({
-          history: state.history.map((item) =>
-            item.id === id ? { ...item, isFavorite: !item.isFavorite } : item
-          ),
-        })),
 
       reset: () => set({ currentPrompt: {} }),
 

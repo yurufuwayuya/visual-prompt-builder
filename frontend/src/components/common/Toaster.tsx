@@ -7,18 +7,14 @@ export function Toaster() {
   const { toasts, removeToast } = useToastStore();
 
   return (
-    <div 
+    <div
       className="pointer-events-none fixed bottom-0 right-0 left-0 sm:left-auto z-50 flex flex-col gap-2 p-4"
       role="region"
       aria-live="polite"
       aria-label="通知"
     >
       {toasts.map((toast) => (
-        <Toast
-          key={toast.id}
-          {...toast}
-          onClose={() => removeToast(toast.id)}
-        />
+        <Toast key={toast.id} {...toast} onClose={() => removeToast(toast.id)} />
       ))}
     </div>
   );
@@ -27,7 +23,7 @@ export function Toaster() {
 interface ToastProps {
   id: string;
   message: string;
-  type: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info' | 'warning';
   duration?: number;
   onClose: () => void;
 }
@@ -42,14 +38,12 @@ function Toast({ message, type, duration = 5000, onClose }: ToastProps) {
 
   return (
     <div
-      className={cn(
-        'pointer-events-auto flex items-center gap-3 rounded-lg px-4 py-3 shadow-lg',
-        {
-          'bg-green-50 text-green-800': type === 'success',
-          'bg-red-50 text-red-800': type === 'error',
-          'bg-blue-50 text-blue-800': type === 'info',
-        }
-      )}
+      className={cn('pointer-events-auto flex items-center gap-3 rounded-lg px-4 py-3 shadow-lg', {
+        'bg-green-50 text-green-800': type === 'success',
+        'bg-red-50 text-red-800': type === 'error',
+        'bg-blue-50 text-blue-800': type === 'info',
+        'bg-yellow-50 text-yellow-800': type === 'warning',
+      })}
       role="alert"
       aria-live={type === 'error' ? 'assertive' : 'polite'}
     >

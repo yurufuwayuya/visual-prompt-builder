@@ -8,8 +8,10 @@
 export interface CategorySelection {
   /** 事前定義されたカテゴリID */
   predefinedId?: string;
-  /** カテゴリの表示名 */
-  displayName: string;
+  /** カテゴリ名 */
+  name: string;
+  /** カテゴリ名（英語） */
+  nameEn?: string;
   /** カスタムカテゴリの場合のテキスト */
   customText?: string;
 }
@@ -20,8 +22,10 @@ export interface CategorySelection {
 export interface DetailSelection {
   /** 事前定義された詳細ID */
   predefinedId: string;
-  /** 詳細の表示名 */
-  displayName: string;
+  /** 詳細名 */
+  name: string;
+  /** 詳細名（英語） */
+  nameEn?: string;
   /** 選択順序（1から始まる） */
   order?: number;
 }
@@ -32,8 +36,10 @@ export interface DetailSelection {
 export interface ColorSelection {
   /** 事前定義された色ID */
   predefinedId: string;
-  /** 色の表示名 */
-  displayName: string;
+  /** 色名 */
+  name: string;
+  /** 色名（英語） */
+  nameEn?: string;
   /** 16進数カラーコード */
   hex: string;
 }
@@ -44,8 +50,10 @@ export interface ColorSelection {
 export interface StyleSelection {
   /** 事前定義されたスタイルID */
   predefinedId: string;
-  /** スタイルの表示名 */
-  displayName: string;
+  /** スタイル名 */
+  name: string;
+  /** スタイル名（英語） */
+  nameEn?: string;
 }
 
 /**
@@ -54,8 +62,10 @@ export interface StyleSelection {
 export interface MoodSelection {
   /** 事前定義された雰囲気ID */
   predefinedId: string;
-  /** 雰囲気の表示名 */
-  displayName: string;
+  /** 雰囲気名 */
+  name: string;
+  /** 雰囲気名（英語） */
+  nameEn?: string;
 }
 
 /**
@@ -64,8 +74,10 @@ export interface MoodSelection {
 export interface LightingSelection {
   /** 事前定義された照明ID */
   predefinedId: string;
-  /** 照明の表示名 */
-  displayName: string;
+  /** 照明名 */
+  name: string;
+  /** 照明名（英語） */
+  nameEn?: string;
 }
 
 /**
@@ -133,8 +145,6 @@ export interface PromptData {
   createdAt: string;
   /** 更新日時 */
   updatedAt: string;
-  /** お気に入りフラグ */
-  isFavorite?: boolean;
 }
 
 /**
