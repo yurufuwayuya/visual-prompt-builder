@@ -120,7 +120,6 @@ export const usePromptStore = create<PromptStore>()(
 
         set({
           history: [newPrompt, ...history].slice(0, 100), // 最大100件
-          currentPrompt: {},
         });
       },
 
