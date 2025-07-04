@@ -30,7 +30,15 @@ export function useMultiSelectState<T>(
   set: (ids: string[]) => void;
   clear: () => void;
 } {
-  const [selectedIds, setSelectedIds] = useStepState(storeValue?.map(getId) ?? [], []);
+  const initialIds = storeValue?.map(getId) ?? [];
+  const [selectedIds, setSelectedIds] = useState<string[]>(initialIds);
+
+  // ストアの値が変更されたら、ローカルstateも更新
+  // getIdは関数なので依存配列から除外（無限ループを防ぐ）
+  useEffect(() => {
+    setSelectedIds(storeValue?.map(getId) ?? []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeValue]);
 
   const toggle = (id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
