@@ -5,7 +5,7 @@ test.describe('リセット機能', () => {
     await page.goto('/');
     // プロンプト作成画面へ遷移
     await page.click('text=プロンプトを作成');
-    await page.waitForURL('**/prompt-builder');
+    await page.waitForURL('**/builder');
   });
 
   test('リセットボタンで全ての選択がクリアされる', async ({ page }) => {
@@ -44,11 +44,11 @@ test.describe('リセット機能', () => {
     // プロンプトが生成されるのを待つ
     await page.waitForSelector('text=生成されたプロンプト', { timeout: 10000 });
 
+    // 確認ダイアログで「OK」をクリックする準備
+    page.once('dialog', (dialog) => dialog.accept());
+
     // リセットボタンをクリック
     await page.click('button:has-text("リセット")');
-
-    // 確認ダイアログで「OK」をクリック
-    await page.click('button:has-text("OK")');
 
     // リセット後の確認
     // 1. ページが最上部にスクロールされる
@@ -104,11 +104,10 @@ test.describe('リセット機能', () => {
     await page.click('text=ポートレート');
     await page.click('button:has-text("次へ")');
 
-    // リセットボタンをクリック
-    await page.click('button:has-text("リセット")');
+    // 確認ダイアログで「キャンセル」をクリックする準備
+    page.once('dialog', (dialog) => dialog.dismiss());
 
-    // 確認ダイアログで「キャンセル」をクリック
-    page.on('dialog', (dialog) => dialog.dismiss());
+    // リセットボタンをクリック
     await page.click('button:has-text("リセット")');
 
     // カテゴリの選択が維持されていることを確認

@@ -109,7 +109,7 @@ export function PromptBuilder() {
                   リセット
                 </Button>
                 <Button variant="ghost" onClick={handleCancel}>
-                  キャンセル
+                  ホームに戻る
                 </Button>
               </div>
             </div>
