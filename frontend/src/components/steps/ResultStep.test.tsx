@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ResultStep } from './ResultStep';
 import { usePromptStore } from '@/stores/promptStore';
@@ -217,19 +217,27 @@ describe('ResultStep', () => {
       render(<ResultStep onNew={mockOnNew} />);
 
       // 最初の試行
-      await vi.advanceTimersByTimeAsync(100);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(100);
+      });
       await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
 
       // 1回目のリトライ
-      await vi.advanceTimersByTimeAsync(1000);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
       await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2));
 
       // 2回目のリトライ
-      await vi.advanceTimersByTimeAsync(2000);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
+      });
       await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(3));
 
       // 3回目のリトライ
-      await vi.advanceTimersByTimeAsync(4000);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4000);
+      });
       await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(4));
 
       await waitFor(() => {
@@ -250,8 +258,12 @@ describe('ResultStep', () => {
       render(<ResultStep onNew={mockOnNew} />);
 
       // 最初のエラー後にリトライ開始
-      await vi.advanceTimersByTimeAsync(100);
-      await vi.advanceTimersByTimeAsync(1000);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(100);
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
 
       await waitFor(() => {
         expect(screen.getByText(/再試行中/)).toBeInTheDocument();
@@ -265,10 +277,18 @@ describe('ResultStep', () => {
       render(<ResultStep onNew={mockOnNew} />);
 
       // エラーが発生するまで待機
-      await vi.advanceTimersByTimeAsync(100);
-      await vi.advanceTimersByTimeAsync(1000);
-      await vi.advanceTimersByTimeAsync(2000);
-      await vi.advanceTimersByTimeAsync(4000);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(100);
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4000);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('プロンプト生成エラー')).toBeInTheDocument();
@@ -434,11 +454,13 @@ describe('ResultStep', () => {
       const saveButton = screen.getByRole('button', { name: 'コピーして履歴に保存' });
       await user.click(saveButton);
 
-      expect(mockWriteText).toHaveBeenCalledWith('プロンプト, ネガティブ');
-      expect(mockSaveToHistory).toHaveBeenCalled();
-      expect(mockAddToast).toHaveBeenCalledWith({
-        type: 'success',
-        message: 'コピーして履歴に保存しました',
+      await waitFor(() => {
+        expect(mockWriteText).toHaveBeenCalledWith('プロンプト, ネガティブ');
+        expect(mockSaveToHistory).toHaveBeenCalled();
+        expect(mockAddToast).toHaveBeenCalledWith({
+          type: 'success',
+          message: 'コピーして履歴に保存しました',
+        });
       });
     });
 
@@ -464,10 +486,12 @@ describe('ResultStep', () => {
       const saveButton = screen.getByRole('button', { name: 'コピーして履歴に保存' });
       await user.click(saveButton);
 
-      expect(mockSaveToHistory).toHaveBeenCalled();
-      expect(mockAddToast).toHaveBeenCalledWith({
-        type: 'warning',
-        message: 'コピーに失敗しましたが、履歴には保存しました',
+      await waitFor(() => {
+        expect(mockSaveToHistory).toHaveBeenCalled();
+        expect(mockAddToast).toHaveBeenCalledWith({
+          type: 'warning',
+          message: 'コピーに失敗しましたが、履歴には保存しました',
+        });
       });
     });
   });

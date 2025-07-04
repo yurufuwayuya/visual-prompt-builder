@@ -25,7 +25,7 @@ const validateOrigin = (origin: string | undefined, env: Bindings): string | nul
     'http://localhost:5173', // 開発環境
     'http://localhost:3000', // 代替開発環境
     'https://visual-prompt-builder.pages.dev', // 本番環境
-    'https://b33e2e63.visual-prompt-builder.pages.dev', // デプロイされたURL
+    'https://57774477.visual-prompt-builder.pages.dev', // デプロイされたURL
   ];
 
   // 開発環境では環境変数から追加のオリジンを許可

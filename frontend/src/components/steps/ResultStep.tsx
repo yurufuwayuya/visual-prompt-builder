@@ -3,6 +3,7 @@ import { Copy, Save, Sparkles } from 'lucide-react';
 import { usePromptStore } from '@/stores/promptStore';
 import { useToastStore } from '@/stores/toastStore';
 import { Button } from '@/components/common/Button';
+import { API_ENDPOINTS } from '@/config/api';
 
 interface ResultStepProps {
   onNew: () => void;
@@ -48,7 +49,7 @@ export function ResultStep({ onNew }: ResultStepProps) {
       }
 
       try {
-        const response = await fetch('http://localhost:8787/api/v1/prompt/generate', {
+        const response = await fetch(API_ENDPOINTS.generatePrompt, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -152,6 +153,7 @@ export function ResultStep({ onNew }: ResultStepProps) {
         }
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentPrompt, setGeneratedPrompt, addToast]
   );
 
@@ -165,7 +167,8 @@ export function ResultStep({ onNew }: ResultStepProps) {
     if (hasSelectedCategory && !hasGenerated && !isGenerating && !error) {
       generatePrompt();
     }
-  }, [currentPrompt.category, hasGenerated, isGenerating, error, generatePrompt]); // 依存関係を適切に設定
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPrompt.category, hasGenerated, isGenerating, error]); // generatePromptは除外（無限ループ防止）
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
