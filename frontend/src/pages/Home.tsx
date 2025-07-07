@@ -20,34 +20,29 @@ export function Home() {
           </p>
         </header>
 
-        <main className="py-8 sm:py-12 lg:py-16 xl:py-20">
-          <div className="grid gap-6 sm:gap-8 xl:gap-10 md:grid-cols-2 max-w-4xl mx-auto">
+        <main className="py-8 sm:py-12 lg:py-16">
+          <div className="grid gap-6 sm:gap-8 md:grid-cols-2 max-w-3xl mx-auto">
             <Link
               to="/builder"
               className="group relative overflow-hidden"
               aria-label="プロンプト作成を開始"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-              <div className="relative rounded-2xl border-2 border-gray-100 bg-white p-6 sm:p-8 lg:p-10 xl:p-12 shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02] hover:border-indigo-200 duration-300">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="p-3 bg-indigo-100 rounded-2xl group-hover:bg-indigo-200 transition-colors">
-                    <Palette
-                      className="h-10 w-10 xl:h-12 xl:w-12 text-indigo-600"
-                      aria-hidden="true"
-                    />
+              <div className="relative rounded-xl border-2 border-gray-100 bg-white p-6 sm:p-8 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] hover:border-indigo-200 duration-300">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-indigo-100 rounded-xl group-hover:bg-indigo-200 transition-colors">
+                    <Palette className="h-8 w-8 text-indigo-600" aria-hidden="true" />
                   </div>
-                  <Zap className="h-6 w-6 text-yellow-400 animate-pulse" />
+                  <Zap className="h-5 w-5 text-yellow-400 animate-pulse" />
                 </div>
-                <h2 className="text-xl sm:text-2xl xl:text-3xl font-bold text-gray-900">
-                  新しく作成
-                </h2>
-                <p className="mt-3 text-base sm:text-lg xl:text-xl text-gray-600 leading-relaxed">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">新しく作成</h2>
+                <p className="mt-2 text-sm sm:text-base text-gray-600 leading-relaxed">
                   カテゴリや詳細を選んで、オリジナルの画像プロンプトを作成します
                 </p>
-                <div className="mt-6 flex items-center text-indigo-600 font-semibold text-lg group-hover:text-indigo-700">
+                <div className="mt-4 flex items-center text-indigo-600 font-semibold text-base group-hover:text-indigo-700">
                   <span>作成を開始</span>
                   <svg
-                    className="ml-2 h-5 w-5 transform group-hover:translate-x-1 transition-transform"
+                    className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -69,26 +64,21 @@ export function Home() {
               aria-label="作成履歴を確認"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-              <div className="relative rounded-2xl border-2 border-gray-100 bg-white p-6 sm:p-8 lg:p-10 xl:p-12 shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02] hover:border-purple-200 duration-300">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="p-3 bg-purple-100 rounded-2xl group-hover:bg-purple-200 transition-colors">
-                    <Clock
-                      className="h-10 w-10 xl:h-12 xl:w-12 text-purple-600"
-                      aria-hidden="true"
-                    />
+              <div className="relative rounded-xl border-2 border-gray-100 bg-white p-6 sm:p-8 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] hover:border-purple-200 duration-300">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-purple-100 rounded-xl group-hover:bg-purple-200 transition-colors">
+                    <Clock className="h-8 w-8 text-purple-600" aria-hidden="true" />
                   </div>
-                  <Heart className="h-6 w-6 text-pink-400 animate-pulse" />
+                  <Heart className="h-5 w-5 text-pink-400 animate-pulse" />
                 </div>
-                <h2 className="text-xl sm:text-2xl xl:text-3xl font-bold text-gray-900">
-                  履歴を見る
-                </h2>
-                <p className="mt-3 text-base sm:text-lg xl:text-xl text-gray-600 leading-relaxed">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">履歴を見る</h2>
+                <p className="mt-2 text-sm sm:text-base text-gray-600 leading-relaxed">
                   過去に作成したプロンプトを確認・再利用できます
                 </p>
-                <div className="mt-6 flex items-center text-purple-600 font-semibold text-lg group-hover:text-purple-700">
+                <div className="mt-4 flex items-center text-purple-600 font-semibold text-base group-hover:text-purple-700">
                   <span>履歴を確認</span>
                   <svg
-                    className="ml-2 h-5 w-5 transform group-hover:translate-x-1 transition-transform"
+                    className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -105,51 +95,49 @@ export function Home() {
             </Link>
           </div>
 
-          <div className="mt-12 sm:mt-16 lg:mt-20 xl:mt-24">
+          <div className="mt-12 sm:mt-16 lg:mt-20">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-400 opacity-10 blur-3xl"></div>
-              <div className="relative rounded-3xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 p-8 sm:p-10 lg:p-12 xl:p-16 max-w-4xl xl:max-w-5xl mx-auto">
-                <div className="flex items-center mb-6">
-                  <div className="p-2 bg-indigo-100 rounded-xl mr-4">
-                    <Sparkles className="h-6 w-6 text-indigo-600" />
+              <div className="relative rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 p-6 sm:p-8 lg:p-10 max-w-3xl mx-auto">
+                <div className="flex items-center mb-5">
+                  <div className="p-2 bg-indigo-100 rounded-lg mr-3">
+                    <Sparkles className="h-5 w-5 text-indigo-600" />
                   </div>
-                  <h3 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900">
-                    使い方のヒント
-                  </h3>
+                  <h3 className="text-xl lg:text-2xl font-bold text-gray-900">使い方のヒント</h3>
                 </div>
-                <div className="grid sm:grid-cols-2 gap-6 mt-8">
-                  <div className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-5 mt-6">
+                  <div className="space-y-3">
                     <div className="flex items-start">
-                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center mt-1">
-                        <span className="text-indigo-600 font-bold">1</span>
+                      <div className="flex-shrink-0 h-7 w-7 rounded-full bg-indigo-100 flex items-center justify-center mt-0.5">
+                        <span className="text-indigo-600 font-semibold text-sm">1</span>
                       </div>
-                      <p className="ml-4 text-base lg:text-lg text-gray-700">
+                      <p className="ml-3 text-sm lg:text-base text-gray-700">
                         カテゴリを選んで、詳細な要素を追加していきます
                       </p>
                     </div>
                     <div className="flex items-start">
-                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center mt-1">
-                        <span className="text-purple-600 font-bold">2</span>
+                      <div className="flex-shrink-0 h-7 w-7 rounded-full bg-purple-100 flex items-center justify-center mt-0.5">
+                        <span className="text-purple-600 font-semibold text-sm">2</span>
                       </div>
-                      <p className="ml-4 text-base lg:text-lg text-gray-700">
+                      <p className="ml-3 text-sm lg:text-base text-gray-700">
                         色やスタイル、雰囲気を選んで、イメージを具体化します
                       </p>
                     </div>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div className="flex items-start">
-                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-pink-100 flex items-center justify-center mt-1">
-                        <span className="text-pink-600 font-bold">3</span>
+                      <div className="flex-shrink-0 h-7 w-7 rounded-full bg-pink-100 flex items-center justify-center mt-0.5">
+                        <span className="text-pink-600 font-semibold text-sm">3</span>
                       </div>
-                      <p className="ml-4 text-base lg:text-lg text-gray-700">
+                      <p className="ml-3 text-sm lg:text-base text-gray-700">
                         生成されたプロンプトを使って、画像を作成できます
                       </p>
                     </div>
                     <div className="flex items-start">
-                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center mt-1">
-                        <span className="text-yellow-600 font-bold">4</span>
+                      <div className="flex-shrink-0 h-7 w-7 rounded-full bg-yellow-100 flex items-center justify-center mt-0.5">
+                        <span className="text-yellow-600 font-semibold text-sm">4</span>
                       </div>
-                      <p className="ml-4 text-base lg:text-lg text-gray-700">
+                      <p className="ml-3 text-sm lg:text-base text-gray-700">
                         作成履歴は自動的に保存されます
                       </p>
                     </div>
