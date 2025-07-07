@@ -43,4 +43,4 @@ jobs:
           projectName: visual-prompt-builder
           directory: frontend/dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          deploymentTrigger: production
+          branch: main
