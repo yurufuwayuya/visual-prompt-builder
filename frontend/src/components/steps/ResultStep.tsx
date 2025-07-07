@@ -4,6 +4,7 @@ import { usePromptStore } from '@/stores/promptStore';
 import { useToastStore } from '@/stores/toastStore';
 import { Button } from '@/components/common/Button';
 import { API_ENDPOINTS } from '@/config/api';
+import { ImageGenerationSection } from '../ImageGenerationSection';
 
 interface ResultStepProps {
   onNew: () => void;
@@ -403,6 +404,9 @@ export function ResultStep({ onNew }: ResultStepProps) {
           )}
         </dl>
       </div>
+
+      {/* 画像生成セクション */}
+      <ImageGenerationSection prompt={generatedPrompt} />
 
       {/* アクションボタン */}
       <div className="flex justify-center">

@@ -620,3 +620,128 @@ const handleSave = async () => {
 2. 不要な方を削除
 3. GitHub Actions ワークフローを修正
 4. GitHub Secrets が正しく設定されているか確認
+
+### 実施した対応
+
+1. **重複する wrangler.toml の削除**
+   - workers/wrangler.toml を削除
+   - ルートの wrangler.toml を使用することに決定
+
+2. **GitHub Actions の修正**
+   - deploy.yml から working-directory: workers を削除
+   - --env production フラグを追加
+
+3. **API Token の権限修正**
+   - 最初のデプロイで KV 書き込み権限エラーが発生
+   - Cloudflare API Token に Workers KV Storage: Edit 権限を追加
+   - 再デプロイで成功
+
+### デプロイ結果
+
+- ✅ Cloudflare Workers へのデプロイ成功
+- URL: https://visual-prompt-builder.yuya-kitamori.workers.dev
+- Version ID: 3d5a0b43-1fc2-4cde-823a-8a5fff756b23
+- KV Namespaces 接続成功:
+  - CACHE
+  - SESSION
+  - RATE_LIMIT_KV
+
+---
+
+## 2025-01-07: 画像生成AI連携機能の実装
+
+### 作業開始
+
+- 時刻: 10:00
+- 目的: ステップ5として画像生成AIサービスとの連携機能を実装
+
+### 実装計画
+
+#### 1. 商用利用可能な無料画像生成サービスの選定
+
+- **Pollinations.ai**: 完全無料、URL連携対応、商用利用可
+- **Bing Image Creator**: Microsoftアカウントで無料、商用利用可
+- **Leonardo.ai**: 無料プラン有り（1日150トークン）、商用利用可
+- **Clipdrop**: 無料プラン有り、商用利用可
+- **Hugging Face Spaces**: モデルによる（ライセンス要確認）
+
+#### 2. 実装方針
+
+- URL連携型とコピペ型の両方に対応
+- 商用利用可能性を明確に表示
+- ユーザーフレンドリーなUIを設計
+
+### 実装内容
+
+1. **サービス設定ファイル作成**
+   - 各サービスの定義と設定
+   - 商用利用可否の明記
+   - URL連携/コピペ型の区別
+
+2. **画像生成サービス連携ロジック**
+   - URL生成関数
+   - クリップボードコピー機能
+   - サービス起動処理
+
+3. **UIコンポーネント**
+   - サービス選択ドロップダウン
+   - 実行ボタン
+   - 使い方ガイド表示
+
+4. **ResultStepへの統合**
+   - プロンプト表示の下に画像生成セクション追加
+   - レスポンシブ対応
+
+### 作業状況: 実装中
+
+#### 実装完了内容
+
+1. **商用利用可能な画像生成サービスの設定ファイル作成**
+   - `/frontend/src/config/commercialImageServices.ts`
+   - 5つのサービス（Pollinations.ai、Hugging
+     Face、Bing、Leonardo.ai、Clipdrop）を定義
+   - 日英両言語対応の説明文
+
+2. **画像生成サービス連携ロジックの実装**
+   - `/frontend/src/services/commercialImageGeneration.ts`
+   - URL生成、クリップボードコピー、サービス起動機能
+   - ユーザー設定の保存・読み込み機能
+
+3. **ImageGenerationSectionコンポーネントの作成**
+   - `/frontend/src/components/ImageGenerationSection.tsx`
+   - サービス選択ドロップダウン
+   - URL型/コピペ型に応じたボタン表示
+   - 使い方ガイドの折りたたみ表示
+   - プロンプト長チェック機能
+
+4. **ResultStepコンポーネントへの統合**
+   - 生成されたプロンプトの下に画像生成セクションを配置
+   - シームレスなユーザー体験
+
+5. **言語ストアの作成**
+   - `/frontend/src/stores/languageStore.ts`
+   - 日英言語切り替えのためのZustandストア
+
+6. **テストの作成と実行**
+   - 画像生成ロジックのユニットテスト
+   - ImageGenerationSectionのコンポーネントテスト
+   - 全テスト合格確認
+
+### 技術的詳細
+
+- TypeScriptの型安全性を確保
+- localStorageでユーザー設定を永続化
+- レスポンシブデザイン対応
+- アクセシビリティ考慮（aria属性等）
+
+### 作業完了
+
+- 時刻: 10:30
+- 作業時間: 30分
+- 全タスク完了
+
+### 次のステップ
+
+- 実際の動作確認（ブラウザでのテスト）
+- ユーザーフィードバックの収集
+- 必要に応じて追加サービスの検討
