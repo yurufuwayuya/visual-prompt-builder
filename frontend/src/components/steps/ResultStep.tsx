@@ -316,12 +316,17 @@ export function ResultStep({ onNew }: ResultStepProps) {
       <h2 id="result-heading" className="sr-only">
         生成結果
       </h2>
-      <p className="text-gray-600 mb-6">以下のプロンプトを画像生成AIで使用してください</p>
+      <p className="text-gray-600 mb-6 xl:text-lg">
+        以下のプロンプトを画像生成AIで使用してください
+      </p>
 
       {/* 統合プロンプト表示 */}
       <div className="space-y-2" role="region" aria-label="生成プロンプト">
         <div className="flex items-center justify-between">
-          <h3 className="font-medium text-sm sm:text-base text-gray-900" id="generated-prompt">
+          <h3
+            className="font-medium text-sm sm:text-base xl:text-lg text-gray-900"
+            id="generated-prompt"
+          >
             生成されたプロンプト
           </h3>
           <Button
@@ -339,19 +344,29 @@ export function ResultStep({ onNew }: ResultStepProps) {
             コピー
           </Button>
         </div>
-        <div className="bg-gray-50 rounded-lg p-3 sm:p-4" aria-describedby="generated-prompt">
-          <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap">
+        <div
+          className="bg-gray-50 rounded-lg p-3 sm:p-4 xl:p-6 max-w-4xl mx-auto"
+          aria-describedby="generated-prompt"
+        >
+          <p className="text-xs sm:text-sm xl:text-base text-gray-700 whitespace-pre-wrap leading-relaxed">
             {negativePrompt ? `${generatedPrompt}, ${negativePrompt}` : generatedPrompt}
           </p>
         </div>
       </div>
 
       {/* 設定内容のサマリー */}
-      <div className="bg-blue-50 rounded-lg p-3 sm:p-4" role="region" aria-label="設定内容">
-        <h3 className="font-medium text-sm sm:text-base text-gray-900 mb-2" id="settings-summary">
+      <div
+        className="bg-blue-50 rounded-lg p-3 sm:p-4 xl:p-6 max-w-4xl mx-auto"
+        role="region"
+        aria-label="設定内容"
+      >
+        <h3
+          className="font-medium text-sm sm:text-base xl:text-lg text-gray-900 mb-2"
+          id="settings-summary"
+        >
           設定内容
         </h3>
-        <dl className="text-xs sm:text-sm space-y-1">
+        <dl className="text-xs sm:text-sm xl:text-base space-y-1">
           <div>
             <dt className="inline font-medium text-gray-600">カテゴリ:</dt>
             <dd className="inline ml-2">{currentPrompt.category?.name}</dd>

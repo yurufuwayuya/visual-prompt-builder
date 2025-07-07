@@ -43,10 +43,10 @@ export function History() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container max-w-7xl">
-        <header className="py-4 sm:py-6 lg:py-8 border-b">
+      <div className="container max-w-7xl xl:max-w-screen-xl 2xl:max-w-screen-2xl">
+        <header className="py-4 sm:py-6 lg:py-8 xl:py-10 border-b">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">作成履歴</h1>
+            <h1 className="text-xl sm:text-2xl xl:text-3xl font-bold text-gray-900">作成履歴</h1>
             <Link to="/">
               <Button variant="outline" size="sm" aria-label="ホームページに戻る">
                 <ChevronLeft className="h-4 w-4 mr-1" aria-hidden="true" />
@@ -56,7 +56,7 @@ export function History() {
           </div>
         </header>
 
-        <main className="py-6 sm:py-8 lg:py-12" aria-label="プロンプト履歴">
+        <main className="py-6 sm:py-8 lg:py-12 xl:py-16" aria-label="プロンプト履歴">
           {history.length === 0 ? (
             <div
               className="rounded-lg bg-white p-8 sm:p-12 text-center shadow-sm"
@@ -72,16 +72,19 @@ export function History() {
               </Link>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" role="list">
+            <div
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+              role="list"
+            >
               {history.map((item) => (
                 <article
                   key={item.id}
-                  className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4 hover:shadow-md transition-shadow"
+                  className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4 xl:p-5 hover:shadow-lg transition-shadow"
                   role="listitem"
                   aria-label={`${item.category.name}のプロンプト`}
                 >
                   <div className="mb-3">
-                    <h3 className="font-medium text-sm sm:text-base text-gray-900">
+                    <h3 className="font-medium text-sm sm:text-base xl:text-lg text-gray-900">
                       {item.category.name}
                     </h3>
                   </div>

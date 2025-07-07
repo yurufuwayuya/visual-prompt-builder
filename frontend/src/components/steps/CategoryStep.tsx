@@ -66,10 +66,10 @@ export function CategoryStep({ onNext }: CategoryStepProps) {
       <h2 id="category-heading" className="sr-only">
         カテゴリ選択
       </h2>
-      <p className="text-gray-600 mb-4">作成したい画像のカテゴリを選んでください</p>
+      <p className="text-gray-600 mb-4 xl:text-lg">作成したい画像のカテゴリを選んでください</p>
 
       <div
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-5"
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 2xl:grid-cols-8 gap-3 sm:gap-4 lg:gap-5 xl:gap-6"
         role="radiogroup"
         aria-required="true"
       >
@@ -87,8 +87,8 @@ export function CategoryStep({ onNext }: CategoryStepProps) {
             aria-checked={selectedCategory === category.id}
             aria-label={`${category.name} - ${category.nameEn}`}
           >
-            <h3 className="font-medium text-gray-900">{category.name}</h3>
-            <p className="text-sm text-gray-500 mt-1">{category.nameEn}</p>
+            <h3 className="font-medium text-gray-900 xl:text-lg">{category.name}</h3>
+            <p className="text-sm xl:text-base text-gray-500 mt-1">{category.nameEn}</p>
           </button>
         ))}
       </div>

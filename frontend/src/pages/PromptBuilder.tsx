@@ -99,11 +99,13 @@ export function PromptBuilder() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container max-w-4xl lg:max-w-6xl">
+      <div className="container max-w-4xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-screen-2xl">
         <header className="sticky top-0 z-10 bg-white shadow-sm">
-          <div className="px-4 py-3 sm:py-4 lg:py-5">
+          <div className="px-4 py-3 sm:py-4 lg:py-5 xl:py-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">プロンプト作成</h1>
+              <h1 className="text-xl sm:text-2xl xl:text-3xl font-bold text-gray-900">
+                プロンプト作成
+              </h1>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={handleReset}>
                   リセット
@@ -114,7 +116,7 @@ export function PromptBuilder() {
               </div>
             </div>
             <nav
-              className="mt-3 sm:mt-4 flex gap-2 sm:gap-4 text-xs sm:text-sm lg:text-base overflow-x-auto"
+              className="mt-3 sm:mt-4 flex gap-2 sm:gap-4 xl:gap-6 text-xs sm:text-sm lg:text-base xl:text-lg overflow-x-auto"
               role="navigation"
               aria-label="プロンプト作成ステップ"
             >
@@ -164,15 +166,17 @@ export function PromptBuilder() {
           </div>
         </header>
 
-        <main className="px-4 py-6 sm:py-8 lg:py-12 space-y-8 sm:space-y-12 lg:space-y-16">
+        <main className="px-4 py-6 sm:py-8 lg:py-12 xl:py-16 space-y-8 sm:space-y-12 lg:space-y-16 xl:space-y-20">
           {/* カテゴリ選択 */}
           <section ref={categoryRef} className="scroll-mt-32">
-            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 xl:p-8">
               <div className="mb-6">
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary-600 text-white font-bold">
+                <span className="inline-flex items-center justify-center w-8 h-8 xl:w-10 xl:h-10 rounded-full bg-primary-600 text-white font-bold xl:text-lg">
                   1
                 </span>
-                <span className="ml-2 text-lg font-semibold text-gray-900">カテゴリ選択</span>
+                <span className="ml-2 text-lg xl:text-xl font-semibold text-gray-900">
+                  カテゴリ選択
+                </span>
               </div>
               <CategoryStep onNext={handleCategoryComplete} />
             </div>
@@ -185,7 +189,7 @@ export function PromptBuilder() {
               completedSteps.category ? 'opacity-100' : 'opacity-30 pointer-events-none'
             }`}
           >
-            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 xl:p-8">
               <div className="mb-6">
                 <span
                   className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
@@ -209,7 +213,7 @@ export function PromptBuilder() {
               completedSteps.detail ? 'opacity-100' : 'opacity-30 pointer-events-none'
             }`}
           >
-            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 xl:p-8">
               <div className="mb-6">
                 <span
                   className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
@@ -233,7 +237,7 @@ export function PromptBuilder() {
               completedSteps.style ? 'opacity-100' : 'opacity-30 pointer-events-none'
             }`}
           >
-            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 xl:p-8">
               <div className="mb-6">
                 <span
                   className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${

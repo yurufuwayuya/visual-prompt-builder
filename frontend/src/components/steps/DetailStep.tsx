@@ -62,7 +62,9 @@ export function DetailStep({ onNext }: DetailStepProps) {
       <h2 id="detail-heading" className="sr-only">
         詳細選択
       </h2>
-      <p className="text-gray-600 mb-4">{categoryData?.name}の詳細を最大5つまで選択できます</p>
+      <p className="text-gray-600 mb-4 xl:text-lg">
+        {categoryData?.name}の詳細を最大5つまで選択できます
+      </p>
 
       {/* 選択済みの詳細 */}
       {selectedDetails.length > 0 && (
@@ -95,11 +97,11 @@ export function DetailStep({ onNext }: DetailStepProps) {
 
       {/* 利用可能な詳細オプション */}
       <div role="region" aria-label="利用可能なオプション">
-        <h3 className="font-medium text-gray-900 mb-3" id="available-options">
+        <h3 className="font-medium text-gray-900 mb-3 xl:text-lg" id="available-options">
           利用可能なオプション
         </h3>
         <div
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 sm:gap-3 lg:gap-4 xl:gap-5"
           role="list"
           aria-labelledby="available-options"
         >
@@ -122,7 +124,7 @@ export function DetailStep({ onNext }: DetailStepProps) {
                 aria-pressed={isSelected}
                 aria-label={`${detail.name}${isSelected ? ' (選択済み)' : ''}${selectedDetails.length >= 5 && !isSelected ? ' (上限に達しました)' : ''}`}
               >
-                <span className="text-xs sm:text-sm">{detail.name}</span>
+                <span className="text-xs sm:text-sm xl:text-base">{detail.name}</span>
               </button>
             );
           })}
@@ -131,7 +133,7 @@ export function DetailStep({ onNext }: DetailStepProps) {
 
       {/* カスタム詳細入力 */}
       <div role="region" aria-label="カスタムオプション">
-        <h3 className="font-medium text-gray-900 mb-3" id="custom-option">
+        <h3 className="font-medium text-gray-900 mb-3 xl:text-lg" id="custom-option">
           カスタムオプション
         </h3>
         <div className="flex gap-2">

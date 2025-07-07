@@ -40,7 +40,7 @@ export function StyleStep({ onNext }: StyleStepProps) {
     const setSelectionFromId = <T extends { id: string; name: string; nameEn: string }>(
       selectedId: string | undefined,
       masterData: readonly T[],
-      setter: (selection: any) => void
+      setter: (selection: { predefinedId: string; name: string; nameEn: string }) => void
     ) => {
       if (!selectedId) return;
       const item = masterData.find((m) => m.id === selectedId);
@@ -62,14 +62,14 @@ export function StyleStep({ onNext }: StyleStepProps) {
 
   return (
     <div className="space-y-8">
-      <p className="text-gray-600 mb-6">画像のスタイルや雰囲気を設定してください</p>
+      <p className="text-gray-600 mb-6 xl:text-lg">画像のスタイルや雰囲気を設定してください</p>
 
       {/* 色選択 */}
       <div>
-        <h3 className="font-medium text-sm sm:text-base text-gray-900 mb-2 sm:mb-3">
+        <h3 className="font-medium text-sm sm:text-base xl:text-lg text-gray-900 mb-2 sm:mb-3">
           色（複数選択可）
         </h3>
-        <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-3">
+        <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 sm:gap-3 xl:gap-4">
           {COLORS.map((color) => (
             <button
               key={color.id}
@@ -80,10 +80,10 @@ export function StyleStep({ onNext }: StyleStepProps) {
               )}
             >
               <div
-                className="w-full h-6 sm:h-8 rounded mb-1 sm:mb-2"
+                className="w-full h-6 sm:h-8 xl:h-10 rounded mb-1 sm:mb-2"
                 style={{ backgroundColor: color.hex }}
               />
-              <span className="text-[10px] sm:text-xs">{color.name}</span>
+              <span className="text-[10px] sm:text-xs xl:text-sm">{color.name}</span>
             </button>
           ))}
         </div>
@@ -91,8 +91,10 @@ export function StyleStep({ onNext }: StyleStepProps) {
 
       {/* スタイル選択 */}
       <div>
-        <h3 className="font-medium text-sm sm:text-base text-gray-900 mb-2 sm:mb-3">スタイル</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+        <h3 className="font-medium text-sm sm:text-base xl:text-lg text-gray-900 mb-2 sm:mb-3">
+          スタイル
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 xl:gap-4">
           {STYLES.map((style) => (
             <button
               key={style.id}
@@ -104,8 +106,8 @@ export function StyleStep({ onNext }: StyleStepProps) {
                   : 'border-gray-200 hover:border-gray-300'
               )}
             >
-              <div className="font-medium text-xs sm:text-sm">{style.name}</div>
-              <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">
+              <div className="font-medium text-xs sm:text-sm xl:text-base">{style.name}</div>
+              <div className="text-[10px] sm:text-xs xl:text-sm text-gray-500 mt-0.5 sm:mt-1">
                 {style.description}
               </div>
             </button>
