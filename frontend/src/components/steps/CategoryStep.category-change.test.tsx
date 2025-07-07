@@ -13,7 +13,7 @@ describe('CategoryStep - Category Change Alert', () => {
   const mockOnNext = vi.fn();
   const mockSetCategory = vi.fn();
   const mockClearSelectionsFromDetails = vi.fn();
-  
+
   beforeEach(() => {
     vi.clearAllMocks();
     (global.confirm as any).mockReset();
@@ -25,11 +25,12 @@ describe('CategoryStep - Category Change Alert', () => {
       currentPrompt: {
         category: {
           predefinedId: 'animal',
-          displayName: '動物',
+          name: '動物',
+          nameEn: 'Animal',
         },
         details: [
-          { predefinedId: 'cat', displayName: '猫', order: 0 },
-          { predefinedId: 'dog', displayName: '犬', order: 1 },
+          { predefinedId: 'cat', name: '猫', nameEn: 'Cat', order: 0 },
+          { predefinedId: 'dog', name: '犬', nameEn: 'Dog', order: 1 },
         ],
       },
       setCategory: mockSetCategory,
@@ -60,7 +61,8 @@ describe('CategoryStep - Category Change Alert', () => {
     // Verify new category was set
     expect(mockSetCategory).toHaveBeenCalledWith({
       predefinedId: 'food',
-      displayName: '食べ物',
+      name: '食べ物',
+      nameEn: 'Food',
     });
   });
 
@@ -70,11 +72,10 @@ describe('CategoryStep - Category Change Alert', () => {
       currentPrompt: {
         category: {
           predefinedId: 'animal',
-          displayName: '動物',
+          name: '動物',
+          nameEn: 'Animal',
         },
-        details: [
-          { predefinedId: 'cat', displayName: '猫', order: 0 },
-        ],
+        details: [{ predefinedId: 'cat', name: '猫', nameEn: 'Cat', order: 0 }],
       },
       setCategory: mockSetCategory,
       clearSelectionsFromDetails: mockClearSelectionsFromDetails,
@@ -103,7 +104,8 @@ describe('CategoryStep - Category Change Alert', () => {
       currentPrompt: {
         category: {
           predefinedId: 'animal',
-          displayName: '動物',
+          name: '動物',
+          nameEn: 'Animal',
         },
         details: [],
       },

@@ -1259,3 +1259,56 @@
 - 具体的な最適化の実装
 - デスクトップ向けのスタイル調整
 - 大画面でのユーザビリティテスト
+
+## 2025-01-07 テスト修正
+
+### 実施内容
+
+1. **テストの失敗原因調査**
+   - CategoryStepテスト: `displayName` プロパティが `name` と `nameEn`
+     に変更された
+   - ResultStepテスト: DOM構造の変更による要素の重複
+   - リトライ機能テストのタイムアウト
+
+2. **CategoryStepテストの修正**
+   - CategoryStep.test.tsx: `displayName` を `name`/`nameEn` に変更
+   - CategoryStep.category-change.test.tsx: 同様の変更
+
+3. **StyleStepテストの修正**
+   - モックデータの期待値を `displayName` から `name`/`nameEn` に更新
+
+4. **ResultStepテストの修正**
+   - DOM構造の変更に対応: `getByRole('region', { name: '生成プロンプト' })`
+     を使用
+   - リトライ機能テストのタイミング調整
+   - タイムアウトの増加（10秒）
+   - vi.useFakeTimers({ shouldAdvanceTime: true }) の使用
+
+### 完成物
+
+- CategoryStepのテストがパス
+- StyleStepのテストがパス
+- ResultStepのテストが大部分パス（一部のリトライテストを除く）
+
+### 課題
+
+- リトライ機能のテストがまだ不安定
+- 非同期処理とタイマーの組み合わせが複雑
+- テストの保守性を高める必要がある
+
+## 次回作業予定
+
+1. 残りのリトライテストの修正
+   - タイミング問題の根本的解決
+   - よりロバストなテスト実装
+
+2. 画像出力機能の実装
+   - Canvas APIを使用した画像生成
+   - Base64エンコード形式でのダウンロード
+
+3. 性能最適化
+   - コード分割の実装
+   - バンドルサイズの削減
+
+4. E2Eテストの追加
+   - Playwrightを使用したシナリオテスト

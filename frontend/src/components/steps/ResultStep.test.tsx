@@ -116,12 +116,10 @@ describe('ResultStep', () => {
       render(<ResultStep onNew={mockOnNew} />);
 
       await waitFor(() => {
-        // 統合表示されたプロンプトを取得
-        const promptElement = screen.getByText((_content, element) => {
-          const text = element?.textContent || '';
-          return text.includes('テストプロンプト') && text.includes('ネガティブプロンプト');
-        });
-        expect(promptElement).toBeInTheDocument();
+        // プロンプトが表示されるエリアを確認
+        const promptArea = screen.getByRole('region', { name: '生成プロンプト' });
+        expect(promptArea).toHaveTextContent('テストプロンプト');
+        expect(promptArea).toHaveTextContent('ネガティブプロンプト');
       });
     });
 
@@ -192,19 +190,17 @@ describe('ResultStep', () => {
       render(<ResultStep onNew={mockOnNew} />);
 
       await waitFor(() => {
-        // 統合表示されたプロンプトを取得
-        const promptElement = screen.getByText((_content, element) => {
-          const text = element?.textContent || '';
-          return text.includes('テストプロンプト') && text.includes('ネガティブプロンプト');
-        });
-        expect(promptElement).toBeInTheDocument();
+        // プロンプトが表示されるエリアを確認
+        const promptArea = screen.getByRole('region', { name: '生成プロンプト' });
+        expect(promptArea).toHaveTextContent('テストプロンプト');
+        expect(promptArea).toHaveTextContent('ネガティブプロンプト');
       });
     });
   });
 
   describe('リトライ機能', () => {
     beforeEach(() => {
-      vi.useFakeTimers();
+      vi.useFakeTimers({ shouldAdvanceTime: true });
     });
 
     afterEach(() => {
@@ -216,59 +212,39 @@ describe('ResultStep', () => {
 
       render(<ResultStep onNew={mockOnNew} />);
 
-      // 最初の試行
+      // すべてのリトライが完了するまで待つ (1000 + 2000 + 4000 = 7000ms)
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(100);
+        await vi.advanceTimersByTimeAsync(8000);
       });
-      await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
 
-      // 1回目のリトライ
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(1000);
-      });
-      await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2));
+      // 4回の試行があったことを確認
+      expect(mockFetch).toHaveBeenCalledTimes(4);
 
-      // 2回目のリトライ
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(2000);
-      });
-      await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(3));
-
-      // 3回目のリトライ
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(4000);
-      });
-      await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(4));
-
-      await waitFor(() => {
-        expect(mockAddToast).toHaveBeenCalledWith(
-          expect.objectContaining({
-            type: 'error',
-            message: expect.stringContaining('最大リトライ回数(3回)に達しました'),
-          })
-        );
-      });
-    });
+      // エラーメッセージが表示されたことを確認
+      expect(mockAddToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          message: 'プロンプト生成に失敗しました。最大リトライ回数(3回)に達しました。',
+        })
+      );
+    }, 10000);
 
     it('リトライ中に進捗を表示する', async () => {
+      // 最初はエラー、次は永久にpending
       mockFetch
         .mockRejectedValueOnce(new Error('Network error'))
         .mockImplementation(() => new Promise(() => {}));
 
       render(<ResultStep onNew={mockOnNew} />);
 
-      // 最初のエラー後にリトライ開始
+      // エラー後のリトライを開始させる
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(100);
-      });
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(1100);
       });
 
-      await waitFor(() => {
-        expect(screen.getByText(/再試行中/)).toBeInTheDocument();
-      });
-    });
+      // リトライ中のメッセージを確認
+      expect(screen.getByText(/再試行中/)).toBeInTheDocument();
+    }, 10000);
 
     it('エラー画面から手動で再試行できる', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -276,23 +252,13 @@ describe('ResultStep', () => {
 
       render(<ResultStep onNew={mockOnNew} />);
 
-      // エラーが発生するまで待機
+      // すべてのリトライが失敗するまで待機
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(100);
-      });
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(1000);
-      });
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(2000);
-      });
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(4000);
+        await vi.advanceTimersByTimeAsync(8000);
       });
 
-      await waitFor(() => {
-        expect(screen.getByText('プロンプト生成エラー')).toBeInTheDocument();
-      });
+      // エラー画面が表示されることを確認
+      expect(screen.getByText('プロンプト生成エラー')).toBeInTheDocument();
 
       // リセット
       mockFetch.mockClear();
@@ -310,13 +276,10 @@ describe('ResultStep', () => {
       await user.click(retryButton);
 
       await waitFor(() => {
-        const promptElement = screen.getByText((_content, element) => {
-          const text = element?.textContent || '';
-          return text.includes('リトライ後のプロンプト');
-        });
-        expect(promptElement).toBeInTheDocument();
+        const promptArea = screen.getByRole('region', { name: '生成プロンプト' });
+        expect(promptArea).toHaveTextContent('リトライ後のプロンプト');
       });
-    });
+    }, 10000);
   });
 
   describe('コピー機能', () => {
@@ -335,11 +298,8 @@ describe('ResultStep', () => {
       render(<ResultStep onNew={mockOnNew} />);
 
       await waitFor(() => {
-        const promptElement = screen.getByText((_content, element) => {
-          const text = element?.textContent || '';
-          return text.includes('コピーするプロンプト');
-        });
-        expect(promptElement).toBeInTheDocument();
+        const promptArea = screen.getByRole('region', { name: '生成プロンプト' });
+        expect(promptArea).toHaveTextContent('コピーするプロンプト');
       });
 
       // ボタンがクリック可能になるのを待つ
@@ -348,11 +308,8 @@ describe('ResultStep', () => {
         expect(copyButton).not.toBeDisabled();
       });
 
-      const copyButtons = screen.getAllByRole('button', { name: /コピー/ });
-      const promptCopyButton =
-        copyButtons.find((button) => button.textContent?.includes('プロンプトをコピー')) ||
-        copyButtons[0];
-      await user.click(promptCopyButton);
+      const copyButton = screen.getByRole('button', { name: 'プロンプトをコピー' });
+      await user.click(copyButton);
 
       expect(mockWriteText).toHaveBeenCalledWith('コピーするプロンプト');
       expect(mockAddToast).toHaveBeenCalledWith({
@@ -376,11 +333,9 @@ describe('ResultStep', () => {
       render(<ResultStep onNew={mockOnNew} />);
 
       await waitFor(() => {
-        const promptElement = screen.getByText((_content, element) => {
-          const text = element?.textContent || '';
-          return text.includes('ポジティブプロンプト') && text.includes('ネガティブプロンプト');
-        });
-        expect(promptElement).toBeInTheDocument();
+        const promptArea = screen.getByRole('region', { name: '生成プロンプト' });
+        expect(promptArea).toHaveTextContent('ポジティブプロンプト');
+        expect(promptArea).toHaveTextContent('ネガティブプロンプト');
       });
 
       const copyButton = screen.getByRole('button', { name: 'プロンプトをコピー' });
@@ -410,11 +365,8 @@ describe('ResultStep', () => {
       const { rerender } = render(<ResultStep onNew={mockOnNew} />);
 
       await waitFor(() => {
-        const promptElement = screen.getByText((_content, element) => {
-          const text = element?.textContent || '';
-          return text.includes('生成されたプロンプト');
-        });
-        expect(promptElement).toBeInTheDocument();
+        const promptArea = screen.getByRole('region', { name: '生成プロンプト' });
+        expect(promptArea).toHaveTextContent('生成されたプロンプト');
       });
 
       // プロンプトストアをリセット

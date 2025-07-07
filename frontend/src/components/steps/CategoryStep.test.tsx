@@ -9,7 +9,7 @@ vi.mock('@/stores/promptStore');
 describe('CategoryStep', () => {
   const mockOnNext = vi.fn();
   const mockSetCategory = vi.fn();
-  
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -20,15 +20,14 @@ describe('CategoryStep', () => {
       currentPrompt: {
         category: {
           predefinedId: 'animal',
-          displayName: '動物',
+          name: '動物',
+          nameEn: 'Animal',
         },
       },
       setCategory: mockSetCategory,
     });
 
-    const { rerender } = render(
-      <CategoryStep onNext={mockOnNext} />
-    );
+    const { rerender } = render(<CategoryStep onNext={mockOnNext} />);
 
     // Verify initial selection
     const animalButton = screen.getByRole('radio', { name: /動物 - Animal/ });
@@ -66,7 +65,8 @@ describe('CategoryStep', () => {
     // Verify category was set
     expect(mockSetCategory).toHaveBeenCalledWith({
       predefinedId: 'food',
-      displayName: '食べ物',
+      name: '食べ物',
+      nameEn: 'Food',
     });
     expect(mockOnNext).toHaveBeenCalled();
   });
