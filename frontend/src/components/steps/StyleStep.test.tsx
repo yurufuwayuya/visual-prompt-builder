@@ -153,7 +153,7 @@ describe('StyleStep', () => {
         expect.objectContaining({
           predefinedId: 'blue',
           name: '青',
-          nameEn: 'Blue',
+          nameEn: 'blue',
           hex: '#0000FF',
         }),
       ]);
@@ -161,19 +161,19 @@ describe('StyleStep', () => {
       expect(mockSetStyle).toHaveBeenCalledWith({
         predefinedId: 'realistic',
         name: 'リアル',
-        nameEn: 'Realistic',
+        nameEn: 'realistic',
       });
 
       expect(mockSetMood).toHaveBeenCalledWith({
         predefinedId: 'happy',
         name: '楽しい',
-        nameEn: 'Happy',
+        nameEn: 'happy',
       });
 
       expect(mockSetLighting).toHaveBeenCalledWith({
         predefinedId: 'natural',
         name: '自然光',
-        nameEn: 'Natural Light',
+        nameEn: 'natural light',
       });
 
       expect(mockOnNext).toHaveBeenCalled();
