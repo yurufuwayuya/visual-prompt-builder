@@ -60,29 +60,29 @@ export function ResultStep({ onNew }: ResultStepProps) {
             },
             details: (currentPrompt.details || []).map((detail, index) => ({
               predefinedId: detail.predefinedId,
-              customText: detail.customText || null,
+              customText: null,
               order: index,
             })),
             colors: (currentPrompt.colors || []).map((color) => ({
               predefinedId: color.predefinedId,
-              customText: color.customText || null,
+              customText: null,
             })),
             style: currentPrompt.style
               ? {
                   predefinedId: currentPrompt.style.predefinedId,
-                  customText: currentPrompt.style.customText || null,
+                  customText: null,
                 }
               : undefined,
             mood: currentPrompt.mood
               ? {
                   predefinedId: currentPrompt.mood.predefinedId,
-                  customText: currentPrompt.mood.customText || null,
+                  customText: null,
                 }
               : undefined,
             lighting: currentPrompt.lighting
               ? {
                   predefinedId: currentPrompt.lighting.predefinedId,
-                  customText: currentPrompt.lighting.customText || null,
+                  customText: null,
                 }
               : undefined,
           },
