@@ -43,6 +43,8 @@ export function ResultStep({ onNew }: ResultStepProps) {
         return;
       }
 
+      console.log('Current Prompt State:', currentPrompt); // デバッグ用
+
       if (attemptCount === 0) {
         setIsGenerating(true);
         setError(null);
@@ -50,51 +52,55 @@ export function ResultStep({ onNew }: ResultStepProps) {
       }
 
       try {
+        const requestBody = {
+          promptData: {
+            category: {
+              predefinedId: currentPrompt.category.predefinedId,
+              customText: currentPrompt.category.customText || null,
+            },
+            details: (currentPrompt.details || []).map((detail, index) => ({
+              predefinedId: detail.predefinedId,
+              customText: detail.customText || null,
+              order: index,
+            })),
+            colors: (currentPrompt.colors || []).map((color) => ({
+              predefinedId: color.predefinedId,
+              customText: color.customText || null,
+            })),
+            style: currentPrompt.style
+              ? {
+                  predefinedId: currentPrompt.style.predefinedId,
+                  customText: currentPrompt.style.customText || null,
+                }
+              : undefined,
+            mood: currentPrompt.mood
+              ? {
+                  predefinedId: currentPrompt.mood.predefinedId,
+                  customText: currentPrompt.mood.customText || null,
+                }
+              : undefined,
+            lighting: currentPrompt.lighting
+              ? {
+                  predefinedId: currentPrompt.lighting.predefinedId,
+                  customText: currentPrompt.lighting.customText || null,
+                }
+              : undefined,
+          },
+          options: {
+            language: 'en',
+            quality: 'high',
+            includeNegativePrompt: true,
+          },
+        };
+
+        console.log('API Request Body:', requestBody); // デバッグ用
+
         const response = await fetch(API_ENDPOINTS.generatePrompt, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            promptData: {
-              category: {
-                predefinedId: currentPrompt.category.predefinedId,
-                customText: currentPrompt.category.customText || null,
-              },
-              details: (currentPrompt.details || []).map((detail, index) => ({
-                predefinedId: detail.predefinedId,
-                customText: null,
-                order: index,
-              })),
-              colors: (currentPrompt.colors || []).map((color) => ({
-                predefinedId: color.predefinedId,
-                customText: null,
-              })),
-              style: currentPrompt.style
-                ? {
-                    predefinedId: currentPrompt.style.predefinedId,
-                    customText: null,
-                  }
-                : undefined,
-              mood: currentPrompt.mood
-                ? {
-                    predefinedId: currentPrompt.mood.predefinedId,
-                    customText: null,
-                  }
-                : undefined,
-              lighting: currentPrompt.lighting
-                ? {
-                    predefinedId: currentPrompt.lighting.predefinedId,
-                    customText: null,
-                  }
-                : undefined,
-            },
-            options: {
-              language: 'en',
-              quality: 'high',
-              includeNegativePrompt: true,
-            },
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
@@ -107,6 +113,7 @@ export function ResultStep({ onNew }: ResultStepProps) {
         }
 
         const result = await response.json();
+        console.log('API Response:', result); // デバッグ用
         const data = result.data;
         setLocalGeneratedPrompt(data.prompt);
         // 日本語プロンプトは使用しない
@@ -406,7 +413,9 @@ export function ResultStep({ onNew }: ResultStepProps) {
       </div>
 
       {/* 画像生成セクション */}
-      <ImageGenerationSection prompt={generatedPrompt} />
+      <ImageGenerationSection
+        prompt={negativePrompt ? `${generatedPrompt}, ${negativePrompt}` : generatedPrompt}
+      />
 
       {/* アクションボタン */}
       <div className="flex justify-center">
