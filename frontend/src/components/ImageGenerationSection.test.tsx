@@ -35,28 +35,30 @@ describe('ImageGenerationSection', () => {
     render(<ImageGenerationSection prompt={mockPrompt} />);
 
     // 各サービスがカードとして表示されることを確認
-    expect(screen.getByText('Pollinations.ai')).toBeInTheDocument();
-    expect(screen.getByText('Hugging Face Spaces')).toBeInTheDocument();
+    expect(screen.getByText('ChatGPT 画像生成')).toBeInTheDocument();
     expect(screen.getByText('Bing Image Creator')).toBeInTheDocument();
     expect(screen.getByText('Leonardo.ai')).toBeInTheDocument();
-    expect(screen.getByText('Perchance AI')).toBeInTheDocument();
+    expect(screen.getByText('Stable Diffusion Online')).toBeInTheDocument();
+    expect(screen.getByText('ImageFX by Google')).toBeInTheDocument();
   });
 
-  it('URL型サービスで画像生成ボタンをクリックすると適切に処理される', async () => {
+  it('コピー型サービスで画像生成ボタンをクリックすると適切に処理される', async () => {
     (imageGeneration.openImageService as any).mockImplementation(() => {});
+    (imageGeneration.copyPromptToClipboard as any).mockResolvedValue(true);
 
     render(<ImageGenerationSection prompt={mockPrompt} />);
 
-    // Pollinations.ai（URL型）カードをクリック
-    const pollinationsCard = screen.getByText('Pollinations.ai').closest('button');
-    fireEvent.click(pollinationsCard!);
+    // ChatGPT（コピー型）カードをクリック
+    const chatgptCard = screen.getByText('ChatGPT 画像生成').closest('button');
+    fireEvent.click(chatgptCard!);
 
-    const generateButton = screen.getByText('画像生成サービスで開く');
+    const generateButton = screen.getByText('プロンプトをコピーして開く');
     fireEvent.click(generateButton);
 
     await waitFor(() => {
+      expect(imageGeneration.copyPromptToClipboard).toHaveBeenCalledWith(mockPrompt);
       expect(imageGeneration.openImageService).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 'pollinations' }),
+        expect.objectContaining({ id: 'chatgpt' }),
         mockPrompt
       );
     });
@@ -87,7 +89,7 @@ describe('ImageGenerationSection', () => {
     const howToButton = screen.getByText('使い方');
     fireEvent.click(howToButton);
 
-    expect(screen.getByText(/自動的に画像が生成されます/)).toBeInTheDocument();
+    expect(screen.getByText(/ChatGPTにログイン後/)).toBeInTheDocument();
   });
 
   it('プロンプトが長すぎる場合は警告が表示される', () => {
@@ -115,15 +117,15 @@ describe('ImageGenerationSection', () => {
   });
 
   it('無料プラン情報が表示される', () => {
-    (imageGeneration.getLastUsedService as any).mockReturnValue('pollinations');
+    (imageGeneration.getLastUsedService as any).mockReturnValue('chatgpt');
 
     render(<ImageGenerationSection prompt={mockPrompt} />);
 
-    // Pollinations.aiカードをクリックして情報を確認
-    const pollinationsCard = screen.getByText('Pollinations.ai').closest('button');
-    fireEvent.click(pollinationsCard!);
+    // ChatGPTカードをクリックして情報を確認
+    const chatgptCard = screen.getByText('ChatGPT 画像生成').closest('button');
+    fireEvent.click(chatgptCard!);
 
-    expect(screen.getByText(/完全無料、登録不要/)).toBeInTheDocument();
+    expect(screen.getByText(/無料プランで利用可能/)).toBeInTheDocument();
   });
 
   it('サービスを変更すると対応する情報が表示される', () => {
