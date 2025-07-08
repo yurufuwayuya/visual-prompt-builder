@@ -6,9 +6,12 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import type { Bindings } from '../types';
 import type { GeneratePromptResponse } from '@visual-prompt-builder/shared';
-import { createSuccessResponse, createErrorResponse, generateCacheKey } from '@visual-prompt-builder/shared';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  generateCacheKey,
+} from '@visual-prompt-builder/shared';
 import { generatePrompt } from '../services/promptGenerator';
-import { generateNegativePrompt } from '../services/negativePromptGenerator';
 import { generatePromptSchema } from '../validators/prompt';
 // import { promptRateLimit } from '../middleware/rateLimit';
 
@@ -21,28 +24,23 @@ promptRoute.post(
   zValidator('json', generatePromptSchema),
   async (c) => {
     const { promptData, options } = c.req.valid('json');
-    
+
+    console.log('[API] Received request:', JSON.stringify({ promptData, options }, null, 2));
+
     try {
       // プロンプト生成
       const startTime = Date.now();
       const prompt = await generatePrompt(promptData, options);
-      
-      // ネガティブプロンプト生成（オプション）
-      let negativePrompt: string | undefined;
-      if (options.includeNegativePrompt !== false) {
-        negativePrompt = await generateNegativePrompt(promptData, options);
-      }
-      
+
       // 使用されたキーワードの抽出
       const usedKeywords = extractKeywords(prompt);
-      
+
       const response: GeneratePromptResponse = {
         prompt,
-        negativePrompt,
         usedKeywords,
         generationTime: Date.now() - startTime,
       };
-      
+
       // キャッシュに保存（1時間）- ローカル開発では無効化
       if (c.env.ENVIRONMENT !== 'development') {
         try {
@@ -58,14 +56,11 @@ promptRoute.post(
           // キャッシュ保存失敗は無視して続行
         }
       }
-      
+
       return c.json(createSuccessResponse(response));
     } catch (error) {
       console.error('Prompt generation error:', error);
-      return c.json(
-        createErrorResponse(error, 'プロンプト生成に失敗しました'),
-        500
-      );
+      return c.json(createErrorResponse(error, 'プロンプト生成に失敗しました'), 500);
     }
   }
 );
@@ -87,6 +82,6 @@ function extractKeywords(prompt: string): string[] {
   // シンプルな実装：カンマで分割して前後の空白を削除
   return prompt
     .split(',')
-    .map(keyword => keyword.trim())
-    .filter(keyword => keyword.length > 0);
+    .map((keyword) => keyword.trim())
+    .filter((keyword) => keyword.length > 0);
 }

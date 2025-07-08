@@ -47,7 +47,10 @@ export interface TranslationResponse {
  */
 export interface GeneratePromptRequest {
   /** プロンプトデータ（カテゴリ、詳細など） */
-  promptData: Omit<import('./prompt').PromptData, 'id' | 'createdAt' | 'updatedAt' | 'generatedPrompt' | 'generatedPromptJa' | 'negativePrompt'>;
+  promptData: Omit<
+    import('./prompt').PromptData,
+    'id' | 'createdAt' | 'updatedAt' | 'generatedPrompt' | 'generatedPromptJa'
+  >;
   /** 生成オプション */
   options: import('./prompt').PromptGenerationOptions;
 }
@@ -58,8 +61,6 @@ export interface GeneratePromptRequest {
 export interface GeneratePromptResponse {
   /** 生成されたプロンプト（指定言語） */
   prompt: string;
-  /** ネガティブプロンプト（オプション） */
-  negativePrompt?: string;
   /** 使用されたキーワード */
   usedKeywords: string[];
   /** 生成にかかった時間（ミリ秒） */

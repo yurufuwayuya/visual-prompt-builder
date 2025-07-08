@@ -36,7 +36,6 @@ describe('ImageGenerationSection', () => {
 
     // 各サービスがカードとして表示されることを確認
     expect(screen.getByText('ChatGPT 画像生成')).toBeInTheDocument();
-    expect(screen.getByText('Bing Image Creator')).toBeInTheDocument();
     expect(screen.getByText('Leonardo.ai')).toBeInTheDocument();
     expect(screen.getByText('Stable Diffusion Online')).toBeInTheDocument();
     expect(screen.getByText('ImageFX by Google')).toBeInTheDocument();
@@ -69,9 +68,9 @@ describe('ImageGenerationSection', () => {
 
     render(<ImageGenerationSection prompt={mockPrompt} />);
 
-    // Bing（コピー型）カードをクリック
-    const bingCard = screen.getByText('Bing Image Creator').closest('button');
-    fireEvent.click(bingCard!);
+    // Leonardo（コピー型）カードをクリック
+    const leonardoCard = screen.getByText('Leonardo.ai').closest('button');
+    fireEvent.click(leonardoCard!);
 
     const copyButton = screen.getByText('プロンプトをコピーして開く');
     fireEvent.click(copyButton);

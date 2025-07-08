@@ -48,8 +48,88 @@
 
 ### 次のステップ
 
+1. フロントエンドでの実際のAPIレスポンスをデバッグ
+2. カテゴリマスターデータとの整合性確認
+3. 問題の根本原因を特定して修正
+
+---
+
+## 2025-01-08 - ネガティブプロンプト機能の削除
+
+### 実施内容
+
+1. **要件確認**
+   - ユーザーからネガティブプロンプト機能を使用しない決定の連絡を受領
+   - 全コードベースからネガティブプロンプト関連の実装を削除することを決定
+
+2. **削除作業**
+   - 型定義の更新
+     - `shared/src/types/prompt.ts`:
+       PromptData から negativePrompt プロパティを削除
+     - `shared/src/types/api.ts`:
+       GeneratePromptResponse から negativePrompt を削除
+   - 定数・ヘルパー関数の削除
+     - `shared/src/constants/promptKeywords.ts`: ネガティブプロンプト関連の定数と関数を削除
+   - バックエンドの更新
+     - `workers/src/services/negativePromptGenerator.ts`: ファイル削除
+     - `workers/src/routes/prompt.ts`: ネガティブプロンプト生成ロジックを削除
+   - フロントエンドの更新
+     - `frontend/src/stores/promptStore.ts`: negativePrompt パラメータを削除
+     - `frontend/src/components/steps/ResultStep.tsx`: ネガティブプロンプト関連の UI とロジックを削除
+     - `frontend/src/pages/History.tsx`: ネガティブプロンプト表示を削除
+   - テストの更新
+     - `frontend/src/test-api.html`: includeNegativePrompt オプションを削除
+     - `frontend/src/components/steps/ResultStep.test.tsx`: ネガティブプロンプト関連のテストケースを修正
+
+3. **テスト実行と確認**
+   - 全てのテストが成功することを確認
+   - workers: 13 tests passed
+   - frontend: 51 tests passed (8 skipped)
+   - shared: 14 tests passed
+
+### 完成したもの
+
+- ネガティブプロンプト機能の完全削除
+- 全テストの成功確認
+- クリーンなコードベース（不要な機能なし）
+
+### 次のステップ
+
 - ブラウザでの実際の動作を確認し、APIリクエスト/レスポンスを検証する
 - フロントエンドで選択される項目のIDがマスターデータと一致しているか確認する
+
+---
+
+## 2025-01-08 - Bing Image Creator の削除
+
+### 実施内容
+
+1. **要件確認**
+   - ユーザーから Bing Image Creator が商用利用不可のため削除依頼を受領
+   - 全コードベースから Bing Image Creator 関連の実装を削除することを決定
+
+2. **削除作業**
+   - 設定ファイルの更新
+     - `frontend/src/config/commercialImageServices.ts`: Bing Image
+       Creator エントリを削除
+   - テストの更新
+     - `frontend/src/services/commercialImageGeneration.test.ts`:
+       'bing' を 'chatgpt' に変更
+     - `frontend/src/components/ImageGenerationSection.test.tsx`:
+       Bing 関連のテストケースを削除し、Leonardo.ai に置き換え
+
+3. **テスト実行と確認**
+   - 全てのテストが成功することを確認
+   - Frontend: 51 tests passed (8 skipped)
+   - 商用利用可能なサービスのみが残されている状態
+
+### 完成したもの
+
+- Bing Image Creator の完全削除
+- 商用利用可能なサービスのみを含むクリーンな状態
+- 全テストの成功確認
+
+### 次のステップ
 
 ---
 
@@ -510,3 +590,90 @@
 - テストケースと実際の動作環境での差異に注意が必要
 - デバッグログは問題解決の重要な手段
 - データフローの各段階での検証が重要
+
+---
+
+## 2025-01-08 20:30 - プロンプト生成ボタンの動作不良調査
+
+### 実施内容
+
+1. **コード調査**
+   - StyleStep.tsx: 「プロンプトを生成」ボタンの実装を確認
+   - ResultStep.tsx: プロンプト生成APIの呼び出しロジックを確認
+   - promptStore.ts: 状態管理の実装を確認
+   - API設定とルーティングの確認
+
+2. **動作フロー分析**
+   - StyleStepで「プロンプトを生成」ボタンクリック → ResultStepへ遷移
+   - ResultStepのuseEffectで自動的にAPIを呼び出し（164-174行目）
+   - API: `/api/v1/prompt/generate`へPOSTリクエスト
+   - レスポンスをストアに保存し、画面に表示
+
+3. **発見した問題の可能性**
+   - APIサーバーが起動していない可能性が最も高い
+   - フロントエンドの開発サーバー（localhost:5173）とAPIサーバー（localhost:8787）が別々
+   - CORSエラーの可能性
+   - APIレスポンスの形式とフロントエンドの期待値の不一致
+
+### 問題の詳細
+
+- ResultStep.tsx には3箇所のconsole.logが追加されている（44, 93, 113行目）
+- エラー処理も適切に実装されている
+- プロンプト生成関数は適切にデバッグログを出力するよう設定済み
+
+### 次のステップ
+
+1. 両方のサーバーを起動する
+   - `npm run dev:worker` (APIサーバー)
+   - `npm run dev` (フロントエンド)
+2. ブラウザの開発者ツールでエラーを確認
+3. 必要に応じて追加のデバッグやエラー処理を実装
+
+### 修正計画
+
+1. **サーバー起動確認**
+   - APIサーバー（workers）とフロントエンドサーバーの両方が必要
+   - `npm run dev:worker` と `npm run dev` を別ターミナルで実行
+
+2. **エラー確認ポイント**
+   - ブラウザコンソールでAPIリクエストのエラーを確認
+   - ネットワークタブで404や500エラーをチェック
+   - CORSエラーの有無を確認
+
+3. **追加の改善案**
+   - APIサーバーの起動状態を確認するヘルスチェック機能
+   - エラー時のユーザーへのフィードバック改善
+   - 開発時の両サーバー同時起動スクリプトの作成
+
+---
+
+## 2025-01-08 20:45 - 開発環境改善の実装
+
+### 実施内容
+
+1. **同時起動スクリプトの追加**
+   - concurrentlyパッケージをインストール
+   - package.jsonに`dev:all`スクリプトを追加
+   - フロントエンドとAPIサーバーを1コマンドで起動可能に
+
+2. **README.mdの更新**
+   - 開発サーバー起動手順を明確化
+   - 両サーバーの起動が必要なことを強調
+   - トラブルシューティング情報を追加
+
+3. **エラーメッセージの改善**
+   - ResultStep.tsxでネットワークエラーを検出
+   - APIサーバー未起動時に分かりやすいメッセージを表示
+   - 改行対応のためwhitespace-pre-lineクラスを追加
+
+### 完成したもの
+
+- `npm run dev:all`で両サーバー同時起動
+- 初見でも迷わない開発環境セットアップ手順
+- APIサーバー未起動時の親切なエラーメッセージ
+- テストも全て成功
+
+### 次回の作業予定
+
+- ヘルスチェック機能の実装検討
+- 開発環境の更なる改善

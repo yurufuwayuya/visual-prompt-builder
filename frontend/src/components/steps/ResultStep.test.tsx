@@ -86,7 +86,6 @@ describe('ResultStep', () => {
         json: async () => ({
           data: {
             prompt: 'テストプロンプト',
-            negativePrompt: 'ネガティブプロンプト',
           },
         }),
       });
@@ -108,7 +107,6 @@ describe('ResultStep', () => {
         json: async () => ({
           data: {
             prompt: 'テストプロンプト',
-            negativePrompt: 'ネガティブプロンプト',
           },
         }),
       });
@@ -119,7 +117,6 @@ describe('ResultStep', () => {
         // プロンプトが表示されるエリアを確認
         const promptArea = screen.getByRole('region', { name: '生成プロンプト' });
         expect(promptArea).toHaveTextContent('テストプロンプト');
-        expect(promptArea).toHaveTextContent('ネガティブプロンプト');
       });
     });
 
@@ -152,7 +149,6 @@ describe('ResultStep', () => {
         json: async () => ({
           data: {
             prompt: 'realistic portrait, smile, casual, blue, white colors',
-            negativePrompt: 'low quality, blurry',
           },
         }),
       });
@@ -182,7 +178,6 @@ describe('ResultStep', () => {
         json: async () => ({
           data: {
             prompt: 'テストプロンプト',
-            negativePrompt: 'ネガティブプロンプト',
           },
         }),
       });
@@ -193,7 +188,6 @@ describe('ResultStep', () => {
         // プロンプトが表示されるエリアを確認
         const promptArea = screen.getByRole('region', { name: '生成プロンプト' });
         expect(promptArea).toHaveTextContent('テストプロンプト');
-        expect(promptArea).toHaveTextContent('ネガティブプロンプト');
       });
     });
   });
@@ -270,7 +264,6 @@ describe('ResultStep', () => {
           json: async () => ({
             data: {
               prompt: 'リトライ成功',
-              negativePrompt: '',
             },
           }),
         });
@@ -313,7 +306,6 @@ describe('ResultStep', () => {
         json: async () => ({
           data: {
             prompt: 'リトライ後のプロンプト',
-            negativePrompt: '',
           },
         }),
       });
@@ -336,7 +328,6 @@ describe('ResultStep', () => {
         json: async () => ({
           data: {
             prompt: 'コピーするプロンプト',
-            negativePrompt: '',
           },
         }),
       });
@@ -371,7 +362,6 @@ describe('ResultStep', () => {
         json: async () => ({
           data: {
             prompt: 'ポジティブプロンプト',
-            negativePrompt: 'ネガティブプロンプト',
           },
         }),
       });
@@ -381,13 +371,12 @@ describe('ResultStep', () => {
       await waitFor(() => {
         const promptArea = screen.getByRole('region', { name: '生成プロンプト' });
         expect(promptArea).toHaveTextContent('ポジティブプロンプト');
-        expect(promptArea).toHaveTextContent('ネガティブプロンプト');
       });
 
       const copyButton = screen.getByRole('button', { name: /コピー/ });
       await user.click(copyButton);
 
-      expect(mockWriteText).toHaveBeenCalledWith('ポジティブプロンプト, ネガティブプロンプト');
+      expect(mockWriteText).toHaveBeenCalledWith('ポジティブプロンプト');
       expect(mockAddToast).toHaveBeenCalledWith({
         type: 'success',
         message: 'プロンプトをコピーしました',
@@ -403,7 +392,6 @@ describe('ResultStep', () => {
           data: {
             prompt: '生成されたプロンプト',
             promptJa: '生成されたプロンプト（日本語）',
-            negativePrompt: 'ネガティブプロンプト',
           },
         }),
       });
@@ -438,7 +426,6 @@ describe('ResultStep', () => {
         json: async () => ({
           data: {
             prompt: 'プロンプト',
-            negativePrompt: 'ネガティブ',
           },
         }),
       });
@@ -453,7 +440,7 @@ describe('ResultStep', () => {
       await user.click(saveButton);
 
       await waitFor(() => {
-        expect(mockWriteText).toHaveBeenCalledWith('プロンプト, ネガティブ');
+        expect(mockWriteText).toHaveBeenCalledWith('プロンプト');
         expect(mockSaveToHistory).toHaveBeenCalled();
         expect(mockAddToast).toHaveBeenCalledWith({
           type: 'success',
@@ -470,7 +457,6 @@ describe('ResultStep', () => {
         json: async () => ({
           data: {
             prompt: 'プロンプト',
-            negativePrompt: '',
           },
         }),
       });

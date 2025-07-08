@@ -15,7 +15,6 @@ export function ResultStep({ onNew }: ResultStepProps) {
   const { addToast } = useToastStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPrompt, setLocalGeneratedPrompt] = useState('');
-  const [negativePrompt, setLocalNegativePrompt] = useState('');
   const [retryCount, setRetryCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [hasGenerated, setHasGenerated] = useState(false);
@@ -27,7 +26,6 @@ export function ResultStep({ onNew }: ResultStepProps) {
   useEffect(() => {
     if (!currentPrompt.generatedPrompt && !currentPrompt.generatedPromptJa) {
       setLocalGeneratedPrompt('');
-      setLocalNegativePrompt('');
       setHasGenerated(false);
       setError(null);
       setRetryCount(0);
@@ -89,7 +87,6 @@ export function ResultStep({ onNew }: ResultStepProps) {
           options: {
             language: 'en',
             quality: 'high',
-            includeNegativePrompt: true,
           },
         };
 
@@ -117,21 +114,35 @@ export function ResultStep({ onNew }: ResultStepProps) {
         const data = result.data;
         setLocalGeneratedPrompt(data.prompt);
         // 日本語プロンプトは使用しない
-        setLocalNegativePrompt(data.negativePrompt || '');
-        setGeneratedPrompt(data.prompt, '', data.negativePrompt);
+        setGeneratedPrompt(data.prompt, '');
         setError(null);
         setRetryCount(0);
         setHasGenerated(true);
       } catch (error) {
         console.error(`Error generating prompt (attempt ${attemptCount + 1}):`, error);
 
-        const errorMessage =
-          error instanceof Error ? error.message : 'プロンプト生成に失敗しました';
+        let errorMessage = 'プロンプト生成に失敗しました';
+        let isConnectionError = false;
+
+        if (error instanceof Error) {
+          errorMessage = error.message;
+          // ネットワークエラーの判定
+          isConnectionError =
+            error.message.includes('Failed to fetch') ||
+            error.message.includes('NetworkError') ||
+            error.message.includes('ERR_NETWORK');
+        }
+
+        // APIサーバー未起動の可能性を示唆するメッセージ
+        if (isConnectionError) {
+          errorMessage =
+            'APIサーバーに接続できません。APIサーバーが起動していることを確認してください。\n\n開発時は npm run dev:all または別ターミナルで npm run dev:worker を実行してください。';
+        }
 
         // 400番台のエラーはリトライしない
         const isClientError = errorMessage.includes('(4') || errorMessage.includes('カテゴリ');
 
-        if (attemptCount < MAX_RETRY_COUNT - 1 && !isClientError) {
+        if (attemptCount < MAX_RETRY_COUNT - 1 && !isClientError && !isConnectionError) {
           // リトライ（サーバーエラーの場合のみ）
           setRetryCount(attemptCount + 1);
           const delay = RETRY_DELAYS[attemptCount] || 1000;
@@ -146,14 +157,14 @@ export function ResultStep({ onNew }: ResultStepProps) {
           setError(errorMessage);
           addToast({
             type: 'error',
-            message: isClientError
-              ? errorMessage
-              : `プロンプト生成に失敗しました。最大リトライ回数(${MAX_RETRY_COUNT}回)に達しました。`,
+            message:
+              isClientError || isConnectionError
+                ? errorMessage
+                : `プロンプト生成に失敗しました。最大リトライ回数(${MAX_RETRY_COUNT}回)に達しました。`,
           });
 
           // エラー時はモックデータも生成しない
           setLocalGeneratedPrompt('');
-          setLocalNegativePrompt('');
         }
       } finally {
         if (attemptCount === 0 || attemptCount >= MAX_RETRY_COUNT - 1) {
@@ -195,7 +206,7 @@ export function ResultStep({ onNew }: ResultStepProps) {
 
   const handleSave = async () => {
     // プロンプトをコピー
-    const fullPrompt = negativePrompt ? `${generatedPrompt}, ${negativePrompt}` : generatedPrompt;
+    const fullPrompt = generatedPrompt;
     try {
       await navigator.clipboard.writeText(fullPrompt);
       // 履歴に保存
@@ -246,7 +257,9 @@ export function ResultStep({ onNew }: ResultStepProps) {
           </svg>
         </div>
         <h3 className="text-lg font-medium text-gray-900 mb-2">プロンプト生成エラー</h3>
-        <p className="text-sm text-gray-600 mb-4 text-center max-w-md">{error}</p>
+        <p className="text-sm text-gray-600 mb-4 text-center max-w-md whitespace-pre-line">
+          {error}
+        </p>
         <Button onClick={() => generatePrompt()} variant="default">
           再試行
         </Button>
@@ -339,10 +352,7 @@ export function ResultStep({ onNew }: ResultStepProps) {
           </h3>
           <Button
             onClick={() => {
-              const fullPrompt = negativePrompt
-                ? `${generatedPrompt}, ${negativePrompt}`
-                : generatedPrompt;
-              copyToClipboard(fullPrompt, 'プロンプト');
+              copyToClipboard(generatedPrompt, 'プロンプト');
             }}
             variant="ghost"
             size="sm"
@@ -357,7 +367,7 @@ export function ResultStep({ onNew }: ResultStepProps) {
           aria-describedby="generated-prompt"
         >
           <p className="text-xs sm:text-sm xl:text-base text-gray-700 whitespace-pre-wrap leading-relaxed">
-            {negativePrompt ? `${generatedPrompt}, ${negativePrompt}` : generatedPrompt}
+            {generatedPrompt}
           </p>
         </div>
       </div>
@@ -413,9 +423,7 @@ export function ResultStep({ onNew }: ResultStepProps) {
       </div>
 
       {/* 画像生成セクション */}
-      <ImageGenerationSection
-        prompt={negativePrompt ? `${generatedPrompt}, ${negativePrompt}` : generatedPrompt}
-      />
+      <ImageGenerationSection prompt={generatedPrompt} />
 
       {/* アクションボタン */}
       <div className="flex justify-center">

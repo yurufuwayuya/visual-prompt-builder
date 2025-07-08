@@ -107,9 +107,7 @@ export function History() {
                     {item.generatedPrompt && (
                       <div className="pt-2 border-t">
                         <p className="text-xs sm:text-sm text-gray-700 line-clamp-2">
-                          {item.negativePrompt
-                            ? `${item.generatedPromptJa || item.generatedPrompt}, ${item.negativePrompt}`
-                            : item.generatedPromptJa || item.generatedPrompt}
+                          {item.generatedPromptJa || item.generatedPrompt}
                         </p>
                       </div>
                     )}
@@ -127,10 +125,7 @@ export function History() {
                       size="sm"
                       onClick={() => {
                         const prompt = item.generatedPrompt || item.generatedPromptJa || '';
-                        const fullPrompt = item.negativePrompt
-                          ? `${prompt}, ${item.negativePrompt}`
-                          : prompt;
-                        copyToClipboard(fullPrompt);
+                        copyToClipboard(prompt);
                       }}
                       aria-label="プロンプトをコピー"
                     >

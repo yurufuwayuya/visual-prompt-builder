@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Test</title>
+</head>
+<body>
+  <h1>プロンプト生成APIテスト</h1>
+  <button onclick="testAPI()">APIテスト実行</button>
+  <pre id="result"></pre>
+
+  <script>
+    async function testAPI() {
+      const requestBody = {
+        promptData: {
+          category: {
+            predefinedId: "landscape",
+            customText: null
+          },
+          details: [{
+            predefinedId: "landscape_mountain",
+            customText: null,
+            order: 0
+          }],
+          colors: [{
+            predefinedId: "blue",
+            customText: null
+          }],
+          style: {
+            predefinedId: "photo-realistic",
+            customText: null
+          }
+        },
+        options: {
+          language: "en",
+          quality: "high"
+        }
+      };
+
+      console.log('Request:', requestBody);
+      document.getElementById('result').textContent = 'リクエスト送信中...';
+
+      try {
+        const response = await fetch('http://localhost:5173/api/v1/prompt/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        const data = await response.json();
+        console.log('Response:', data);
+        document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('result').textContent = 'エラー: ' + error.message;
+      }
+    }
+  </script>
+</body>
+</html>

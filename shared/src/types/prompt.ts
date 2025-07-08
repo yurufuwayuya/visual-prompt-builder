@@ -139,8 +139,6 @@ export interface PromptData {
   generatedPrompt?: string;
   /** 生成されたプロンプト（日本語） */
   generatedPromptJa?: string;
-  /** ネガティブプロンプト */
-  negativePrompt?: string;
   /** 作成日時 */
   createdAt: string;
   /** 更新日時 */
@@ -153,10 +151,6 @@ export interface PromptData {
 export interface PromptGenerationOptions {
   /** 品質向上キーワードを追加するか */
   enhanceQuality?: boolean;
-  /** ネガティブプロンプトを生成するか */
-  includeNegative?: boolean;
-  /** ネガティブプロンプトを生成するか (新API用) */
-  includeNegativePrompt?: boolean;
   /** 出力言語 */
   language: 'ja' | 'en';
   /** 品質設定 */

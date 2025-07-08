@@ -26,7 +26,7 @@ interface PromptStore {
   setStyle: (style: StyleSelection | undefined) => void;
   setMood: (mood: MoodSelection | undefined) => void;
   setLighting: (lighting: LightingSelection | undefined) => void;
-  setGeneratedPrompt: (prompt: string, promptJa: string, negativePrompt?: string) => void;
+  setGeneratedPrompt: (prompt: string, promptJa: string) => void;
 
   saveToHistory: () => void;
   reset: () => void;
@@ -89,13 +89,12 @@ export const usePromptStore = create<PromptStore>()(
           currentPrompt: { ...state.currentPrompt, lighting },
         })),
 
-      setGeneratedPrompt: (prompt, promptJa, negativePrompt) =>
+      setGeneratedPrompt: (prompt, promptJa) =>
         set((state) => ({
           currentPrompt: {
             ...state.currentPrompt,
             generatedPrompt: prompt,
             generatedPromptJa: promptJa,
-            negativePrompt,
           },
         })),
 
@@ -115,7 +114,6 @@ export const usePromptStore = create<PromptStore>()(
           lighting: currentPrompt.lighting,
           generatedPrompt: currentPrompt.generatedPrompt,
           generatedPromptJa: currentPrompt.generatedPromptJa,
-          negativePrompt: currentPrompt.negativePrompt,
         };
 
         set({
@@ -136,7 +134,6 @@ export const usePromptStore = create<PromptStore>()(
             lighting: undefined,
             generatedPrompt: undefined,
             generatedPromptJa: undefined,
-            negativePrompt: undefined,
           },
         })),
     }),

@@ -122,9 +122,9 @@ describe('commercialImageGeneration', () => {
 
   describe('getLastUsedService', () => {
     it('localStorageからサービスIDを取得する', () => {
-      (localStorage.getItem as any).mockReturnValue('bing');
+      (localStorage.getItem as any).mockReturnValue('chatgpt');
       const result = getLastUsedService();
-      expect(result).toBe('bing');
+      expect(result).toBe('chatgpt');
       expect(localStorage.getItem).toHaveBeenCalledWith('lastUsedImageService');
     });
 

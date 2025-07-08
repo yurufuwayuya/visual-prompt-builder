@@ -12,6 +12,7 @@
   "scripts": {
     "dev": "npm run dev --workspace=frontend",
     "dev:worker": "npm run dev --workspace=workers",
+    "dev:all": "concurrently \"npm run dev:worker\" \"npm run dev\"",
     "build": "npm run build:workers && npm run build:frontend",
     "build:shared": "echo 'Shared package does not require build'",
     "build:frontend": "npm run build --workspace=frontend",
@@ -54,6 +55,7 @@
     "@playwright/test": "^1.53.2",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "concurrently": "^9.2.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react": "^7.34.3",
