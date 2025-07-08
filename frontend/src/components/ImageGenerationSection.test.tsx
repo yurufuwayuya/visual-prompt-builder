@@ -29,17 +29,17 @@ describe('ImageGenerationSection', () => {
 
     expect(screen.getByText('画像を生成')).toBeInTheDocument();
     expect(screen.getByText('サービスを選択')).toBeInTheDocument();
-    expect(screen.getByRole('combobox')).toBeInTheDocument();
   });
 
-  it('サービス選択ドロップダウンに全てのサービスが表示される', () => {
+  it('サービス選択カードに全てのサービスが表示される', () => {
     render(<ImageGenerationSection prompt={mockPrompt} />);
 
-    const select = screen.getByRole('combobox');
-    const options = select.querySelectorAll('option');
-
-    expect(options.length).toBeGreaterThan(0);
-    expect(options[0]).toHaveTextContent('Pollinations.ai');
+    // 各サービスがカードとして表示されることを確認
+    expect(screen.getByText('Pollinations.ai')).toBeInTheDocument();
+    expect(screen.getByText('Hugging Face Spaces')).toBeInTheDocument();
+    expect(screen.getByText('Bing Image Creator')).toBeInTheDocument();
+    expect(screen.getByText('Leonardo.ai')).toBeInTheDocument();
+    expect(screen.getByText('Perchance AI')).toBeInTheDocument();
   });
 
   it('URL型サービスで画像生成ボタンをクリックすると適切に処理される', async () => {
@@ -47,9 +47,9 @@ describe('ImageGenerationSection', () => {
 
     render(<ImageGenerationSection prompt={mockPrompt} />);
 
-    // Pollinations.ai（URL型）を選択
-    const select = screen.getByRole('combobox');
-    fireEvent.change(select, { target: { value: 'pollinations' } });
+    // Pollinations.ai（URL型）カードをクリック
+    const pollinationsCard = screen.getByText('Pollinations.ai').closest('button');
+    fireEvent.click(pollinationsCard!);
 
     const generateButton = screen.getByText('画像生成サービスで開く');
     fireEvent.click(generateButton);
@@ -68,9 +68,9 @@ describe('ImageGenerationSection', () => {
 
     render(<ImageGenerationSection prompt={mockPrompt} />);
 
-    // Bing（コピー型）を選択
-    const select = screen.getByRole('combobox');
-    fireEvent.change(select, { target: { value: 'bing' } });
+    // Bing（コピー型）カードをクリック
+    const bingCard = screen.getByText('Bing Image Creator').closest('button');
+    fireEvent.click(bingCard!);
 
     const copyButton = screen.getByText('プロンプトをコピーして開く');
     fireEvent.click(copyButton);
@@ -103,8 +103,9 @@ describe('ImageGenerationSection', () => {
 
     render(<ImageGenerationSection prompt={mockPrompt} />);
 
-    const select = screen.getByRole('combobox') as HTMLSelectElement;
-    expect(select.value).toBe('leonardo');
+    // Leonardo.aiカードが選択状態になっていることを確認
+    const leonardoCard = screen.getByText('Leonardo.ai').closest('button');
+    expect(leonardoCard).toHaveClass('border-blue-500');
   });
 
   it('商用利用可能の表示がある', () => {
@@ -118,9 +119,9 @@ describe('ImageGenerationSection', () => {
 
     render(<ImageGenerationSection prompt={mockPrompt} />);
 
-    // Pollinations.aiを選択して情報を確認
-    const select = screen.getByRole('combobox');
-    fireEvent.change(select, { target: { value: 'pollinations' } });
+    // Pollinations.aiカードをクリックして情報を確認
+    const pollinationsCard = screen.getByText('Pollinations.ai').closest('button');
+    fireEvent.click(pollinationsCard!);
 
     expect(screen.getByText(/完全無料、登録不要/)).toBeInTheDocument();
   });
@@ -128,9 +129,9 @@ describe('ImageGenerationSection', () => {
   it('サービスを変更すると対応する情報が表示される', () => {
     render(<ImageGenerationSection prompt={mockPrompt} />);
 
-    // Leonardo.aiを選択
-    const select = screen.getByRole('combobox');
-    fireEvent.change(select, { target: { value: 'leonardo' } });
+    // Leonardo.aiカードをクリック
+    const leonardoCard = screen.getByText('Leonardo.ai').closest('button');
+    fireEvent.click(leonardoCard!);
 
     // Leonardo.aiの情報が表示される
     expect(screen.getByText(/無料プラン: 1日150トークン/)).toBeInTheDocument();

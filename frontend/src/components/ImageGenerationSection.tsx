@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, ExternalLink, Copy, Check, AlertCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, ExternalLink, Copy, Check, AlertCircle, Link } from 'lucide-react';
 import { useLanguageStore } from '@/stores/languageStore';
 import { commercialImageServices, getServiceById } from '../config/commercialImageServices';
 import {
@@ -35,10 +35,9 @@ export const ImageGenerationSection: React.FC<ImageGenerationSectionProps> = ({ 
 
   const selectedService = getServiceById(selectedServiceId);
 
-  const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newServiceId = e.target.value;
-    setSelectedServiceId(newServiceId);
-    saveLastUsedService(newServiceId);
+  const handleServiceSelect = (serviceId: string) => {
+    setSelectedServiceId(serviceId);
+    saveLastUsedService(serviceId);
     setShowInstructions(false);
     setIsCopied(false);
   };
@@ -80,42 +79,81 @@ export const ImageGenerationSection: React.FC<ImageGenerationSectionProps> = ({ 
       <h3 className="text-lg font-semibold mb-4">{isJapanese ? '画像を生成' : 'Generate Image'}</h3>
 
       <div className="space-y-4">
-        {/* サービス選択 */}
+        {/* サービス選択カード */}
         <div>
-          <label className="block text-sm font-medium mb-2">
+          <label className="block text-sm font-medium mb-3">
             {isJapanese ? 'サービスを選択' : 'Select Service'}
           </label>
-          <select
-            value={selectedServiceId}
-            onChange={handleServiceChange}
-            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {commercialImageServices.map((service) => (
-              <option key={service.id} value={service.id}>
-                {service.name}
-              </option>
+              <button
+                key={service.id}
+                onClick={() => handleServiceSelect(service.id)}
+                className={`
+                  relative p-3 rounded-lg border-2 transition-all duration-200
+                  hover:shadow-md hover:scale-[1.02] active:scale-[0.98]
+                  text-left flex flex-col gap-2
+                  ${
+                    selectedServiceId === service.id
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-sm'
+                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500'
+                  }
+                `}
+              >
+                {/* 選択インジケーター */}
+                {selectedServiceId === service.id && (
+                  <div className="absolute top-2 right-2">
+                    <Check className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                )}
+
+                {/* サービス名 */}
+                <div className="font-medium text-gray-900 dark:text-gray-100">{service.name}</div>
+
+                {/* サービスタイプ */}
+                <div className="flex items-center gap-2 text-xs">
+                  {service.type === 'url' || service.type === 'both' ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded">
+                      <Link className="w-3 h-3" />
+                      URL連携
+                    </span>
+                  ) : null}
+                  {service.type === 'copy' || service.type === 'both' ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded">
+                      <Copy className="w-3 h-3" />
+                      コピペ
+                    </span>
+                  ) : null}
+                </div>
+
+                {/* 無料プラン情報 */}
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  {isJapanese ? service.freeInfo : service.freeInfoEn}
+                </div>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
 
-        {/* サービス情報 */}
+        {/* 選択されたサービスの詳細情報 */}
         {selectedService && (
-          <div className="text-sm space-y-2">
-            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-              <Check className="w-4 h-4" />
-              <span>{isJapanese ? '商用利用可能' : 'Commercial use allowed'}</span>
-            </div>
-            <div className="text-gray-600 dark:text-gray-400">
-              {isJapanese ? selectedService.freeInfo : selectedService.freeInfoEn}
-            </div>
-            {selectedService.limitations && (
-              <div className="flex items-start gap-2 text-amber-600 dark:text-amber-400">
-                <AlertCircle className="w-4 h-4 mt-0.5" />
-                <span>
-                  {isJapanese ? selectedService.limitations : selectedService.limitationsEn}
+          <div className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                <Check className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {isJapanese ? '商用利用可能' : 'Commercial use allowed'}
                 </span>
               </div>
-            )}
+              {selectedService.limitations && (
+                <div className="flex items-start gap-2 text-amber-600 dark:text-amber-400">
+                  <AlertCircle className="w-4 h-4 mt-0.5" />
+                  <span className="text-sm">
+                    {isJapanese ? selectedService.limitations : selectedService.limitationsEn}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -135,7 +173,7 @@ export const ImageGenerationSection: React.FC<ImageGenerationSectionProps> = ({ 
           <button
             onClick={handleGenerateImage}
             disabled={!prompt || isGenerating}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
           >
             {selectedService?.type === 'copy' ? (
               <>
