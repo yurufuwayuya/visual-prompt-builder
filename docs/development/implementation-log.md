@@ -745,3 +745,170 @@ const handleSave = async () => {
 - 実際の動作確認（ブラウザでのテスト）
 - ユーザーフィードバックの収集
 - 必要に応じて追加サービスの検討
+
+---
+
+## 2025年7月8日 - Stable Diffusion Online サービス追加
+
+### 作業開始: 15:30
+
+- **目的**: Visual Prompt BuilderにStable Diffusion
+  Onlineを画像生成サービスとして追加
+- **背景**: 当初カテゴリとして追加しようとしたが、画像生成サービスとして追加すべきと判明
+
+### 実施内容
+
+1. **誤って追加したカテゴリの削除**
+   - `/shared/src/constants/categories.ts`から以下を削除:
+     - Stable Diffusion Onlineカテゴリ定義（13番目）
+     - 関連する12種類の詳細オプション
+
+2. **画像生成サービスへの追加**
+   - `/frontend/src/config/commercialImageServices.ts`に追加
+   - サービスID: `stablediffusion-online`
+   - タイプ: コピペ型（copy）
+   - URL: https://stablediffusionweb.com
+   - 商用利用: 可能
+   - 完全無料、登録不要
+
+### 完成物
+
+- Stable Diffusion Onlineが画像生成サービスとして利用可能に
+- 生成されたプロンプトをコピーして使用する形式
+- 他の画像生成サービスと同列に選択可能
+
+### 作業完了: 15:45
+
+- カテゴリマスターデータは12種類に戻る
+- 画像生成サービスは6種類に増加
+
+---
+
+## 2025年7月8日 - 画像生成サービスの入れ替え
+
+### 作業開始: 15:50
+
+- **目的**: 画像生成サービスのラインナップを調整
+
+### 実施内容
+
+1. **削除したサービス**
+   - Pollinations.ai
+   - Hugging Face Spaces
+
+2. **追加したサービス**
+   - EMI (Hugging Face)
+     - サービスID: `emi`
+     - タイプ: URL連携型
+     - URLテンプレート:
+       `https://huggingface.co/spaces/Tonic/emi?prompt={prompt}`
+     - 完全無料、登録不要
+     - 商用利用可能
+
+### 完成物
+
+- 画像生成サービスは5種類に調整
+  1. EMI (Hugging Face) - URL連携型
+  2. Bing Image Creator - コピペ型
+  3. Leonardo.ai - コピペ型
+  4. Perchance AI - コピペ型
+  5. Stable Diffusion Online - コピペ型
+
+### 作業完了: 15:55
+
+---
+
+## 2025年7月8日 - 画像生成サービスの再調整
+
+### 作業開始: 16:00
+
+- **目的**: EMIをCanvaに入れ替え
+
+### 実施内容
+
+1. **削除したサービス**
+   - EMI (Hugging Face)
+
+2. **追加したサービス**
+   - Canva Text to Image
+     - サービスID: `canva`
+     - タイプ: コピペ型
+     - URL: `https://www.canva.com/apps/text-to-image`
+     - 無料プランで利用可能（回数制限あり）
+     - 商用利用可能
+
+### 完成物
+
+- 画像生成サービスは5種類に維持
+  1. Canva Text to Image - コピペ型
+  2. Bing Image Creator - コピペ型
+  3. Leonardo.ai - コピペ型
+  4. Perchance AI - コピペ型
+  5. Stable Diffusion Online - コピペ型
+
+### 作業完了: 16:05
+
+---
+
+## 2025年7月8日 - ImageFXサービス追加
+
+### 作業開始: 16:10
+
+- **目的**: ImageFX by Googleを画像生成サービスに追加
+
+### 実施内容
+
+1. **追加したサービス**
+   - ImageFX by Google
+     - サービスID: `imagefx`
+     - タイプ: コピペ型
+     - URL: `https://aitestkitchen.withgoogle.com/tools/image-fx`
+     - 完全無料、Googleアカウント必要
+     - 商用利用可能
+     - 1日の生成回数に制限あり
+
+### 完成物
+
+- 画像生成サービスは6種類に増加
+  1. Canva Text to Image - コピペ型
+  2. Bing Image Creator - コピペ型
+  3. Leonardo.ai - コピペ型
+  4. Perchance AI - コピペ型
+  5. Stable Diffusion Online - コピペ型
+  6. ImageFX by Google - コピペ型
+
+### 作業完了: 16:15
+
+---
+
+## 2025年7月8日 - 画像生成サービスの再編成
+
+### 作業開始: 16:20
+
+- **目的**: サービスラインナップの最適化
+
+### 実施内容
+
+1. **削除したサービス**
+   - Canva Text to Image
+   - Perchance AI
+
+2. **追加したサービス**
+   - ChatGPT 画像生成
+     - サービスID: `chatgpt`
+     - タイプ: コピペ型
+     - URL: `https://chat.openai.com`
+     - 無料プランで利用可能（DALL-E 3）
+     - 商用利用可能
+     - 無料プランは生成回数に制限
+
+### 完成物
+
+- 画像生成サービスは5種類に最適化
+  1. ChatGPT 画像生成 - コピペ型
+  2. Bing Image Creator - コピペ型
+  3. Leonardo.ai - コピペ型
+  4. Stable Diffusion Online - コピペ型
+  5. ImageFX by Google - コピペ型
+
+### 作業完了: 16:25
