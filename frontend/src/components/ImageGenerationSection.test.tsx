@@ -58,8 +58,7 @@ describe('ImageGenerationSection', () => {
     await waitFor(() => {
       expect(imageGeneration.copyPromptToClipboard).toHaveBeenCalledWith(mockPrompt);
       expect(imageGeneration.openImageService).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 'chatgpt' }),
-        mockPrompt
+        expect.objectContaining({ id: 'chatgpt' })
       );
     });
   });
@@ -142,7 +141,11 @@ describe('ImageGenerationSection', () => {
   it('プロンプトが空の場合、ボタンが無効になる', () => {
     render(<ImageGenerationSection prompt="" />);
 
-    const button = screen.getByRole('button', { name: /画像生成サービスで開く/ });
+    // まずサービスを選択
+    const chatgptCard = screen.getByText('ChatGPT 画像生成').closest('button');
+    fireEvent.click(chatgptCard!);
+
+    const button = screen.getByRole('button', { name: /プロンプトをコピーして開く/ });
     expect(button).toBeDisabled();
   });
 });
