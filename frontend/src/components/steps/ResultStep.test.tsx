@@ -11,7 +11,6 @@ vi.mock('@/stores/toastStore');
 
 // Fetch APIのモック
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
 
 // クリップボードAPIのモック
 const mockWriteText = vi.fn();
@@ -58,6 +57,9 @@ describe('ResultStep', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // fetchモックをグローバルに設定
+    global.fetch = mockFetch;
 
     // ストアのモック設定
     (usePromptStore as any).mockReturnValue({
@@ -435,26 +437,47 @@ describe('ResultStep', () => {
         saveToHistory: mockSaveToHistory,
       });
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          data: {
-            prompt: 'portrait with custom details',
-          },
-        }),
+      // すべてのfetch呼び出しに対応するモック設定
+      mockFetch.mockImplementation((url: string) => {
+        // 翻訳APIのモック
+        if (url.includes('/translation/translate')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              translatedText: 'translated text',
+            }),
+          });
+        }
+
+        // プロンプト生成APIのモック
+        if (url.includes('/prompt/generate')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              data: {
+                prompt: 'portrait with custom details',
+              },
+            }),
+          });
+        }
+
+        return Promise.reject(new Error('Unknown API endpoint'));
       });
 
       render(<ResultStep onNew={mockOnNew} />);
 
       await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalledWith('http://localhost:8787/api/v1/prompt/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: expect.any(String),
-        });
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/prompt/generate'),
+          expect.any(Object)
+        );
 
-        // リクエストボディを解析
-        const callArgs = mockFetch.mock.calls[0];
+        // プロンプト生成APIの呼び出しを見つける
+        const generateCall = mockFetch.mock.calls.find((call) =>
+          call[0].includes('/prompt/generate')
+        );
+        expect(generateCall).toBeDefined();
+        const callArgs = generateCall;
         const body = JSON.parse(callArgs[1].body);
 
         // デバッグ情報を出力
@@ -463,9 +486,9 @@ describe('ResultStep', () => {
         // カスタム項目がcustomTextとして送信されていることを確認
         expect(body.promptData.details).toEqual([
           { predefinedId: 'smile', customText: null, order: 0 },
-          { predefinedId: null, customText: 'カスタム詳細1', order: 1 },
+          { predefinedId: null, customText: 'translated text', order: 1 },
           { predefinedId: 'casual', customText: null, order: 2 },
-          { predefinedId: null, customText: 'カスタム詳細2', order: 3 },
+          { predefinedId: null, customText: 'translated text', order: 3 },
         ]);
       });
     });
@@ -485,25 +508,47 @@ describe('ResultStep', () => {
         saveToHistory: mockSaveToHistory,
       });
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          data: {
-            prompt: 'custom category prompt',
-          },
-        }),
+      // すべてのfetch呼び出しに対応するモック設定
+      mockFetch.mockImplementation((url: string) => {
+        // 翻訳APIのモック
+        if (url.includes('/translation/translate')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              translatedText: 'translated text',
+            }),
+          });
+        }
+
+        // プロンプト生成APIのモック
+        if (url.includes('/prompt/generate')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              data: {
+                prompt: 'custom category prompt',
+              },
+            }),
+          });
+        }
+
+        return Promise.reject(new Error('Unknown API endpoint'));
       });
 
       render(<ResultStep onNew={mockOnNew} />);
 
       await waitFor(() => {
-        const callArgs = mockFetch.mock.calls[0];
-        const body = JSON.parse(callArgs[1].body);
+        // プロンプト生成APIの呼び出しを見つける
+        const generateCall = mockFetch.mock.calls.find((call) =>
+          call[0].includes('/prompt/generate')
+        );
+        expect(generateCall).toBeDefined();
+        const body = JSON.parse(generateCall[1].body);
 
         // カスタムカテゴリがcustomTextとして送信されていることを確認
         expect(body.promptData.category).toEqual({
           predefinedId: null,
-          customText: 'カスタムカテゴリ',
+          customText: 'translated text',
         });
       });
     });

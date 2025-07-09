@@ -40,10 +40,7 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
 const originalError = console.error;
 beforeAll(() => {
   console.error = (...args: unknown[]) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Consider adding an error boundary')
-    ) {
+    if (typeof args[0] === 'string' && args[0].includes('Consider adding an error boundary')) {
       return;
     }
     originalError.call(console, ...args);
@@ -52,4 +49,14 @@ beforeAll(() => {
 
 afterAll(() => {
   console.error = originalError;
+});
+
+// Global fetch mock for tests
+const globalFetch = global.fetch;
+beforeAll(() => {
+  global.fetch = vi.fn();
+});
+
+afterAll(() => {
+  global.fetch = globalFetch;
 });

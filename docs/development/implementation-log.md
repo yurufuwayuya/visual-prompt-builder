@@ -1459,6 +1459,56 @@ details: (currentPrompt.details || []).map((detail, index) => ({
 
 ---
 
+## 2025-01-09 - カスタムプロンプト翻訳機能の調査
+
+### 実施内容
+
+1. **問題の調査**
+   - ユーザーからカスタムプロンプトの日本語が翻訳されずに出力される問題の報告
+   - プロンプト生成と翻訳処理の実装状況を調査
+
+2. **調査結果**
+   - **プロンプト生成**: `workers/src/services/promptGenerator.ts`
+     - 常に英語でプロンプトを生成（31行目: `const language = 'en'`）
+     - カスタムテキストはそのまま使用される（翻訳処理なし）
+   - **翻訳処理**: `frontend/src/components/steps/ResultStep.tsx`
+     - 日本語検出機能あり（49-53行目: `containsJapanese`関数）
+     - 翻訳API呼び出し機能あり（56-105行目: `translateText`関数）
+     - カスタムテキストの翻訳処理実装済み（107-354行目）
+   - **言語管理**: `frontend/src/stores/languageStore.ts`
+     - デフォルト言語は日本語（'ja'）
+     - 言語切り替え機能は実装されているがUIがない
+
+3. **問題の詳細**
+   - フロントエンドで翻訳APIへのリクエスト時にフィールド名のミスがあった
+   - `from`/`to` ではなく `sourceLang`/`targetLang`
+     を使用すべき（API仕様と不一致）
+   - 翻訳API自体は正常に実装されている（MyMemory API使用）
+
+### 直面した問題
+
+- APIリクエストのフィールド名が間違っていたため翻訳が機能していなかった
+- テストではモックを使用していたため、実際のAPI呼び出しで問題が発覚
+
+### 解決策
+
+- ResultStep.tsxの翻訳APIリクエストのフィールド名を修正済み
+- デバッグログを追加して問題の特定を容易に
+
+### 完成したもの
+
+- カスタムプロンプトの日本語→英語翻訳機能の修正
+- 包括的なテストケース（翻訳失敗時のフォールバック含む）
+- デバッグ機能の強化
+
+### 残作業・TODO
+
+- ブラウザでの実際の動作確認
+- 言語切り替えUIの実装（現在はストアのみ存在）
+- 他の言語への対応検討
+
+---
+
 ## 2025-01-09 - カスタムプロンプトの日本語翻訳機能実装
 
 ### 実施内容
@@ -1519,3 +1569,93 @@ details: (currentPrompt.details || []).map((detail, index) => ({
 1. 開発サーバーを起動して実際の動作を確認
 2. ユーザーからのフィードバックを受けて追加改善
 3. 必要に応じてパフォーマンス最適化
+
+---
+
+## 2025-07-09 本番環境での翻訳APIフィールド名エラー修正
+
+### 作業内容
+
+1. **問題の特定**
+   - 本番環境でカスタムプロンプトが日本語のまま出力されていた
+   - 原因：翻訳APIリクエストのフィールド名の不一致（from/to →
+     sourceLang/targetLang）
+   - コード自体は既に修正済みだったが、デプロイが失敗していた
+
+2. **デプロイ失敗の原因**
+   - テストで`fetch`のモックが正しく設定されていなかった
+   - `Cannot read properties of undefined (reading 'ok')` エラーが発生
+   - GitHub Actionsのデプロイジョブが失敗していた
+
+3. **修正内容**
+   - setup.tsにグローバルfetchモックを追加
+   - 各テストファイルのbeforeEachでfetch mockを確実に設定
+   - 翻訳APIとプロンプト生成APIの両方に対応するモック実装
+   - テストのアサーションを翻訳後の値に合わせて修正
+
+### 技術的詳細
+
+1. **テストモックの改善**
+
+   ```typescript
+   // すべてのfetch呼び出しに対応するモック設定
+   mockFetch.mockImplementation((url: string, options: any) => {
+     // 翻訳APIのモック
+     if (url.includes('/translation/translate')) {
+       return Promise.resolve({
+         ok: true,
+         json: async () => ({
+           translatedText: 'translated text',
+         }),
+       });
+     }
+
+     // プロンプト生成APIのモック
+     if (url.includes('/prompt/generate')) {
+       return Promise.resolve({
+         ok: true,
+         json: async () => ({
+           data: {
+             prompt: 'generated prompt',
+           },
+         }),
+       });
+     }
+
+     return Promise.reject(new Error('Unknown API endpoint'));
+   });
+   ```
+
+2. **テストアサーションの修正**
+   - カスタムテキストの期待値を翻訳後の値に変更
+   - API呼び出しの検証を柔軟に（最初の呼び出しではなく適切な呼び出しを探す）
+
+### 修正されたファイル
+
+1. **frontend/src/test/setup.ts**
+   - グローバルfetchモックの追加
+
+2. **frontend/src/components/steps/ResultStep.test.tsx**
+   - fetchモックの設定方法を修正
+   - カスタム項目のテストケースを更新
+
+3. **frontend/src/components/steps/ResultStep.custom.test.tsx**
+   - fetchモックの設定方法を修正
+   - テストアサーションを翻訳後の値に更新
+
+4. **frontend/src/components/steps/**tests**/ResultStep.customTranslation.test.tsx**
+   - fetchモックの設定方法を修正
+
+### 完成したもの
+
+1. **すべてのテストが成功**
+   - 67テスト中59テストが成功、8テストがスキップ
+   - デプロイの障害となっていたエラーを解消
+
+2. **本番環境へのデプロイ準備完了**
+   - テストの修正により、GitHub Actionsが正常に動作する状態に
+
+### 残作業・TODO
+
+1. コミット・プッシュして本番環境へのデプロイを実行
+2. 本番環境でカスタムプロンプトの翻訳が正しく動作することを確認

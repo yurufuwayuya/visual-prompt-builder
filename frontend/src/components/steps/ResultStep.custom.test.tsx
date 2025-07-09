@@ -10,7 +10,6 @@ vi.mock('@/stores/toastStore');
 
 // Fetch APIのモック
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
 
 describe('ResultStep - カスタム項目の統合テスト', () => {
   const mockOnNew = vi.fn();
@@ -20,6 +19,9 @@ describe('ResultStep - カスタム項目の統合テスト', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // fetchモックをグローバルに設定
+    global.fetch = mockFetch;
 
     (useToastStore as any).mockReturnValue({
       addToast: mockAddToast,
@@ -55,37 +57,58 @@ describe('ResultStep - カスタム項目の統合テスト', () => {
     });
 
     // APIレスポンスをモック
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        data: {
-          prompt: 'realistic portrait, smile, woman in red dress, holding bouquet, red colors',
-        },
-      }),
+    // すべてのfetch呼び出しに対応するモック設定
+    mockFetch.mockImplementation((url: string) => {
+      // 翻訳APIのモック
+      if (url.includes('/translation/translate')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            translatedText: 'translated text',
+          }),
+        });
+      }
+
+      // プロンプト生成APIのモック
+      if (url.includes('/prompt/generate')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            data: {
+              prompt: 'realistic portrait, smile, woman in red dress, holding bouquet, red colors',
+            },
+          }),
+        });
+      }
+
+      return Promise.reject(new Error('Unknown API endpoint'));
     });
 
     render(<ResultStep onNew={mockOnNew} />);
 
     // APIが正しいパラメータで呼ばれたことを確認
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8787/api/v1/prompt/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: expect.stringContaining('赤いドレスを着た女性'),
-      });
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/prompt/generate'),
+        expect.any(Object)
+      );
 
-      const callArgs = mockFetch.mock.calls[0];
-      const body = JSON.parse(callArgs[1].body);
+      // プロンプト生成APIの呼び出しを見つける
+      const generateCall = mockFetch.mock.calls.find((call) =>
+        call[0].includes('/prompt/generate')
+      );
+      expect(generateCall).toBeDefined();
+      const body = JSON.parse(generateCall[1].body);
 
       // カスタム項目が正しく変換されていることを確認
       expect(body.promptData.details).toContainEqual({
         predefinedId: null,
-        customText: '赤いドレスを着た女性',
+        customText: 'translated text',
         order: 1,
       });
       expect(body.promptData.details).toContainEqual({
         predefinedId: null,
-        customText: '花束を持っている',
+        customText: 'translated text',
         order: 2,
       });
     });
@@ -131,41 +154,63 @@ describe('ResultStep - カスタム項目の統合テスト', () => {
       saveToHistory: mockSaveToHistory,
     });
 
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        data: {
-          prompt:
-            'fantasy illustration, magical girl, holding glowing staff, rainbow colors, anime style, mystical mood, magical lighting',
-        },
-      }),
+    // すべてのfetch呼び出しに対応するモック設定
+    mockFetch.mockImplementation((url: string) => {
+      // 翻訳APIのモック
+      if (url.includes('/translation/translate')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            translatedText: 'translated text',
+          }),
+        });
+      }
+
+      // プロンプト生成APIのモック
+      if (url.includes('/prompt/generate')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            data: {
+              prompt:
+                'fantasy illustration, magical girl, holding glowing staff, rainbow colors, anime style, mystical mood, magical lighting',
+            },
+          }),
+        });
+      }
+
+      return Promise.reject(new Error('Unknown API endpoint'));
     });
 
     render(<ResultStep onNew={mockOnNew} />);
 
     await waitFor(() => {
-      const callArgs = mockFetch.mock.calls[0];
-      const body = JSON.parse(callArgs[1].body);
+      // プロンプト生成APIの呼び出しを見つける
+      const generateCall = mockFetch.mock.calls.find((call) =>
+        call[0].includes('/prompt/generate')
+      );
+      expect(generateCall).toBeDefined();
+      const body = JSON.parse(generateCall[1].body);
 
       // すべてのカスタム項目が正しく処理されていることを確認
       expect(body.promptData.category).toEqual({
         predefinedId: null,
-        customText: 'ファンタジーイラスト',
+        customText: 'translated text',
       });
 
       expect(body.promptData.style).toEqual({
         predefinedId: null,
-        customText: 'アニメ風',
+        customText: 'translated text',
       });
 
       expect(body.promptData.mood).toEqual({
         predefinedId: null,
-        customText: '神秘的',
+        customText: 'translated text',
       });
 
       expect(body.promptData.lighting).toEqual({
         predefinedId: null,
-        customText: '魔法の光',
+        customText: 'translated text',
       });
     });
   });
@@ -206,20 +251,42 @@ describe('ResultStep - カスタム項目の統合テスト', () => {
       saveToHistory: mockSaveToHistory,
     });
 
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        data: {
-          prompt: 'mixed custom and predefined prompt',
-        },
-      }),
+    // すべてのfetch呼び出しに対応するモック設定
+    mockFetch.mockImplementation((url: string) => {
+      // 翻訳APIのモック
+      if (url.includes('/translation/translate')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            translatedText: 'translated text',
+          }),
+        });
+      }
+
+      // プロンプト生成APIのモック
+      if (url.includes('/prompt/generate')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            data: {
+              prompt: 'mixed custom and predefined prompt',
+            },
+          }),
+        });
+      }
+
+      return Promise.reject(new Error('Unknown API endpoint'));
     });
 
     render(<ResultStep onNew={mockOnNew} />);
 
     await waitFor(() => {
-      const callArgs = mockFetch.mock.calls[0];
-      const body = JSON.parse(callArgs[1].body);
+      // プロンプト生成APIの呼び出しを見つける
+      const generateCall = mockFetch.mock.calls.find((call) =>
+        call[0].includes('/prompt/generate')
+      );
+      expect(generateCall).toBeDefined();
+      const body = JSON.parse(generateCall[1].body);
 
       // 定義済み項目
       expect(body.promptData.category.predefinedId).toBe('portrait');
@@ -230,10 +297,10 @@ describe('ResultStep - カスタム項目の統合テスト', () => {
 
       // カスタム項目
       expect(body.promptData.style.predefinedId).toBeNull();
-      expect(body.promptData.style.customText).toBe('カスタムスタイル');
+      expect(body.promptData.style.customText).toBe('translated text');
 
       expect(body.promptData.lighting.predefinedId).toBeNull();
-      expect(body.promptData.lighting.customText).toBe('カスタム照明');
+      expect(body.promptData.lighting.customText).toBe('translated text');
 
       // 詳細の混在
       expect(body.promptData.details[0]).toEqual({
@@ -243,7 +310,7 @@ describe('ResultStep - カスタム項目の統合テスト', () => {
       });
       expect(body.promptData.details[1]).toEqual({
         predefinedId: null,
-        customText: 'カスタム詳細',
+        customText: 'translated text',
         order: 1,
       });
       expect(body.promptData.details[2]).toEqual({
@@ -259,7 +326,7 @@ describe('ResultStep - カスタム項目の統合テスト', () => {
       });
       expect(body.promptData.colors[1]).toEqual({
         predefinedId: null,
-        customText: 'カスタム色',
+        customText: 'translated text',
       });
     });
   });

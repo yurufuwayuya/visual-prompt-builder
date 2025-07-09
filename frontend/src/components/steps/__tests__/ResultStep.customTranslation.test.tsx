@@ -11,7 +11,6 @@ vi.mock('@/stores/toastStore');
 
 // fetch モック
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
 
 describe('ResultStep - カスタムテキストの翻訳', () => {
   const mockCurrentPrompt = {
@@ -63,6 +62,9 @@ describe('ResultStep - カスタムテキストの翻訳', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // fetchモックをグローバルに設定
+    global.fetch = mockFetch;
 
     // ストアのモック
     vi.mocked(usePromptStore).mockReturnValue({
