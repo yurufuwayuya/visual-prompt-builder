@@ -70,14 +70,16 @@ export function createMockPromptData(overrides?: Partial<PromptData>): PromptDat
  */
 export function createMockApiPromptData(overrides?: Partial<ApiPromptData>): ApiPromptData {
   const promptData = createMockPromptData(overrides);
-  const { id, createdAt, updatedAt, ...apiData } = promptData;
+  const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...apiData } = promptData;
   return apiData as ApiPromptData;
 }
 
 /**
  * プロンプト生成オプションを作成
  */
-export function createMockPromptOptions(overrides?: Partial<PromptGenerationOptions>): PromptGenerationOptions {
+export function createMockPromptOptions(
+  overrides?: Partial<PromptGenerationOptions>
+): PromptGenerationOptions {
   return {
     language: 'ja',
     quality: 'standard',
