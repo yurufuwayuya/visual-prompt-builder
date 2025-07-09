@@ -677,3 +677,34 @@
 
 - ヘルスチェック機能の実装検討
 - 開発環境の更なる改善
+
+---
+
+## 2025-01-09 14:00 - Cloudflare Pages デプロイメントエラー対応
+
+### 実施内容
+
+1. **エラー調査**
+   - GitHub ActionsでCloudflare Pages APIエラー（エラーコード8000000）が発生
+   - wrangler v2が非推奨でv3にデリゲートされている
+   - wrangler.tomlに`pages_build_output_dir`フィールドがない警告
+
+2. **修正作業**
+   - wrangler.tomlに`pages_build_output_dir = "frontend/dist"`を追加
+   - GitHub Actions deploy.ymlにwranglerVersion: '3'を明示的に指定
+
+### 直面した問題
+
+- CloudflareのAPIエラーメッセージが不親切（詳細がない）
+- wranglerのバージョン管理が複雑
+- WorkersとPagesの設定が分離されている
+
+### 完成したもの
+
+- wrangler.tomlのPages設定追加
+- GitHub ActionsのwranglerVersion指定
+
+### 次回の作業予定
+
+- デプロイの再実行と動作確認
+- エラーが解決しない場合の追加調査

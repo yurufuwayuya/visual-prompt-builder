@@ -76,3 +76,6 @@ id = "f4948d4c905944cbbd95aa798985179a"
 # Secrets (set via wrangler secret)
 # - TRANSLATION_API_KEY
 # - LOGFLARE_API_KEY (optional)
+
+# Pages configuration
+pages_build_output_dir = "frontend/dist"
