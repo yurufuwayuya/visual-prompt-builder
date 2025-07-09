@@ -56,6 +56,15 @@ translationRoute.post('/translate', zValidator('json', translationSchema), async
     return c.json(createSuccessResponse(response));
   } catch (error) {
     console.error('Translation error:', error);
+
+    // エラーの詳細をログに出力
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+      });
+    }
+
     return c.json(createErrorResponse(error, '翻訳に失敗しました'), 500);
   }
 });
@@ -155,33 +164,39 @@ async function translateWithMyMemory(
   targetLang: 'ja' | 'en'
 ): Promise<string> {
   try {
+    // デバッグログ
+    console.log('Translating text:', { text, sourceLang, targetLang });
+
     // MyMemory APIのエンドポイント
     const langPair = `${sourceLang}|${targetLang}`;
     const encodedText = encodeURIComponent(text);
     const url = `https://api.mymemory.translated.net/get?q=${encodedText}&langpair=${langPair}`;
 
-    // APIリクエスト（タイムアウト10秒）
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    console.log('MyMemory API URL:', url);
 
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Visual Prompt Builder/1.0',
-      },
-    });
-    clearTimeout(timeoutId);
+    // APIリクエスト
+    const response = await fetch(url);
+
+    console.log('MyMemory API response status:', response.status);
 
     if (!response.ok) {
-      throw new Error(`MyMemory API returned ${response.status}`);
+      const errorText = await response.text();
+      console.error('MyMemory API error response:', errorText);
+      throw new Error(`MyMemory API returned ${response.status}: ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('MyMemory API response data:', data);
 
     // レスポンスの検証
+    if (!data || !data.responseData) {
+      console.error('Invalid MyMemory API response:', data);
+      throw new Error('Invalid translation response');
+    }
+
     if (data.responseStatus !== 200) {
       console.error('MyMemory API error:', data);
-      throw new Error('Translation failed');
+      throw new Error(`Translation failed with status: ${data.responseStatus}`);
     }
 
     // 翻訳結果を返す
