@@ -68,34 +68,50 @@ export function ResultStep({ onNew }: ResultStepProps) {
         const requestBody = {
           promptData: {
             category: {
-              predefinedId: currentPrompt.category.predefinedId,
-              customText: currentPrompt.category.customText || null,
+              predefinedId: currentPrompt.category.predefinedId?.startsWith('custom-')
+                ? null
+                : currentPrompt.category.predefinedId,
+              customText: currentPrompt.category.predefinedId?.startsWith('custom-')
+                ? currentPrompt.category.name
+                : currentPrompt.category.customText || null,
             },
             details: (currentPrompt.details || []).map((detail, index) => ({
-              predefinedId: detail.predefinedId,
-              customText: null,
+              predefinedId: detail.predefinedId?.startsWith('custom-') ? null : detail.predefinedId,
+              customText: detail.predefinedId?.startsWith('custom-') ? detail.name : null,
               order: index,
             })),
             colors: (currentPrompt.colors || []).map((color) => ({
-              predefinedId: color.predefinedId,
-              customText: null,
+              predefinedId: color.predefinedId?.startsWith('custom-') ? null : color.predefinedId,
+              customText: color.predefinedId?.startsWith('custom-') ? color.name : null,
             })),
             style: currentPrompt.style
               ? {
-                  predefinedId: currentPrompt.style.predefinedId,
-                  customText: null,
+                  predefinedId: currentPrompt.style.predefinedId?.startsWith('custom-')
+                    ? null
+                    : currentPrompt.style.predefinedId,
+                  customText: currentPrompt.style.predefinedId?.startsWith('custom-')
+                    ? currentPrompt.style.name
+                    : null,
                 }
               : undefined,
             mood: currentPrompt.mood
               ? {
-                  predefinedId: currentPrompt.mood.predefinedId,
-                  customText: null,
+                  predefinedId: currentPrompt.mood.predefinedId?.startsWith('custom-')
+                    ? null
+                    : currentPrompt.mood.predefinedId,
+                  customText: currentPrompt.mood.predefinedId?.startsWith('custom-')
+                    ? currentPrompt.mood.name
+                    : null,
                 }
               : undefined,
             lighting: currentPrompt.lighting
               ? {
-                  predefinedId: currentPrompt.lighting.predefinedId,
-                  customText: null,
+                  predefinedId: currentPrompt.lighting.predefinedId?.startsWith('custom-')
+                    ? null
+                    : currentPrompt.lighting.predefinedId,
+                  customText: currentPrompt.lighting.predefinedId?.startsWith('custom-')
+                    ? currentPrompt.lighting.name
+                    : null,
                 }
               : undefined,
           },

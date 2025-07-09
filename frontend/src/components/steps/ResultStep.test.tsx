@@ -418,6 +418,97 @@ describe('ResultStep', () => {
     });
   });
 
+  describe('カスタム項目の処理', () => {
+    it('カスタム項目がAPIリクエストに含まれる', async () => {
+      // カスタム項目を含むプロンプトをモック
+      (usePromptStore as any).mockReturnValue({
+        currentPrompt: {
+          ...mockCurrentPrompt,
+          details: [
+            { predefinedId: 'smile', name: '笑顔' },
+            { predefinedId: 'custom-123456', name: 'カスタム詳細1' },
+            { predefinedId: 'casual', name: 'カジュアル' },
+            { predefinedId: 'custom-789012', name: 'カスタム詳細2' },
+          ],
+        },
+        setGeneratedPrompt: mockSetGeneratedPrompt,
+        saveToHistory: mockSaveToHistory,
+      });
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            prompt: 'portrait with custom details',
+          },
+        }),
+      });
+
+      render(<ResultStep onNew={mockOnNew} />);
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith('http://localhost:8787/api/v1/prompt/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: expect.any(String),
+        });
+
+        // リクエストボディを解析
+        const callArgs = mockFetch.mock.calls[0];
+        const body = JSON.parse(callArgs[1].body);
+
+        // デバッグ情報を出力
+        console.log('Request body:', JSON.stringify(body, null, 2));
+
+        // カスタム項目がcustomTextとして送信されていることを確認
+        expect(body.promptData.details).toEqual([
+          { predefinedId: 'smile', customText: null, order: 0 },
+          { predefinedId: null, customText: 'カスタム詳細1', order: 1 },
+          { predefinedId: 'casual', customText: null, order: 2 },
+          { predefinedId: null, customText: 'カスタム詳細2', order: 3 },
+        ]);
+      });
+    });
+
+    it('カスタムカテゴリがAPIリクエストに含まれる', async () => {
+      // カスタムカテゴリを含むプロンプトをモック
+      (usePromptStore as any).mockReturnValue({
+        currentPrompt: {
+          ...mockCurrentPrompt,
+          category: {
+            predefinedId: 'custom-category-123',
+            name: 'カスタムカテゴリ',
+            customText: null,
+          },
+        },
+        setGeneratedPrompt: mockSetGeneratedPrompt,
+        saveToHistory: mockSaveToHistory,
+      });
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            prompt: 'custom category prompt',
+          },
+        }),
+      });
+
+      render(<ResultStep onNew={mockOnNew} />);
+
+      await waitFor(() => {
+        const callArgs = mockFetch.mock.calls[0];
+        const body = JSON.parse(callArgs[1].body);
+
+        // カスタムカテゴリがcustomTextとして送信されていることを確認
+        expect(body.promptData.category).toEqual({
+          predefinedId: null,
+          customText: 'カスタムカテゴリ',
+        });
+      });
+    });
+  });
+
   describe.skip('保存機能', () => {
     it('コピーして履歴に保存できる', async () => {
       const user = userEvent.setup();
