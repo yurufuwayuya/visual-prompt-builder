@@ -55,6 +55,11 @@ export function ResultStep({ onNew }: ResultStepProps) {
   // テキストを翻訳する関数
   const translateText = async (text: string): Promise<string> => {
     try {
+      // デバッグ情報
+      // if (process.env.NODE_ENV === 'development') {
+      //   console.log('Translating text:', text);
+      // }
+
       const response = await fetch(API_ENDPOINTS.translatePrompt, {
         method: 'POST',
         headers: {
@@ -62,18 +67,37 @@ export function ResultStep({ onNew }: ResultStepProps) {
         },
         body: JSON.stringify({
           text,
-          from: 'ja',
-          to: 'en',
+          sourceLang: 'ja', // from → sourceLang に修正
+          targetLang: 'en', // to → targetLang に修正
         }),
       });
 
       if (!response.ok) {
-        console.error('Translation API error:', response.status);
+        let errorText = '';
+        try {
+          errorText = await response.text();
+        } catch {
+          // テスト環境などでtext()が使えない場合
+          errorText = 'Response text not available';
+        }
+        console.error('Translation API error:', response.status, errorText);
+        // エラーをトーストで表示
+        addToast({
+          type: 'warning',
+          message: `翻訳APIエラー: ${response.status}`,
+        });
         return text; // 翻訳に失敗した場合は元のテキストを返す
       }
 
       const result = await response.json();
-      return result.translatedText || text;
+      const translatedText = result.data?.translatedText || result.translatedText || text;
+
+      // デバッグ情報
+      // if (process.env.NODE_ENV === 'development') {
+      //   console.log('Translation result:', translatedText);
+      // }
+
+      return translatedText;
     } catch (error) {
       console.error('Translation error:', error);
       return text; // エラーが発生した場合は元のテキストを返す
@@ -106,7 +130,15 @@ export function ResultStep({ onNew }: ResultStepProps) {
             item?.name &&
             containsJapanese(item.name)
           ) {
-            return await translateText(item.name);
+            // デバッグ情報
+            // if (process.env.NODE_ENV === 'development') {
+            //   console.log('Translating custom text:', item.name);
+            // }
+            const translated = await translateText(item.name);
+            // if (process.env.NODE_ENV === 'development') {
+            //   console.log('Translated result:', translated);
+            // }
+            return translated;
           }
           return item?.name || null;
         };
@@ -156,6 +188,18 @@ export function ResultStep({ onNew }: ResultStepProps) {
         if (currentPrompt.lighting?.predefinedId?.startsWith('custom-')) {
           lightingCustomText = await translateCustomText(currentPrompt.lighting);
         }
+
+        // デバッグ: 翻訳結果を確認
+        // if (process.env.NODE_ENV === 'development') {
+        //   console.log('Translation results:', {
+        //     categoryCustomText,
+        //     styleCustomText,
+        //     moodCustomText,
+        //     lightingCustomText,
+        //     detailsCount: translatedDetails.length,
+        //     colorsCount: translatedColors.length,
+        //   });
+        // }
 
         const requestBody = {
           promptData: {
