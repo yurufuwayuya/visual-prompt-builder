@@ -1659,3 +1659,50 @@ details: (currentPrompt.details || []).map((detail, index) => ({
 
 1. コミット・プッシュして本番環境へのデプロイを実行
 2. 本番環境でカスタムプロンプトの翻訳が正しく動作することを確認
+
+---
+
+## 2025-07-09 翻訳API 500エラーの修正
+
+### 作業内容
+
+1. **問題の特定**
+   - 本番環境で翻訳APIが500エラーを返していた
+   - 原因：Cloudflare Workers環境での制約によるもの
+
+2. **修正内容**
+   - User-Agentヘッダーを削除（Cloudflare Workersでは問題になることがある）
+   - AbortControllerとタイムアウト処理を削除してシンプル化
+   - エラーハンドリングを強化し、詳細なデバッグログを追加
+   - レスポンス検証を改善
+
+3. **技術的詳細**
+
+   ```typescript
+   // 修正前
+   const response = await fetch(url, {
+     signal: controller.signal,
+     headers: {
+       'User-Agent': 'Visual Prompt Builder/1.0',
+     },
+   });
+
+   // 修正後
+   const response = await fetch(url);
+   ```
+
+### 完成したもの
+
+1. **翻訳APIの安定化**
+   - Cloudflare Workers環境での動作を考慮したシンプルな実装
+   - エラー時の詳細なログ出力
+
+2. **デバッグ情報の追加**
+   - リクエストURL、レスポンスステータス、レスポンスデータのログ出力
+   - エラー時のスタックトレース表示
+
+### 残作業・TODO
+
+1. 本番環境で動作確認
+2. 翻訳が正常に動作することを確認
+3. 必要に応じてログを削減（デバッグ完了後）
