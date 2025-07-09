@@ -26,6 +26,8 @@ export interface DetailSelection {
   name: string;
   /** 詳細名（英語） */
   nameEn?: string;
+  /** カスタム詳細の場合のテキスト */
+  customText?: string;
   /** 選択順序（1から始まる） */
   order?: number;
 }
@@ -40,6 +42,8 @@ export interface ColorSelection {
   name: string;
   /** 色名（英語） */
   nameEn?: string;
+  /** カスタム色の場合のテキスト */
+  customText?: string;
   /** 16進数カラーコード */
   hex: string;
 }
@@ -54,6 +58,8 @@ export interface StyleSelection {
   name: string;
   /** スタイル名（英語） */
   nameEn?: string;
+  /** カスタムスタイルの場合のテキスト */
+  customText?: string;
 }
 
 /**
@@ -66,6 +72,8 @@ export interface MoodSelection {
   name: string;
   /** 雰囲気名（英語） */
   nameEn?: string;
+  /** カスタム雰囲気の場合のテキスト */
+  customText?: string;
 }
 
 /**
@@ -78,6 +86,8 @@ export interface LightingSelection {
   name: string;
   /** 照明名（英語） */
   nameEn?: string;
+  /** カスタム照明の場合のテキスト */
+  customText?: string;
 }
 
 /**
