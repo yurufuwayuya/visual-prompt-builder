@@ -32,6 +32,18 @@ export function ResultStep({ onNew }: ResultStepProps) {
     }
   }, [currentPrompt.generatedPrompt, currentPrompt.generatedPromptJa]);
 
+  // ステップ2,3の内容が変更された時にhasGeneratedをリセット
+  useEffect(() => {
+    // カテゴリ以外の要素が変更された場合、再生成を許可
+    setHasGenerated(false);
+  }, [
+    currentPrompt.details,
+    currentPrompt.colors,
+    currentPrompt.style,
+    currentPrompt.mood,
+    currentPrompt.lighting,
+  ]);
+
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const generatePrompt = useCallback(
@@ -41,7 +53,10 @@ export function ResultStep({ onNew }: ResultStepProps) {
         return;
       }
 
-      console.log('Current Prompt State:', currentPrompt); // デバッグ用
+      // デバッグ情報は開発環境でのみ出力
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Current Prompt State:', currentPrompt);
+      }
 
       if (attemptCount === 0) {
         setIsGenerating(true);
@@ -90,7 +105,10 @@ export function ResultStep({ onNew }: ResultStepProps) {
           },
         };
 
-        console.log('API Request Body:', requestBody); // デバッグ用
+        // デバッグ情報は開発環境でのみ出力
+        if (process.env.NODE_ENV === 'development') {
+          console.log('API Request Body:', requestBody);
+        }
 
         const response = await fetch(API_ENDPOINTS.generatePrompt, {
           method: 'POST',
@@ -110,7 +128,10 @@ export function ResultStep({ onNew }: ResultStepProps) {
         }
 
         const result = await response.json();
-        console.log('API Response:', result); // デバッグ用
+        // デバッグ情報は開発環境でのみ出力
+        if (process.env.NODE_ENV === 'development') {
+          console.log('API Response:', result);
+        }
         const data = result.data;
         setLocalGeneratedPrompt(data.prompt);
         // 日本語プロンプトは使用しない
