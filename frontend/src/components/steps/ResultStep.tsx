@@ -46,6 +46,40 @@ export function ResultStep({ onNew }: ResultStepProps) {
 
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+  // 日本語文字を含むかチェックする関数
+  const containsJapanese = (text: string): boolean => {
+    // ひらがな、カタカナ、漢字の正規表現
+    return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
+  };
+
+  // テキストを翻訳する関数
+  const translateText = async (text: string): Promise<string> => {
+    try {
+      const response = await fetch(API_ENDPOINTS.translatePrompt, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text,
+          from: 'ja',
+          to: 'en',
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Translation API error:', response.status);
+        return text; // 翻訳に失敗した場合は元のテキストを返す
+      }
+
+      const result = await response.json();
+      return result.translatedText || text;
+    } catch (error) {
+      console.error('Translation error:', error);
+      return text; // エラーが発生した場合は元のテキストを返す
+    }
+  };
+
   const generatePrompt = useCallback(
     async (attemptCount = 0): Promise<void> => {
       // データ検証：カテゴリが選択されているか確認
@@ -54,9 +88,9 @@ export function ResultStep({ onNew }: ResultStepProps) {
       }
 
       // デバッグ情報は開発環境でのみ出力
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Current Prompt State:', currentPrompt);
-      }
+      // if (process.env.NODE_ENV === 'development') {
+      //   console.log('Current Prompt State:', currentPrompt);
+      // }
 
       if (attemptCount === 0) {
         setIsGenerating(true);
@@ -65,6 +99,64 @@ export function ResultStep({ onNew }: ResultStepProps) {
       }
 
       try {
+        // カスタムテキストの翻訳処理
+        const translateCustomText = async (item: { predefinedId?: string; name?: string }) => {
+          if (
+            item?.predefinedId?.startsWith('custom-') &&
+            item?.name &&
+            containsJapanese(item.name)
+          ) {
+            return await translateText(item.name);
+          }
+          return item?.name || null;
+        };
+
+        // カテゴリのカスタムテキストを翻訳
+        let categoryCustomText = null;
+        if (currentPrompt.category.predefinedId?.startsWith('custom-')) {
+          categoryCustomText = await translateCustomText(currentPrompt.category);
+        }
+
+        // 詳細のカスタムテキストを翻訳
+        const translatedDetails = await Promise.all(
+          (currentPrompt.details || []).map(async (detail) => {
+            const customText = await translateCustomText(detail);
+            return {
+              ...detail,
+              translatedCustomText: customText,
+            };
+          })
+        );
+
+        // 色のカスタムテキストを翻訳
+        const translatedColors = await Promise.all(
+          (currentPrompt.colors || []).map(async (color) => {
+            const customText = await translateCustomText(color);
+            return {
+              ...color,
+              translatedCustomText: customText,
+            };
+          })
+        );
+
+        // スタイルのカスタムテキストを翻訳
+        let styleCustomText = null;
+        if (currentPrompt.style?.predefinedId?.startsWith('custom-')) {
+          styleCustomText = await translateCustomText(currentPrompt.style);
+        }
+
+        // 雰囲気のカスタムテキストを翻訳
+        let moodCustomText = null;
+        if (currentPrompt.mood?.predefinedId?.startsWith('custom-')) {
+          moodCustomText = await translateCustomText(currentPrompt.mood);
+        }
+
+        // 照明のカスタムテキストを翻訳
+        let lightingCustomText = null;
+        if (currentPrompt.lighting?.predefinedId?.startsWith('custom-')) {
+          lightingCustomText = await translateCustomText(currentPrompt.lighting);
+        }
+
         const requestBody = {
           promptData: {
             category: {
@@ -72,20 +164,20 @@ export function ResultStep({ onNew }: ResultStepProps) {
                 ? null
                 : currentPrompt.category.predefinedId,
               customText: currentPrompt.category.predefinedId?.startsWith('custom-')
-                ? currentPrompt.category.name
+                ? categoryCustomText
                 : currentPrompt.category.customText || null,
             },
-            details: (currentPrompt.details || []).map((detail, index) => ({
+            details: translatedDetails.map((detail, index) => ({
               predefinedId: detail.predefinedId?.startsWith('custom-') ? null : detail.predefinedId,
               customText: detail.predefinedId?.startsWith('custom-')
-                ? detail.name
+                ? detail.translatedCustomText
                 : detail.customText || null,
               order: index,
             })),
-            colors: (currentPrompt.colors || []).map((color) => ({
+            colors: translatedColors.map((color) => ({
               predefinedId: color.predefinedId?.startsWith('custom-') ? null : color.predefinedId,
               customText: color.predefinedId?.startsWith('custom-')
-                ? color.name
+                ? color.translatedCustomText
                 : color.customText || null,
             })),
             style: currentPrompt.style
@@ -94,7 +186,7 @@ export function ResultStep({ onNew }: ResultStepProps) {
                     ? null
                     : currentPrompt.style.predefinedId,
                   customText: currentPrompt.style.predefinedId?.startsWith('custom-')
-                    ? currentPrompt.style.name
+                    ? styleCustomText
                     : currentPrompt.style.customText || null,
                 }
               : undefined,
@@ -104,7 +196,7 @@ export function ResultStep({ onNew }: ResultStepProps) {
                     ? null
                     : currentPrompt.mood.predefinedId,
                   customText: currentPrompt.mood.predefinedId?.startsWith('custom-')
-                    ? currentPrompt.mood.name
+                    ? moodCustomText
                     : currentPrompt.mood.customText || null,
                 }
               : undefined,
@@ -114,7 +206,7 @@ export function ResultStep({ onNew }: ResultStepProps) {
                     ? null
                     : currentPrompt.lighting.predefinedId,
                   customText: currentPrompt.lighting.predefinedId?.startsWith('custom-')
-                    ? currentPrompt.lighting.name
+                    ? lightingCustomText
                     : currentPrompt.lighting.customText || null,
                 }
               : undefined,
@@ -126,9 +218,9 @@ export function ResultStep({ onNew }: ResultStepProps) {
         };
 
         // デバッグ情報は開発環境でのみ出力
-        if (process.env.NODE_ENV === 'development') {
-          console.log('API Request Body:', requestBody);
-        }
+        // if (process.env.NODE_ENV === 'development') {
+        //   console.log('API Request Body:', requestBody);
+        // }
 
         const response = await fetch(API_ENDPOINTS.generatePrompt, {
           method: 'POST',
@@ -149,9 +241,9 @@ export function ResultStep({ onNew }: ResultStepProps) {
 
         const result = await response.json();
         // デバッグ情報は開発環境でのみ出力
-        if (process.env.NODE_ENV === 'development') {
-          console.log('API Response:', result);
-        }
+        // if (process.env.NODE_ENV === 'development') {
+        //   console.log('API Response:', result);
+        // }
         const data = result.data;
         setLocalGeneratedPrompt(data.prompt);
         // 日本語プロンプトは使用しない

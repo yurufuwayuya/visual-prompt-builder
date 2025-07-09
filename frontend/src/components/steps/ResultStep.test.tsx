@@ -458,7 +458,7 @@ describe('ResultStep', () => {
         const body = JSON.parse(callArgs[1].body);
 
         // デバッグ情報を出力
-        console.log('Request body:', JSON.stringify(body, null, 2));
+        // console.log('Request body:', JSON.stringify(body, null, 2));
 
         // カスタム項目がcustomTextとして送信されていることを確認
         expect(body.promptData.details).toEqual([

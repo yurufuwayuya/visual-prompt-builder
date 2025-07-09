@@ -4,6 +4,6 @@ export const API_BASE_URL = import.meta.env.PROD
 
 export const API_ENDPOINTS = {
   generatePrompt: `${API_BASE_URL}/api/v1/prompt/generate`,
-  translatePrompt: `${API_BASE_URL}/api/v1/translate`,
+  translatePrompt: `${API_BASE_URL}/api/v1/translation/translate`,
   health: `${API_BASE_URL}/health`,
 } as const;
