@@ -187,7 +187,17 @@ export function ResultStep({ onNew }: ResultStepProps) {
       generatePrompt();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPrompt.category, hasGenerated, isGenerating, error]); // generatePromptは除外（無限ループ防止）
+  }, [
+    currentPrompt.category,
+    currentPrompt.details,
+    currentPrompt.colors,
+    currentPrompt.style,
+    currentPrompt.mood,
+    currentPrompt.lighting,
+    hasGenerated,
+    isGenerating,
+    error,
+  ]); // generatePromptは除外（無限ループ防止）
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
