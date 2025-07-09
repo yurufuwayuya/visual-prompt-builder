@@ -77,12 +77,16 @@ export function ResultStep({ onNew }: ResultStepProps) {
             },
             details: (currentPrompt.details || []).map((detail, index) => ({
               predefinedId: detail.predefinedId?.startsWith('custom-') ? null : detail.predefinedId,
-              customText: detail.predefinedId?.startsWith('custom-') ? detail.name : null,
+              customText: detail.predefinedId?.startsWith('custom-')
+                ? detail.name
+                : detail.customText || null,
               order: index,
             })),
             colors: (currentPrompt.colors || []).map((color) => ({
               predefinedId: color.predefinedId?.startsWith('custom-') ? null : color.predefinedId,
-              customText: color.predefinedId?.startsWith('custom-') ? color.name : null,
+              customText: color.predefinedId?.startsWith('custom-')
+                ? color.name
+                : color.customText || null,
             })),
             style: currentPrompt.style
               ? {
@@ -91,7 +95,7 @@ export function ResultStep({ onNew }: ResultStepProps) {
                     : currentPrompt.style.predefinedId,
                   customText: currentPrompt.style.predefinedId?.startsWith('custom-')
                     ? currentPrompt.style.name
-                    : null,
+                    : currentPrompt.style.customText || null,
                 }
               : undefined,
             mood: currentPrompt.mood
@@ -101,7 +105,7 @@ export function ResultStep({ onNew }: ResultStepProps) {
                     : currentPrompt.mood.predefinedId,
                   customText: currentPrompt.mood.predefinedId?.startsWith('custom-')
                     ? currentPrompt.mood.name
-                    : null,
+                    : currentPrompt.mood.customText || null,
                 }
               : undefined,
             lighting: currentPrompt.lighting
@@ -111,7 +115,7 @@ export function ResultStep({ onNew }: ResultStepProps) {
                     : currentPrompt.lighting.predefinedId,
                   customText: currentPrompt.lighting.predefinedId?.startsWith('custom-')
                     ? currentPrompt.lighting.name
-                    : null,
+                    : currentPrompt.lighting.customText || null,
                 }
               : undefined,
           },
