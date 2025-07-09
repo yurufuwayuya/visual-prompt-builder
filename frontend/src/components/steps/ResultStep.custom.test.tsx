@@ -98,7 +98,7 @@ describe('ResultStep - カスタム項目の統合テスト', () => {
         call[0].includes('/prompt/generate')
       );
       expect(generateCall).toBeDefined();
-      const body = JSON.parse(generateCall[1].body);
+      const body = JSON.parse(generateCall![1].body);
 
       // カスタム項目が正しく変換されていることを確認
       expect(body.promptData.details).toContainEqual({
@@ -190,7 +190,7 @@ describe('ResultStep - カスタム項目の統合テスト', () => {
         call[0].includes('/prompt/generate')
       );
       expect(generateCall).toBeDefined();
-      const body = JSON.parse(generateCall[1].body);
+      const body = JSON.parse(generateCall![1].body);
 
       // すべてのカスタム項目が正しく処理されていることを確認
       expect(body.promptData.category).toEqual({
@@ -286,7 +286,7 @@ describe('ResultStep - カスタム項目の統合テスト', () => {
         call[0].includes('/prompt/generate')
       );
       expect(generateCall).toBeDefined();
-      const body = JSON.parse(generateCall[1].body);
+      const body = JSON.parse(generateCall![1].body);
 
       // 定義済み項目
       expect(body.promptData.category.predefinedId).toBe('portrait');

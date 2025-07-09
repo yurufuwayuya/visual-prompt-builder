@@ -477,7 +477,7 @@ describe('ResultStep', () => {
           call[0].includes('/prompt/generate')
         );
         expect(generateCall).toBeDefined();
-        const callArgs = generateCall;
+        const callArgs = generateCall!;
         const body = JSON.parse(callArgs[1].body);
 
         // デバッグ情報を出力
@@ -543,7 +543,7 @@ describe('ResultStep', () => {
           call[0].includes('/prompt/generate')
         );
         expect(generateCall).toBeDefined();
-        const body = JSON.parse(generateCall[1].body);
+        const body = JSON.parse(generateCall![1].body);
 
         // カスタムカテゴリがcustomTextとして送信されていることを確認
         expect(body.promptData.category).toEqual({

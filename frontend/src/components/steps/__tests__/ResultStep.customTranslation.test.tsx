@@ -1,9 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
 import { ResultStep } from '../ResultStep';
 import { usePromptStore } from '@/stores/promptStore';
 import { useToastStore } from '@/stores/toastStore';
-import type { Category } from '@visual-prompt-builder/shared';
 
 // モックの設定
 vi.mock('@/stores/promptStore');
@@ -18,7 +17,7 @@ describe('ResultStep - カスタムテキストの翻訳', () => {
       id: 'custom-1',
       predefinedId: 'custom-1',
       name: '美しい風景',
-    } as Category,
+    } as any,
     details: [
       {
         id: 'custom-2',
@@ -180,7 +179,7 @@ describe('ResultStep - カスタムテキストの翻訳', () => {
         id: 'custom-1',
         predefinedId: 'custom-1',
         name: 'beautiful landscape', // 英語
-      } as Category,
+      } as any,
     };
 
     vi.mocked(usePromptStore).mockReturnValue({
@@ -243,7 +242,8 @@ describe('ResultStep - カスタムテキストの翻訳', () => {
 
     // 元の日本語テキストがそのまま使用されることを確認
     const generateCall = mockFetch.mock.calls.find((call) => call[0].includes('/prompt/generate'));
-    const requestBody = JSON.parse(generateCall[1].body);
+    expect(generateCall).toBeDefined();
+    const requestBody = JSON.parse(generateCall![1].body);
 
     expect(requestBody.promptData.category.customText).toBe('美しい風景');
   });
