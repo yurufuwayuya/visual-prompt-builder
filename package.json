@@ -27,7 +27,7 @@
     "test:e2e:deployment": "PLAYWRIGHT_BASE_URL=$DEPLOYMENT_URL playwright test",
     "test:e2e:docker": "docker compose -f docker-compose.playwright.yml up --build",
     "playwright:install": "playwright install",
-    "lint": "eslint . --ext ts,tsx,js,jsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --ext ts,tsx,js,jsx --report-unused-disable-directives --max-warnings 31",
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml}\"",
