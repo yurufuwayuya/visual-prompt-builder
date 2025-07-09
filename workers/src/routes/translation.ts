@@ -4,112 +4,258 @@
 
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
 import type { Bindings } from '../types';
 import type { TranslationResponse } from '@visual-prompt-builder/shared';
-import { createSuccessResponse, createErrorResponse, generateCacheKey } from '@visual-prompt-builder/shared';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  generateCacheKey,
+} from '@visual-prompt-builder/shared';
 import { translationSchema } from '../validators/translation';
 
 export const translationRoute = new Hono<{ Bindings: Bindings }>();
 
 // POST /api/v1/translation/translate - テキスト翻訳
+translationRoute.post('/translate', zValidator('json', translationSchema), async (c) => {
+  const { text, sourceLang, targetLang } = c.req.valid('json');
+
+  // 同じ言語の場合はそのまま返す
+  if (sourceLang === targetLang) {
+    const response: TranslationResponse = {
+      translatedText: text,
+      detectedLanguage: sourceLang,
+      confidence: 1.0,
+    };
+    return c.json(createSuccessResponse(response));
+  }
+
+  try {
+    // キャッシュチェック
+    const cacheKey = await generateCacheKey('translation', { sourceLang, targetLang, text });
+    const cached = await c.env.CACHE.get(cacheKey);
+    if (cached) {
+      const cachedResponse = createSuccessResponse(JSON.parse(cached));
+      return c.json({ ...cachedResponse, cached: true });
+    }
+
+    // MyMemory APIを使用して翻訳
+    const translatedText = await translateWithMyMemory(text, sourceLang, targetLang);
+
+    const response: TranslationResponse = {
+      translatedText,
+      detectedLanguage: sourceLang,
+      confidence: 0.95,
+    };
+
+    // キャッシュに保存（24時間）
+    await c.env.CACHE.put(cacheKey, JSON.stringify(response), {
+      expirationTtl: 86400,
+    });
+
+    return c.json(createSuccessResponse(response));
+  } catch (error) {
+    console.error('Translation error:', error);
+    return c.json(createErrorResponse(error, '翻訳に失敗しました'), 500);
+  }
+});
+
+// POST /api/v1/translation/batch - バッチ翻訳
 translationRoute.post(
-  '/translate',
-  zValidator('json', translationSchema),
+  '/batch',
+  zValidator(
+    'json',
+    z.object({
+      texts: z.array(z.string()).min(1).max(100),
+      sourceLang: z.enum(['ja', 'en']),
+      targetLang: z.enum(['ja', 'en']),
+    })
+  ),
   async (c) => {
-    const { text, sourceLang, targetLang } = c.req.valid('json');
-    
+    const { texts, sourceLang, targetLang } = c.req.valid('json');
+
     // 同じ言語の場合はそのまま返す
     if (sourceLang === targetLang) {
-      const response: TranslationResponse = {
-        translatedText: text,
-        detectedLanguage: sourceLang,
-        confidence: 1.0,
-      };
-      return c.json(createSuccessResponse(response));
-    }
-    
-    try {
-      // キャッシュチェック
-      const cacheKey = await generateCacheKey('translation', { sourceLang, targetLang, text });
-      const cached = await c.env.CACHE.get(cacheKey);
-      if (cached) {
-        const cachedResponse = createSuccessResponse(JSON.parse(cached));
-        return c.json({ ...cachedResponse, cached: true });
-      }
-      
-      // TODO: 実際の翻訳API実装
-      // 現在はモック実装
-      const translatedText = await mockTranslate(text, sourceLang, targetLang);
-      
-      const response: TranslationResponse = {
-        translatedText,
-        detectedLanguage: sourceLang,
-        confidence: 0.95,
-      };
-      
-      // キャッシュに保存（24時間）
-      await c.env.CACHE.put(cacheKey, JSON.stringify(response), {
-        expirationTtl: 86400,
-      });
-      
-      return c.json(createSuccessResponse(response));
-    } catch (error) {
-      console.error('Translation error:', error);
       return c.json(
-        createErrorResponse(error, '翻訳に失敗しました'),
-        500
+        createSuccessResponse({
+          translations: texts.map((text) => ({
+            originalText: text,
+            translatedText: text,
+            detectedLanguage: sourceLang,
+            confidence: 1.0,
+          })),
+        })
       );
+    }
+
+    try {
+      // 並列で翻訳を実行（最大5つずつ）
+      const batchSize = 5;
+      const results = [];
+
+      for (let i = 0; i < texts.length; i += batchSize) {
+        const batch = texts.slice(i, i + batchSize);
+        const batchPromises = batch.map(async (text) => {
+          // キャッシュチェック
+          const cacheKey = await generateCacheKey('translation', { sourceLang, targetLang, text });
+          const cached = await c.env.CACHE.get(cacheKey);
+
+          if (cached) {
+            const cachedData = JSON.parse(cached);
+            return {
+              originalText: text,
+              translatedText: cachedData.translatedText,
+              detectedLanguage: cachedData.detectedLanguage,
+              confidence: cachedData.confidence,
+              cached: true,
+            };
+          }
+
+          // 翻訳実行
+          const translatedText = await translateWithMyMemory(text, sourceLang, targetLang);
+          const result = {
+            originalText: text,
+            translatedText,
+            detectedLanguage: sourceLang,
+            confidence: 0.95,
+          };
+
+          // キャッシュに保存
+          await c.env.CACHE.put(
+            cacheKey,
+            JSON.stringify({
+              translatedText,
+              detectedLanguage: sourceLang,
+              confidence: 0.95,
+            }),
+            {
+              expirationTtl: 86400,
+            }
+          );
+
+          return result;
+        });
+
+        const batchResults = await Promise.all(batchPromises);
+        results.push(...batchResults);
+      }
+
+      return c.json(createSuccessResponse({ translations: results }));
+    } catch (error) {
+      console.error('Batch translation error:', error);
+      return c.json(createErrorResponse(error, 'バッチ翻訳に失敗しました'), 500);
     }
   }
 );
 
-// POST /api/v1/translation/batch - バッチ翻訳
-translationRoute.post('/batch', async (c) => {
-  // TODO: バッチ翻訳の実装
-  return c.json(createErrorResponse(new Error('Not implemented')), 501);
-});
-
-// モック翻訳関数（実際のAPIが実装されるまでの仮実装）
-async function mockTranslate(
+// MyMemory Translation APIを使用した翻訳関数
+async function translateWithMyMemory(
   text: string,
   sourceLang: 'ja' | 'en',
   targetLang: 'ja' | 'en'
 ): Promise<string> {
-  // 簡単な辞書ベースの翻訳
+  try {
+    // MyMemory APIのエンドポイント
+    const langPair = `${sourceLang}|${targetLang}`;
+    const encodedText = encodeURIComponent(text);
+    const url = `https://api.mymemory.translated.net/get?q=${encodedText}&langpair=${langPair}`;
+
+    // APIリクエスト（タイムアウト10秒）
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Visual Prompt Builder/1.0',
+      },
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`MyMemory API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // レスポンスの検証
+    if (data.responseStatus !== 200) {
+      console.error('MyMemory API error:', data);
+      throw new Error('Translation failed');
+    }
+
+    // 翻訳結果を返す
+    return data.responseData.translatedText || text;
+  } catch (error) {
+    // エラー時はフォールバック辞書を使用
+    console.error('MyMemory translation error:', error);
+    return fallbackTranslate(text, sourceLang, targetLang);
+  }
+}
+
+// フォールバック翻訳関数（MyMemory APIが使用できない場合）
+function fallbackTranslate(text: string, sourceLang: 'ja' | 'en', targetLang: 'ja' | 'en'): string {
+  // 基本的な辞書ベースの翻訳
   const dictionary: Record<string, Record<string, string>> = {
     'ja-en': {
-      '風景': 'landscape',
-      '動物': 'animal',
-      '人物': 'person',
-      '抽象画': 'abstract',
-      '花': 'flower',
-      '食べ物': 'food',
-      '建物': 'building',
-      '乗り物': 'vehicle',
-      'ファンタジー': 'fantasy',
-      '宇宙': 'space',
-      '物': 'object',
-      '模様': 'pattern',
+      風景: 'landscape',
+      動物: 'animal',
+      人物: 'person',
+      抽象画: 'abstract',
+      花: 'flower',
+      食べ物: 'food',
+      建物: 'building',
+      乗り物: 'vehicle',
+      ファンタジー: 'fantasy',
+      宇宙: 'space',
+      物: 'object',
+      模様: 'pattern',
+      // 追加の基本語彙
+      猫: 'cat',
+      犬: 'dog',
+      鳥: 'bird',
+      魚: 'fish',
+      木: 'tree',
+      山: 'mountain',
+      海: 'sea',
+      空: 'sky',
+      雲: 'cloud',
+      太陽: 'sun',
+      月: 'moon',
+      星: 'star',
     },
     'en-ja': {
-      'landscape': '風景',
-      'animal': '動物',
-      'person': '人物',
-      'abstract': '抽象画',
-      'flower': '花',
-      'food': '食べ物',
-      'building': '建物',
-      'vehicle': '乗り物',
-      'fantasy': 'ファンタジー',
-      'space': '宇宙',
-      'object': '物',
-      'pattern': '模様',
+      landscape: '風景',
+      animal: '動物',
+      person: '人物',
+      abstract: '抽象画',
+      flower: '花',
+      food: '食べ物',
+      building: '建物',
+      vehicle: '乗り物',
+      fantasy: 'ファンタジー',
+      space: '宇宙',
+      object: '物',
+      pattern: '模様',
+      // 追加の基本語彙
+      cat: '猫',
+      dog: '犬',
+      bird: '鳥',
+      fish: '魚',
+      tree: '木',
+      mountain: '山',
+      sea: '海',
+      sky: '空',
+      cloud: '雲',
+      sun: '太陽',
+      moon: '月',
+      star: '星',
     },
   };
-  
+
   const dictKey = `${sourceLang}-${targetLang}`;
   const dict = dictionary[dictKey] || {};
-  
+
   // 辞書にあれば翻訳、なければそのまま返す
   return dict[text] || text;
 }

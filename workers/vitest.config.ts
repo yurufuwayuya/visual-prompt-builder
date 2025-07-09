@@ -13,17 +13,11 @@ export default defineConfig({
         ENVIRONMENT: 'test',
       },
     },
-    setupFiles: './src/test/setup.ts',
+    setupFiles: './tests/setup.ts',
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'src/test/',
-        '**/*.d.ts',
-        '**/*.config.*',
-        '**/types.ts',
-      ],
+      exclude: ['node_modules/', 'src/test/', '**/*.d.ts', '**/*.config.*', '**/types.ts'],
       thresholds: {
         lines: 80,
         functions: 80,
