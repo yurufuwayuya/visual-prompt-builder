@@ -54,6 +54,90 @@
 
 ---
 
+## 2025-01-10 - コードレビュー実施
+
+### 実施内容
+
+1. **フロントエンドコアコンポーネントのレビュー**
+   - PromptBuilder.tsx
+   - CategoryStep.tsx
+   - promptStore.ts
+   - useStepState.ts
+   - api.ts
+
+2. **バックエンドAPIのレビュー**
+   - index.ts (メインエントリー)
+   - prompt.ts (ルート)
+   - promptGenerator.ts (サービス)
+
+3. **共有型定義のレビュー**
+   - prompt.ts (型定義)
+   - categories.ts (定数)
+
+### 発見した問題と改善提案
+
+#### 1. コード品質の問題
+
+**PromptBuilder.tsx**
+
+- ハードコードされた日本語文字列（国際化対応が必要）
+- window.confirm使用（カスタムモーダルの方が良い）
+- setTimeout使用（100ms）は不安定
+- 重複したキーボードショートカット定義（cmd+enter/ctrl+enter）
+
+**CategoryStep.tsx**
+
+- 複雑な条件分岐ロジック（shouldConfirmChange）
+- カテゴリ変更時の重複処理（handleCategorySelectとhandleNext）
+- 不必要な条件チェック（shouldConfirmChangeでsetCategory）
+
+**promptStore.ts**
+
+- removeDetailでpredefinedIdを使用（orderで削除すべき）
+- 履歴の最大件数がハードコード（100件）
+- clearSelectionsFromDetailsが過度に破壊的
+
+#### 2. パフォーマンスの懸念
+
+- useStepStateで不必要なuseEffect（依存配列の問題）
+- 全カテゴリを一度に表示（遅延読み込みが必要かも）
+- キャッシュ戦略が不完全
+
+#### 3. セキュリティの脆弱性
+
+- CORSの検証ロジックが複雑で潜在的に危険
+- エラーハンドリングでスタックトレースを露出
+- APIキーの管理が不明確
+
+#### 4. エラーハンドリングの不足
+
+- API呼び出しのエラーハンドリングが不統一
+- ネットワークエラーの考慮不足
+- ユーザーへのエラーフィードバックが不親切
+
+#### 5. 型の不整合
+
+- ApiSelectionItemとCategorySelectionの型の違い
+- null/undefinedの扱いが不統一
+- customTextの扱いが曖昧
+
+### 完成したもの
+
+- 主要ファイルの詳細レビュー
+- 問題点の洗い出し
+- 改善提案の作成
+
+### 残作業・TODO
+
+1. 国際化（i18n）の実装
+2. カスタムモーダルコンポーネントの作成
+3. エラーハンドリングの統一化
+4. パフォーマンス最適化
+5. セキュリティ強化
+6. 型定義の整合性改善
+
+---
+
 ## 2025-01-10 - Translation APIエンドポイントの調査
 
 ### 実施内容
@@ -2139,3 +2223,50 @@ details: (currentPrompt.details || []).map((detail, index) => ({
 1. URLの設定は必ず実際のデプロイ先と一致させる
 2. 404エラーの場合、まず基本的なURL確認から始める
 3. wrangler.tomlのプロジェクト名とURLの関係を理解する
+
+---
+
+## 2025-01-10
+
+### コードレビューと改善実装 (15:30 - 16:00)
+
+#### 実施内容
+
+全体のコードレビューを実施し、以下の問題点を特定し修正した：
+
+1. **セキュリティ修正**
+   - エラーハンドラーでスタックトレースを本番環境でも露出していた
+   - 開発環境でのみスタックトレースを表示するように修正
+   - `workers/src/index.ts`のapp.onErrorを改善
+
+2. **バグ修正: removeDetailの実装**
+   - predefinedIdで削除していたため、同じIDの複数選択がある場合に問題
+   - orderベースの削除に変更し、orderを再設定するロジックを追加
+   - `frontend/src/stores/promptStore.ts`のremoveDetailを修正
+
+3. **パフォーマンス改善**
+   - useStepStateの依存配列にdefaultValueが含まれていた
+   - 不要な再レンダリングを防ぐため依存配列から除外
+   - `frontend/src/hooks/useStepState.ts`を修正
+
+4. **エラーハンドリング強化**
+   - API呼び出しでネットワークエラーの詳細な処理が不足
+   - fetch呼び出しをtry-catchでラップ
+   - エラーメッセージをよりユーザーフレンドリーに
+   - `frontend/src/components/steps/ResultStep.tsx`を修正
+
+5. **型定義の整合性改善**
+   - ApiSelectionItemとCategorySelection等の型が不一致
+   - 型変換ユーティリティを作成
+   - `shared/src/utils/typeConverters.ts`を新規作成
+
+#### 次のステップ
+
+- プルリクエストを作成してマージ
+- 中期的な改善項目（i18n、モーダル実装等）の計画
+
+#### 教訓
+
+1. セキュリティは最優先事項 - スタックトレースの露出は深刻な問題
+2. 型安全性の徹底 - 型変換ユーティリティで一貫性を保つ
+3. パフォーマンスへの配慮 - Reactの依存配列は慎重に設定
