@@ -15,7 +15,11 @@ import type {
 } from '../types/prompt';
 
 /**
- * 選択項目をAPI用の型に変換
+ * Converts a frontend selection item to an API-compatible selection item.
+ *
+ * Returns an API selection item object with appropriate `predefinedId` and `customText` fields, or `undefined` if the input is `undefined`. For custom selections, sets `predefinedId` to `null` and uses the item's custom or name text as `customText`.
+ *
+ * @returns The converted API selection item, or `undefined` if the input is `undefined`.
  */
 export function toApiSelectionItem(
   item:
@@ -45,7 +49,13 @@ export function toApiSelectionItem(
 }
 
 /**
- * 詳細選択項目をAPI用の型に変換
+ * Converts a detail selection item to an API detail selection item, including its order.
+ *
+ * Throws an error if the detail selection cannot be converted.
+ *
+ * @param detail - The detail selection item to convert
+ * @param order - The order index to assign to the API detail selection item
+ * @returns The API-compatible detail selection item with order
  */
 export function toApiDetailSelectionItem(
   detail: DetailSelection,
@@ -63,7 +73,12 @@ export function toApiDetailSelectionItem(
 }
 
 /**
- * 選択項目の配列をAPI用の型に変換
+ * Converts an array of frontend selection items to API-compatible selection items.
+ *
+ * Throws an error if any item cannot be converted.
+ *
+ * @param items - The array of selection items to convert
+ * @returns An array of API selection items
  */
 export function toApiSelectionItems<
   T extends
@@ -84,14 +99,19 @@ export function toApiSelectionItems<
 }
 
 /**
- * 詳細選択項目の配列をAPI用の型に変換
+ * Converts an array of detail selection items to API-compatible detail selection items, assigning an order to each.
+ *
+ * @param details - The array of detail selection items to convert
+ * @returns An array of API detail selection items with order properties
  */
 export function toApiDetailSelectionItems(details: DetailSelection[]): ApiDetailSelectionItem[] {
   return details.map((detail, index) => toApiDetailSelectionItem(detail, index));
 }
 
 /**
- * 選択項目がカスタムかどうかを判定
+ * Determines whether a selection item is a custom selection.
+ *
+ * Returns true if the item's `predefinedId` starts with "custom-", otherwise false.
  */
 export function isCustomSelection(
   item:
@@ -107,7 +127,13 @@ export function isCustomSelection(
 }
 
 /**
- * カスタムテキストを取得（翻訳済みのテキストを優先）
+ * Retrieves the custom text for a selection item, prioritizing a provided translated text if available.
+ *
+ * If the item is a custom selection, returns the translated text if provided, otherwise the item's custom text, or name, or null. For predefined selections, returns the item's custom text or null.
+ *
+ * @param item - The selection item to extract custom text from
+ * @param translatedText - Optional translated text to use if available
+ * @returns The custom or translated text, or null if none is available
  */
 export function getCustomText(
   item:

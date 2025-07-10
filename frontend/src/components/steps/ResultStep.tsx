@@ -10,6 +10,14 @@ interface ResultStepProps {
   onNew: () => void;
 }
 
+/**
+ * React component for generating, displaying, copying, and saving AI image generation prompts based on user-selected settings.
+ *
+ * Handles prompt translation (including Japanese to English), communicates with backend APIs for prompt generation with retry and error handling, and provides UI for copying and saving prompts to history. Displays appropriate feedback and error messages throughout the prompt generation lifecycle.
+ *
+ * @param onNew - Callback invoked when the user finishes and wants to start a new prompt.
+ * @returns The rendered UI for the prompt generation result step.
+ */
 export function ResultStep({ onNew }: ResultStepProps) {
   const { currentPrompt, setGeneratedPrompt, saveToHistory } = usePromptStore();
   const { addToast } = useToastStore();
