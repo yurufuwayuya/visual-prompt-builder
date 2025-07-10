@@ -42,9 +42,9 @@ promptRoute.post(
       };
 
       // キャッシュに保存（1時間）- ローカル開発では無効化
-      if (c.env.ENVIRONMENT !== 'development') {
+      if (c?.env?.ENVIRONMENT !== 'development') {
         try {
-          if (c.env.CACHE) {
+          if (c?.env?.CACHE) {
             // キーをハッシュ化して512バイト制限を回避
             const cacheKey = await generateCacheKey('prompt', { promptData, options });
             await c.env.CACHE.put(cacheKey, JSON.stringify(response), {

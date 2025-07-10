@@ -1807,3 +1807,71 @@ details: (currentPrompt.details || []).map((detail, index) => ({
 1. 本番環境へのデプロイ
 2. 本番環境での動作確認
 3. ログの削減（デバッグ完了後）
+
+---
+
+## 2025-07-10 Translation API 500エラー修正（KV Namespace問題）
+
+### 作業内容
+
+1. **エラーの特定**
+   - Translation API で500 Internal Server Error が発生
+   - エラーメッセージ: `Cannot read properties of undefined (reading 'get')`
+   - KV Namespaceの`get`メソッドアクセス時に`c.env`がundefined
+
+2. **根本原因**
+   - Cloudflare Workers環境で`c.env`が適切にバインドされていない
+   - KV Namespace（CACHE、SESSION、RATE_LIMIT_KV）へのアクセス時にエラー
+
+3. **修正内容**
+   - **translation.ts**: Optional chaining
+     (`?.`) を使用して`c?.env?.CACHE`に修正（4箇所）
+   - **prompt.ts**: 同様に`c?.env?.CACHE`と`c?.env?.ENVIRONMENT`に修正
+   - **health.ts**: KV Namespaceの存在チェックを追加、適切なエラーハンドリング
+
+4. **技術的詳細**
+
+   ```typescript
+   // 修正前
+   if (c.env.CACHE) { ... }
+
+   // 修正後
+   if (c?.env?.CACHE) { ... }
+   ```
+
+5. **テスト結果**
+   - workers の全テストが成功（21件全てパス）
+   - KV Namespaceがない場合でも適切に動作することを確認
+
+### 技術的決定事項
+
+1. **Optional chaining (`?.`) の標準化**
+   - 環境変数やKVへのアクセスでは常にOptional chainingを使用
+   - より防御的なプログラミングスタイルを採用
+
+2. **エラーハンドリングの強化**
+   - KV Namespaceが利用不可能でもアプリケーションが動作継続
+   - 適切な警告ログの出力
+
+### 残りの課題
+
+1. **本番環境でのKV Namespace設定確認**
+   - wrangler.tomlには本番用KV IDが設定済み
+   - Cloudflareダッシュボードで実際にKVが作成されているか確認が必要
+   - KV Namespaceのバインディングが正しく行われているか検証
+
+2. **デプロイと動作確認**
+   - 修正を本番環境にデプロイ
+   - Translation APIの動作確認
+
+### 学んだこと
+
+- Cloudflare Workers環境では、環境変数とKVバインディングが確実ではない
+- テスト環境と本番環境の差異に注意が必要
+- Optional chainingは環境依存の問題を防ぐ重要な技術
+
+### 次回作業予定
+
+1. 本番環境へのデプロイ実行
+2. Translation APIの動作確認
+3. KV Namespaceの設定状況確認

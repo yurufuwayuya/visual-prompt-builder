@@ -33,7 +33,7 @@ translationRoute.post('/translate', zValidator('json', translationSchema), async
   try {
     // キャッシュチェック（KVが利用可能な場合のみ）
     let cached = null;
-    if (c.env.CACHE) {
+    if (c?.env?.CACHE) {
       try {
         const cacheKey = await generateCacheKey('translation', { sourceLang, targetLang, text });
         cached = await c.env.CACHE.get(cacheKey);
@@ -57,7 +57,7 @@ translationRoute.post('/translate', zValidator('json', translationSchema), async
     };
 
     // キャッシュに保存（24時間）- KVが利用可能な場合のみ
-    if (c.env.CACHE) {
+    if (c?.env?.CACHE) {
       try {
         const cacheKey = await generateCacheKey('translation', { sourceLang, targetLang, text });
         await c.env.CACHE.put(cacheKey, JSON.stringify(response), {
@@ -123,7 +123,7 @@ translationRoute.post(
         const batchPromises = batch.map(async (text) => {
           // キャッシュチェック（KVが利用可能な場合のみ）
           let cached = null;
-          if (c.env.CACHE) {
+          if (c?.env?.CACHE) {
             try {
               const cacheKey = await generateCacheKey('translation', {
                 sourceLang,
@@ -158,7 +158,7 @@ translationRoute.post(
           };
 
           // キャッシュに保存（KVが利用可能な場合のみ）
-          if (c.env.CACHE) {
+          if (c?.env?.CACHE) {
             try {
               const cacheKey = await generateCacheKey('translation', {
                 sourceLang,
