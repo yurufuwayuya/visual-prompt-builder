@@ -16,8 +16,40 @@ import { translationSchema } from '../validators/translation';
 
 export const translationRoute = new Hono<{ Bindings: Bindings }>();
 
-// POST /api/v1/translation/translate - テキスト翻訳
-translationRoute.post('/translate', zValidator('json', translationSchema), async (c) => {
+// デバッグ用の最小限のテストルート
+translationRoute.get('/test', (c) => {
+  return c.json({
+    success: true,
+    message: 'Translation route is working',
+    env: !!c.env,
+    cache: !!c?.env?.CACHE,
+  });
+});
+
+// POSTテストルート
+translationRoute.post('/test-post', async (c) => {
+  try {
+    const body = await c.req.json();
+    return c.json({
+      success: true,
+      message: 'POST test working',
+      body: body,
+      env: !!c.env,
+      cache: !!c?.env?.CACHE,
+    });
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      500
+    );
+  }
+});
+
+// /trans エンドポイント（/translateの代替）
+translationRoute.post('/trans', zValidator('json', translationSchema), async (c) => {
   const { text, sourceLang, targetLang } = c.req.valid('json');
 
   // 同じ言語の場合はそのまま返す
@@ -84,6 +116,130 @@ translationRoute.post('/translate', zValidator('json', translationSchema), async
     return c.json(createErrorResponse(error, '翻訳に失敗しました'), 500);
   }
 });
+
+// POST /api/v1/translation/translate - テキスト翻訳
+translationRoute.post('/translate', async (c) => {
+  try {
+    // 最小限の実装でテスト
+    const body = (await c.req.json()) as TranslationRequest;
+
+    return c.json({
+      success: true,
+      data: {
+        translatedText: 'Test translation',
+        detectedLanguage: body.sourceLang,
+        confidence: 0.95,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+      500
+    );
+  }
+});
+
+// 元の実装（一時的にコメントアウト）
+/*
+translationRoute.post('/translate-old', 
+  async (c, next) => {
+    console.log('[Translation Middleware] Request received at /translate');
+    console.log('[Translation Middleware] Method:', c.req.method);
+    console.log('[Translation Middleware] Headers:', c.req.header());
+    console.log('[Translation Middleware] Context env exists:', !!c.env);
+    return next();
+  },
+  // zValidator('json', translationSchema), // 一時的に無効化
+  async (c) => {
+  console.log('[Translation API] After validation');
+  console.log('[Translation API] Context env:', c.env);
+  console.log('[Translation API] Has CACHE:', !!c?.env?.CACHE);
+  
+  // const { text, sourceLang, targetLang } = c.req.valid('json');
+  const { text, sourceLang, targetLang } = await c.req.json() as TranslationRequest;
+
+  // 同じ言語の場合はそのまま返す
+  if (sourceLang === targetLang) {
+    const response: TranslationResponse = {
+      translatedText: text,
+      detectedLanguage: sourceLang,
+      confidence: 1.0,
+    };
+    return c.json(createSuccessResponse(response));
+  }
+
+  try {
+    // キャッシュチェック（KVが利用可能な場合のみ）
+    let cached = null;
+    console.log('[Translation API] Checking cache availability:', !!c?.env?.CACHE);
+    if (c?.env?.CACHE) {
+      try {
+        console.log('[Translation API] Attempting to read from cache');
+        const cacheKey = await generateCacheKey('translation', { sourceLang, targetLang, text });
+        cached = await c.env.CACHE.get(cacheKey);
+        if (cached) {
+          const cachedResponse = createSuccessResponse(JSON.parse(cached));
+          return c.json({ ...cachedResponse, cached: true });
+        }
+      } catch (cacheError) {
+        console.warn('Cache read error:', cacheError);
+        // キャッシュエラーは無視して続行
+      }
+    }
+
+    // MyMemory APIを使用して翻訳
+    const translatedText = await translateWithMyMemory(text, sourceLang, targetLang);
+
+    const response: TranslationResponse = {
+      translatedText,
+      detectedLanguage: sourceLang,
+      confidence: 0.95,
+    };
+
+    // キャッシュに保存（24時間）- KVが利用可能な場合のみ
+    if (c?.env?.CACHE) {
+      try {
+        const cacheKey = await generateCacheKey('translation', { sourceLang, targetLang, text });
+        await c.env.CACHE.put(cacheKey, JSON.stringify(response), {
+          expirationTtl: 86400,
+        });
+      } catch (cacheError) {
+        console.warn('Cache write error:', cacheError);
+        // キャッシュエラーは無視して続行
+      }
+    }
+
+    return c.json(createSuccessResponse(response));
+  } catch (error) {
+    console.error('[Translation API] Translation error:', error);
+
+    // エラーの詳細をログに出力
+    if (error instanceof Error) {
+      console.error('[Translation API] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        cause: error.cause,
+      });
+    } else {
+      console.error('[Translation API] Non-Error object thrown:', error);
+    }
+
+    const errorResponse = createErrorResponse(error, '翻訳に失敗しました');
+    // デバッグ用にスタックトレースを追加
+    if (error instanceof Error) {
+      (errorResponse as any).stack = error.stack;
+      (errorResponse as any).name = error.name;
+    }
+    return c.json(errorResponse, 500);
+  }
+});
+*/
 
 // POST /api/v1/translation/batch - バッチ翻訳
 translationRoute.post(

@@ -67,11 +67,18 @@ app.use('*', prettyJSON());
 
 // エラーハンドラー
 app.onError((err, c) => {
-  console.error(`Error: ${err.message}`, err);
+  console.error('[Global Error Handler] Error caught:', err);
+  console.error('[Global Error Handler] Error message:', err.message);
+  console.error('[Global Error Handler] Error stack:', err.stack);
+  console.error('[Global Error Handler] Context env:', c?.env);
+  console.error('[Global Error Handler] Request path:', c?.req?.path);
+
   return c.json(
     {
       success: false,
       error: err.message,
+      stack: err.stack,
+      name: err.name,
       timestamp: new Date().toISOString(),
     },
     500
@@ -92,9 +99,11 @@ app.notFound((c) => {
 });
 
 // ルートの登録
+console.log('[App Init] Registering routes...');
 app.route('/health', healthRoute);
 app.route('/api/v1/prompt', promptRoute);
 app.route('/api/v1/translation', translationRoute);
+console.log('[App Init] Routes registered successfully');
 
 // ルートハンドラー
 app.get('/', (c) => {
