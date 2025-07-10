@@ -54,6 +54,79 @@
 
 ---
 
+## 2025-01-10 - Translation APIエンドポイントの調査
+
+### 実施内容
+
+1. **Translation APIエンドポイントの実装確認**
+   - `/api/v1/translation/trans` エンドポイントの実装を調査
+   - Cloudflare Workersのルーティング設定を確認
+   - APIの実装ファイルの場所を特定
+
+2. **調査結果**
+   - **実装ファイル**: `/workers/src/routes/translation.ts`
+   - **利用可能なエンドポイント**:
+     - `/api/v1/translation/trans` - 単一テキスト翻訳（POSTメソッド）
+     - `/api/v1/translation/translate` - テスト用の最小実装（現在はテスト応答のみ）
+     - `/api/v1/translation/batch` - バッチ翻訳（POSTメソッド）
+     - `/api/v1/translation/test` - デバッグ用テストルート（GETメソッド）
+     - `/api/v1/translation/test-post` - POSTテストルート
+3. **エンドポイントの詳細**
+   - **`/trans`エンドポイント**:
+     - 本番用の翻訳エンドポイント
+     - MyMemory Translation APIを使用
+     - KVキャッシュサポート（24時間のTTL）
+     - フォールバック辞書による基本的な翻訳機能
+   - **フロントエンド設定**:
+     - `frontend/src/config/api.ts`で`/api/v1/translation/trans`を使用するよう設定済み
+     - `/translate`から`/trans`に変更（Cloudflare Workers問題の回避のため）
+
+4. **API使用方法**
+
+   ```json
+   // リクエスト
+   POST /api/v1/translation/trans
+   {
+     "text": "猫",
+     "sourceLang": "ja",
+     "targetLang": "en"
+   }
+
+   // レスポンス
+   {
+     "success": true,
+     "data": {
+       "translatedText": "cat",
+       "detectedLanguage": "ja",
+       "confidence": 0.95
+     }
+   }
+   ```
+
+### 直面した問題
+
+- 元の`/translate`エンドポイントがコメントアウトされていた（Cloudflare
+  Workers関連の問題？）
+
+### 解決策
+
+- `/trans`エンドポイントが正しく実装され、フロントエンドも適切に設定されている
+
+### 完成したもの
+
+- Translation APIの実装状況の完全な把握
+- エンドポイントの仕様確認
+
+### 残作業・TODO
+
+- なし（調査タスクのため）
+
+### 次のステップ
+
+- 必要に応じて `/translate` エンドポイントの問題を調査・修正
+
+---
+
 ## 2025-01-09 - カスタムプロンプトの日本語翻訳機能修正
 
 ### 実施内容
@@ -2023,3 +2096,46 @@ details: (currentPrompt.details || []).map((detail, index) => ({
 - なぜ`/translate`パスだけがエラーになるのか
 - Cloudflare Workersの内部動作に関連？
 - 他のプロジェクトでも同様の問題が発生するか検証が必要
+
+---
+
+## 2025-07-10
+
+### 404エラー: Translation API (04:50 - 04:52)
+
+#### 問題
+
+- フロントエンドから`/api/v1/translation/trans`エンドポイントへのアクセスで404エラー
+- エラーURL:
+  `https://visual-prompt-builder-api.yuya-kitamori.workers.dev/api/v1/translation/trans`
+
+#### 調査内容
+
+1. APIエンドポイントの実装確認
+   - `/workers/src/routes/translation.ts`に正しく実装されている
+   - ルーティングも`/workers/src/index.ts`で設定済み
+2. デプロイメント状況確認
+   - 最新デプロイ: 2025-07-10T04:11:19.785Z
+   - wrangler whoami: 認証正常
+3. URLテスト
+   - `curl https://visual-prompt-builder-api.yuya-kitamori.workers.dev/api/v1/translation/test`
+     → 404
+   - `curl https://visual-prompt-builder.yuya-kitamori.workers.dev/api/v1/translation/test`
+     → 200 OK
+
+#### 原因
+
+- フロントエンドのAPI URL設定ミス
+- 間違い: `visual-prompt-builder-api.yuya-kitamori.workers.dev`
+- 正解: `visual-prompt-builder.yuya-kitamori.workers.dev`
+
+#### 解決策
+
+- `/frontend/src/config/api.ts`のAPI_BASE_URLを修正
+- `-api`の部分を削除
+
+#### 教訓
+
+1. URLの設定は必ず実際のデプロイ先と一致させる
+2. 404エラーの場合、まず基本的なURL確認から始める
+3. wrangler.tomlのプロジェクト名とURLの関係を理解する
