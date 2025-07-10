@@ -10,6 +10,14 @@ interface ResultStepProps {
   onNew: () => void;
 }
 
+/**
+ * React component for generating, displaying, copying, and saving AI image generation prompts based on user-selected settings.
+ *
+ * Handles prompt translation (including Japanese to English), communicates with backend APIs for prompt generation with retry and error handling, and provides UI for copying and saving prompts to history. Displays appropriate feedback and error messages throughout the prompt generation lifecycle.
+ *
+ * @param onNew - Callback invoked when the user finishes and wants to start a new prompt.
+ * @returns The rendered UI for the prompt generation result step.
+ */
 export function ResultStep({ onNew }: ResultStepProps) {
   const { currentPrompt, setGeneratedPrompt, saveToHistory } = usePromptStore();
   const { addToast } = useToastStore();
@@ -100,6 +108,14 @@ export function ResultStep({ onNew }: ResultStepProps) {
       return translatedText;
     } catch (error) {
       console.error('Translation error:', error);
+      // ネットワークエラーの詳細をログ
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.error('Network error occurred during translation');
+        addToast({
+          type: 'error',
+          message: 'ネットワークエラーが発生しました',
+        });
+      }
       return text; // エラーが発生した場合は元のテキストを返す
     }
   };
@@ -266,24 +282,40 @@ export function ResultStep({ onNew }: ResultStepProps) {
         //   console.log('API Request Body:', requestBody);
         // }
 
-        const response = await fetch(API_ENDPOINTS.generatePrompt, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody),
-        });
+        let response;
+        try {
+          response = await fetch(API_ENDPOINTS.generatePrompt, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
+          });
+        } catch (fetchError) {
+          // ネットワークエラーの処理
+          console.error('Fetch error:', fetchError);
+          throw new Error(
+            'ネットワークエラーが発生しました。インターネット接続を確認してください。'
+          );
+        }
 
         if (!response.ok) {
           // 400番台のエラーはリトライしない（クライアントエラー）
           if (response.status >= 400 && response.status < 500) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `プロンプト生成に失敗しました (${response.status})`);
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(
+              errorData.error ||
+                `プロンプト生成に失敗しました (${response.status} ${response.statusText})`
+            );
           }
-          throw new Error(`プロンプト生成に失敗しました (${response.status})`);
+          throw new Error(
+            `プロンプト生成に失敗しました (${response.status} ${response.statusText})`
+          );
         }
 
-        const result = await response.json();
+        const result = await response.json().catch(() => {
+          throw new Error('レスポンスの解析に失敗しました');
+        });
         // デバッグ情報は開発環境でのみ出力
         // if (process.env.NODE_ENV === 'development') {
         //   console.log('API Response:', result);

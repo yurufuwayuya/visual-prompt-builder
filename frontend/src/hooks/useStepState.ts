@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 
 /**
- * Stepコンポーネント用の共通state管理Hook
- * ストアの値とローカルstateを同期
+ * Manages local state synchronized with an external store value, falling back to a default if the store value is undefined.
+ *
+ * Initializes local state with `storeValue` if provided, otherwise uses `defaultValue`. Updates the local state whenever `storeValue` changes.
+ *
+ * @returns A tuple containing the current state and a setter function.
  */
 export function useStepState<T>(
   storeValue: T | undefined,
@@ -13,7 +16,7 @@ export function useStepState<T>(
   // ストアの値が変更されたら、ローカルstateも更新
   useEffect(() => {
     setLocalValue(storeValue ?? defaultValue);
-  }, [storeValue, defaultValue]);
+  }, [storeValue]); // defaultValueを依存配列から除外
 
   return [localValue, setLocalValue];
 }

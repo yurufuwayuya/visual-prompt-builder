@@ -73,11 +73,14 @@ app.onError((err, c) => {
   console.error('[Global Error Handler] Context env:', c?.env);
   console.error('[Global Error Handler] Request path:', c?.req?.path);
 
+  // 開発環境でのみスタックトレースを露出
+  const isDevelopment = c.env.ENVIRONMENT === 'development' || c.req.url.includes('localhost');
+
   return c.json(
     {
       success: false,
       error: err.message,
-      stack: err.stack,
+      ...(isDevelopment && { stack: err.stack }),
       name: err.name,
       timestamp: new Date().toISOString(),
     },

@@ -57,12 +57,24 @@ export const usePromptStore = create<PromptStore>()(
         }),
 
       removeDetail: (detailId) =>
-        set((state) => ({
-          currentPrompt: {
-            ...state.currentPrompt,
-            details: state.currentPrompt.details?.filter((d) => d.predefinedId !== detailId),
-          },
-        })),
+        set((state) => {
+          const details = state.currentPrompt.details || [];
+          // detailIdをorderとして扱い、該当インデックスの要素を削除
+          const orderIndex = parseInt(detailId, 10);
+          const updatedDetails = details.filter((_, index) => index !== orderIndex);
+          // orderを再設定
+          const reorderedDetails = updatedDetails.map((detail, index) => ({
+            ...detail,
+            order: index,
+          }));
+
+          return {
+            currentPrompt: {
+              ...state.currentPrompt,
+              details: reorderedDetails,
+            },
+          };
+        }),
 
       reorderDetails: (details) =>
         set((state) => ({
