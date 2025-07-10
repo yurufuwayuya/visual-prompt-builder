@@ -31,12 +31,20 @@ translationRoute.post('/translate', zValidator('json', translationSchema), async
   }
 
   try {
-    // キャッシュチェック
-    const cacheKey = await generateCacheKey('translation', { sourceLang, targetLang, text });
-    const cached = await c.env.CACHE.get(cacheKey);
-    if (cached) {
-      const cachedResponse = createSuccessResponse(JSON.parse(cached));
-      return c.json({ ...cachedResponse, cached: true });
+    // キャッシュチェック（KVが利用可能な場合のみ）
+    let cached = null;
+    if (c.env.CACHE) {
+      try {
+        const cacheKey = await generateCacheKey('translation', { sourceLang, targetLang, text });
+        cached = await c.env.CACHE.get(cacheKey);
+        if (cached) {
+          const cachedResponse = createSuccessResponse(JSON.parse(cached));
+          return c.json({ ...cachedResponse, cached: true });
+        }
+      } catch (cacheError) {
+        console.warn('Cache read error:', cacheError);
+        // キャッシュエラーは無視して続行
+      }
     }
 
     // MyMemory APIを使用して翻訳
@@ -48,10 +56,18 @@ translationRoute.post('/translate', zValidator('json', translationSchema), async
       confidence: 0.95,
     };
 
-    // キャッシュに保存（24時間）
-    await c.env.CACHE.put(cacheKey, JSON.stringify(response), {
-      expirationTtl: 86400,
-    });
+    // キャッシュに保存（24時間）- KVが利用可能な場合のみ
+    if (c.env.CACHE) {
+      try {
+        const cacheKey = await generateCacheKey('translation', { sourceLang, targetLang, text });
+        await c.env.CACHE.put(cacheKey, JSON.stringify(response), {
+          expirationTtl: 86400,
+        });
+      } catch (cacheError) {
+        console.warn('Cache write error:', cacheError);
+        // キャッシュエラーは無視して続行
+      }
+    }
 
     return c.json(createSuccessResponse(response));
   } catch (error) {
@@ -105,19 +121,31 @@ translationRoute.post(
       for (let i = 0; i < texts.length; i += batchSize) {
         const batch = texts.slice(i, i + batchSize);
         const batchPromises = batch.map(async (text) => {
-          // キャッシュチェック
-          const cacheKey = await generateCacheKey('translation', { sourceLang, targetLang, text });
-          const cached = await c.env.CACHE.get(cacheKey);
+          // キャッシュチェック（KVが利用可能な場合のみ）
+          let cached = null;
+          if (c.env.CACHE) {
+            try {
+              const cacheKey = await generateCacheKey('translation', {
+                sourceLang,
+                targetLang,
+                text,
+              });
+              cached = await c.env.CACHE.get(cacheKey);
 
-          if (cached) {
-            const cachedData = JSON.parse(cached);
-            return {
-              originalText: text,
-              translatedText: cachedData.translatedText,
-              detectedLanguage: cachedData.detectedLanguage,
-              confidence: cachedData.confidence,
-              cached: true,
-            };
+              if (cached) {
+                const cachedData = JSON.parse(cached);
+                return {
+                  originalText: text,
+                  translatedText: cachedData.translatedText,
+                  detectedLanguage: cachedData.detectedLanguage,
+                  confidence: cachedData.confidence,
+                  cached: true,
+                };
+              }
+            } catch (cacheError) {
+              console.warn('Batch cache read error:', cacheError);
+              // キャッシュエラーは無視して続行
+            }
           }
 
           // 翻訳実行
@@ -129,18 +157,30 @@ translationRoute.post(
             confidence: 0.95,
           };
 
-          // キャッシュに保存
-          await c.env.CACHE.put(
-            cacheKey,
-            JSON.stringify({
-              translatedText,
-              detectedLanguage: sourceLang,
-              confidence: 0.95,
-            }),
-            {
-              expirationTtl: 86400,
+          // キャッシュに保存（KVが利用可能な場合のみ）
+          if (c.env.CACHE) {
+            try {
+              const cacheKey = await generateCacheKey('translation', {
+                sourceLang,
+                targetLang,
+                text,
+              });
+              await c.env.CACHE.put(
+                cacheKey,
+                JSON.stringify({
+                  translatedText,
+                  detectedLanguage: sourceLang,
+                  confidence: 0.95,
+                }),
+                {
+                  expirationTtl: 86400,
+                }
+              );
+            } catch (cacheError) {
+              console.warn('Batch cache write error:', cacheError);
+              // キャッシュエラーは無視して続行
             }
-          );
+          }
 
           return result;
         });
