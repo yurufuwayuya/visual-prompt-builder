@@ -14,6 +14,9 @@ interface PromptStore {
   // 現在の選択状態
   currentPrompt: Partial<PromptData>;
 
+  // 参考画像（Base64形式）
+  referenceImage: string | null;
+
   // 履歴
   history: PromptData[];
 
@@ -27,6 +30,7 @@ interface PromptStore {
   setMood: (mood: MoodSelection | undefined) => void;
   setLighting: (lighting: LightingSelection | undefined) => void;
   setGeneratedPrompt: (prompt: string, promptJa: string) => void;
+  setReferenceImage: (image: string | null) => void;
 
   saveToHistory: () => void;
   reset: () => void;
@@ -37,6 +41,7 @@ export const usePromptStore = create<PromptStore>()(
   persist(
     (set, get) => ({
       currentPrompt: {},
+      referenceImage: null,
       history: [],
 
       setCategory: (category) =>
@@ -110,6 +115,8 @@ export const usePromptStore = create<PromptStore>()(
           },
         })),
 
+      setReferenceImage: (image) => set({ referenceImage: image }),
+
       saveToHistory: () => {
         const { currentPrompt, history } = get();
         if (!currentPrompt.category) return;
@@ -133,7 +140,7 @@ export const usePromptStore = create<PromptStore>()(
         });
       },
 
-      reset: () => set({ currentPrompt: {} }),
+      reset: () => set({ currentPrompt: {}, referenceImage: null }),
 
       clearSelectionsFromDetails: () =>
         set((state) => ({

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CategoryStep } from '@/components/steps/CategoryStep';
 import { DetailStep } from '@/components/steps/DetailStep';
+import { ImageStep } from '@/components/steps/ImageStep';
 import { StyleStep } from '@/components/steps/StyleStep';
 import { ResultStep } from '@/components/steps/ResultStep';
 import { Button } from '@/components/common/Button';
@@ -16,11 +17,13 @@ export function PromptBuilder() {
   const [completedSteps, setCompletedSteps] = useState({
     category: false,
     detail: false,
+    image: false,
     style: false,
   });
 
   const categoryRef = useRef<HTMLDivElement>(null);
   const detailRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
   const styleRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +38,11 @@ export function PromptBuilder() {
 
   const handleDetailComplete = () => {
     setCompletedSteps((prev) => ({ ...prev, detail: true }));
+    setTimeout(() => scrollToSection(imageRef), 100);
+  };
+
+  const handleImageComplete = () => {
+    setCompletedSteps((prev) => ({ ...prev, image: true }));
     setTimeout(() => scrollToSection(styleRef), 100);
   };
 
@@ -58,6 +66,7 @@ export function PromptBuilder() {
       setCompletedSteps({
         category: false,
         detail: false,
+        image: false,
         style: false,
       });
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -82,8 +91,9 @@ export function PromptBuilder() {
   useKeyboardShortcuts({
     '1': () => scrollToSection(categoryRef),
     '2': () => completedSteps.category && scrollToSection(detailRef),
-    '3': () => completedSteps.detail && scrollToSection(styleRef),
-    '4': () => completedSteps.style && scrollToSection(resultRef),
+    '3': () => completedSteps.detail && scrollToSection(imageRef),
+    '4': () => completedSteps.image && scrollToSection(styleRef),
+    '5': () => completedSteps.style && scrollToSection(resultRef),
     'cmd+enter': () => {
       if (completedSteps.style && currentPrompt.generatedPrompt) {
         handleComplete();
@@ -139,7 +149,7 @@ export function PromptBuilder() {
                 2. 詳細
               </button>
               <button
-                onClick={() => scrollToSection(styleRef)}
+                onClick={() => scrollToSection(imageRef)}
                 className={`font-medium ${
                   completedSteps.detail
                     ? 'text-primary-600 hover:underline'
@@ -148,7 +158,19 @@ export function PromptBuilder() {
                 disabled={!completedSteps.detail}
                 aria-disabled={!completedSteps.detail}
               >
-                3. スタイル
+                3. 画像
+              </button>
+              <button
+                onClick={() => scrollToSection(styleRef)}
+                className={`font-medium ${
+                  completedSteps.image
+                    ? 'text-primary-600 hover:underline'
+                    : 'text-gray-400 cursor-not-allowed'
+                }`}
+                disabled={!completedSteps.image}
+                aria-disabled={!completedSteps.image}
+              >
+                4. スタイル
               </button>
               <button
                 onClick={() => scrollToSection(resultRef)}
@@ -160,7 +182,7 @@ export function PromptBuilder() {
                 disabled={!completedSteps.style}
                 aria-disabled={!completedSteps.style}
               >
-                4. 結果
+                5. 結果
               </button>
             </nav>
           </div>
@@ -206,9 +228,9 @@ export function PromptBuilder() {
             </div>
           </section>
 
-          {/* スタイル設定 */}
+          {/* 画像アップロード */}
           <section
-            ref={styleRef}
+            ref={imageRef}
             className={`scroll-mt-32 transition-opacity duration-300 ${
               completedSteps.detail ? 'opacity-100' : 'opacity-30 pointer-events-none'
             }`}
@@ -223,6 +245,28 @@ export function PromptBuilder() {
                   }`}
                 >
                   3
+                </span>
+                <span className="ml-2 text-lg font-semibold text-gray-900">画像アップロード</span>
+              </div>
+              <ImageStep onNext={handleImageComplete} />
+            </div>
+          </section>
+
+          {/* スタイル設定 */}
+          <section
+            ref={styleRef}
+            className={`scroll-mt-32 transition-opacity duration-300 ${
+              completedSteps.image ? 'opacity-100' : 'opacity-30 pointer-events-none'
+            }`}
+          >
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 xl:p-8">
+              <div className="mb-6">
+                <span
+                  className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
+                    completedSteps.image ? 'bg-primary-600 text-white' : 'bg-gray-300 text-gray-500'
+                  }`}
+                >
+                  4
                 </span>
                 <span className="ml-2 text-lg font-semibold text-gray-900">スタイル設定</span>
               </div>
@@ -244,7 +288,7 @@ export function PromptBuilder() {
                     completedSteps.style ? 'bg-primary-600 text-white' : 'bg-gray-300 text-gray-500'
                   }`}
                 >
-                  4
+                  5
                 </span>
                 <span className="ml-2 text-lg font-semibold text-gray-900">生成結果</span>
               </div>

@@ -91,31 +91,15 @@ export function createDataUrl(base64: string, mimeType: string): string {
 /**
  * 画像のサイズを推定（Base64から）
  */
-export function estimateImageDimensions(base64String: string): Promise<{
+export function estimateImageDimensions(_base64String: string): Promise<{
   width: number;
   height: number;
 } | null> {
   return new Promise((resolve) => {
     try {
-      // ブラウザ環境でのみ動作
-      if (typeof Image !== 'undefined') {
-        const img = new Image();
-        img.onload = () => {
-          resolve({
-            width: img.width,
-            height: img.height,
-          });
-        };
-        img.onerror = () => {
-          resolve(null);
-        };
-        img.src = base64String.startsWith('data:')
-          ? base64String
-          : createDataUrl(base64String, 'image/png');
-      } else {
-        // Workers環境では画像サイズを取得できない
-        resolve(null);
-      }
+      // Cloudflare Workers環境ではImageオブジェクトが利用できないため
+      // 画像サイズの取得はスキップ
+      resolve(null);
     } catch {
       resolve(null);
     }

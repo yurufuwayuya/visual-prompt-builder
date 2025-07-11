@@ -19,9 +19,10 @@ vi.mock('../../services/imageProviders/replicate', () => ({
 describe('Image API Routes', () => {
   let app: Hono<{ Bindings: Bindings }>;
   let mockEnv: Bindings;
-  
+
   // テスト用の1x1 PNG画像（Base64エンコード）
-  const TEST_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+  const TEST_IMAGE =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
   beforeEach(() => {
     app = new Hono<{ Bindings: Bindings }>();
@@ -64,7 +65,7 @@ describe('Image API Routes', () => {
       );
 
       expect(response.status).toBe(400);
-      const result = await response.json();
+      const result = (await response.json()) as any;
       expect(result.success).toBe(false);
     });
 
@@ -80,7 +81,6 @@ describe('Image API Routes', () => {
           currency: 'USD',
         },
       });
-
 
       const response = await app.request(
         '/api/v1/image/generate',
@@ -106,7 +106,7 @@ describe('Image API Routes', () => {
       );
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = (await response.json()) as any;
       expect(result.success).toBe(true);
       expect(result.data).toHaveProperty('image');
       expect(result.data).toHaveProperty('generationTime');
@@ -117,7 +117,6 @@ describe('Image API Routes', () => {
     it('should handle API key missing error', async () => {
       // API キーなしの環境
       const envWithoutKey = { ...mockEnv, IMAGE_API_KEY: undefined };
-
 
       const response = await app.request(
         '/api/v1/image/generate',
@@ -135,7 +134,7 @@ describe('Image API Routes', () => {
       );
 
       expect(response.status).toBe(500);
-      const result = await response.json();
+      const result = (await response.json()) as any;
       expect(result.success).toBe(false);
       expect(result.error).toContain('画像生成APIキーが設定されていません');
     });
@@ -147,9 +146,8 @@ describe('Image API Routes', () => {
           image: 'cached-image',
           generationTime: 1000,
           model: 'replicate/flux-fill',
-        })
+        }) as any
       );
-
 
       const response = await app.request(
         '/api/v1/image/generate',
@@ -167,7 +165,7 @@ describe('Image API Routes', () => {
       );
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = (await response.json()) as any;
       expect(result.data.image).toBe('cached-image');
       expect(mockEnv.IMAGE_CACHE!.get).toHaveBeenCalled();
     });
@@ -191,7 +189,7 @@ describe('Image API Routes', () => {
       );
 
       expect(response.status).toBe(500);
-      const result = await response.json();
+      const result = (await response.json()) as any;
       expect(result.error).toContain('OpenAI API実装は準備中です');
     });
 
@@ -214,7 +212,7 @@ describe('Image API Routes', () => {
       );
 
       expect(response.status).toBe(500);
-      const result = await response.json();
+      const result = (await response.json()) as any;
       expect(result.error).toContain('サポートされていないプロバイダー');
     });
 
@@ -272,7 +270,7 @@ describe('Image API Routes', () => {
       );
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = (await response.json()) as any;
       expect(result.success).toBe(true);
       expect(generateWithReplicate).toHaveBeenCalledWith(
         TEST_IMAGE,
@@ -310,13 +308,15 @@ describe('Image API Routes', () => {
       );
 
       expect(response.status).toBe(500);
-      const result = await response.json();
+      const result = (await response.json()) as any;
       expect(result.error).toContain('Stability AI API実装は準備中です');
     });
 
     it('should handle image generation timeout', async () => {
       const { generateWithReplicate } = await import('../../services/imageProviders/replicate');
-      vi.mocked(generateWithReplicate).mockRejectedValueOnce(new Error('Image generation timed out'));
+      vi.mocked(generateWithReplicate).mockRejectedValueOnce(
+        new Error('Image generation timed out')
+      );
 
       const response = await app.request(
         '/api/v1/image/generate',
@@ -334,13 +334,15 @@ describe('Image API Routes', () => {
       );
 
       expect(response.status).toBe(500);
-      const result = await response.json();
+      const result = (await response.json()) as any;
       expect(result.error).toContain('Image generation timed out');
     });
 
     it('should handle malformed API response', async () => {
       const { generateWithReplicate } = await import('../../services/imageProviders/replicate');
-      vi.mocked(generateWithReplicate).mockRejectedValueOnce(new Error('Failed to download generated image: 404'));
+      vi.mocked(generateWithReplicate).mockRejectedValueOnce(
+        new Error('Failed to download generated image: 404')
+      );
 
       const response = await app.request(
         '/api/v1/image/generate',
@@ -358,7 +360,7 @@ describe('Image API Routes', () => {
       );
 
       expect(response.status).toBe(500);
-      const result = await response.json();
+      const result = (await response.json()) as any;
       expect(result.error).toContain('Failed to download generated image: 404');
     });
 
@@ -374,7 +376,8 @@ describe('Image API Routes', () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            baseImage: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+            baseImage:
+              'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
             prompt: 'test prompt',
           }),
         },
@@ -382,7 +385,7 @@ describe('Image API Routes', () => {
       );
 
       expect(response.status).toBe(500);
-      const result = await response.json();
+      const result = (await response.json()) as any;
       expect(result.error).toContain('Invalid image format');
     });
   });
@@ -398,7 +401,7 @@ describe('Image API Routes', () => {
       );
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = (await response.json()) as any;
       expect(result.success).toBe(true);
       expect(result.data).toHaveProperty('provider', 'replicate');
       expect(result.data).toHaveProperty('models');
@@ -416,7 +419,7 @@ describe('Image API Routes', () => {
         openaiEnv
       );
       expect(openaiResponse.status).toBe(200);
-      const openaiResult = await openaiResponse.json();
+      const openaiResult = (await openaiResponse.json()) as any;
       expect(openaiResult.data.provider).toBe('openai');
       expect(openaiResult.data.models).toHaveLength(1);
       expect(openaiResult.data.models[0].id).toBe('dall-e-3');
@@ -428,7 +431,7 @@ describe('Image API Routes', () => {
         stabilityEnv
       );
       expect(stabilityResponse.status).toBe(200);
-      const stabilityResult = await stabilityResponse.json();
+      const stabilityResult = (await stabilityResponse.json()) as any;
       expect(stabilityResult.data.provider).toBe('stability');
       expect(stabilityResult.data.models).toHaveLength(2);
       expect(stabilityResult.data.models[0].id).toBe('sd-3.5-large');

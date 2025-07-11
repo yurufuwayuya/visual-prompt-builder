@@ -162,18 +162,18 @@ export async function generateWithReplicate(
       }
 
       imageBuffer = await imageResponse.arrayBuffer();
-      
+
       // バッファサイズの最終チェック
       if (imageBuffer.byteLength > MAX_IMAGE_SIZE) {
         throw new Error('Generated image exceeds size limit (10MB)');
       }
-      
+
       break; // 成功したのでループを抜ける
     } catch (error) {
       lastError = error as Error;
       if (retry < MAX_RETRIES - 1) {
         // 次のリトライまで待機（指数バックオフ）
-        await new Promise(resolve => setTimeout(resolve, 1000 * (retry + 1)));
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (retry + 1)));
       }
     }
   }
@@ -181,7 +181,11 @@ export async function generateWithReplicate(
   if (lastError) {
     throw lastError;
   }
-  
+
+  if (!imageBuffer!) {
+    throw new Error('Failed to download image after retries');
+  }
+
   // 大きな画像でもスタックオーバーフローを防ぐため、チャンク単位で処理
   const uint8Array = new Uint8Array(imageBuffer);
   let binary = '';
