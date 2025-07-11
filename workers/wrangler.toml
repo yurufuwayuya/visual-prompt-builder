@@ -1,0 +1,33 @@
+name = "visual-prompt-builder-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# KV Namespaces
+[[kv_namespaces]]
+binding = "CACHE"
+id = "cache_namespace_id"
+
+[[kv_namespaces]]
+binding = "SESSION"
+id = "session_namespace_id"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "rate_limit_namespace_id"
+
+[[kv_namespaces]]
+binding = "IMAGE_CACHE"
+id = "image_cache_namespace_id"
+
+# 環境変数（開発環境）
+[vars]
+ENVIRONMENT = "development"
+IMAGE_PROVIDER = "replicate"
+
+# 本番環境用の設定
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+# シークレット（実際の値は wrangler secret put で設定）
+# IMAGE_API_KEY = "your-api-key"
+# TRANSLATION_API_KEY = "your-translation-api-key"

@@ -14,6 +14,7 @@ import type { Bindings } from './types';
 import { healthRoute } from './routes/health';
 import { promptRoute } from './routes/prompt';
 import { translationRoute } from './routes/translation';
+import { imageRoute } from './routes/image';
 
 // Honoアプリケーションの作成
 const app = new Hono<{ Bindings: Bindings }>();
@@ -102,11 +103,10 @@ app.notFound((c) => {
 });
 
 // ルートの登録
-console.log('[App Init] Registering routes...');
 app.route('/health', healthRoute);
 app.route('/api/v1/prompt', promptRoute);
 app.route('/api/v1/translation', translationRoute);
-console.log('[App Init] Routes registered successfully');
+app.route('/api/v1/image', imageRoute);
 
 // ルートハンドラー
 app.get('/', (c) => {
