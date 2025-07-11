@@ -6,7 +6,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import type { Bindings } from '../types';
-import type { TranslationResponse } from '@visual-prompt-builder/shared';
+import type { TranslationResponse, TranslationRequest } from '@visual-prompt-builder/shared';
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -121,7 +121,7 @@ translationRoute.post('/trans', zValidator('json', translationSchema), async (c)
 translationRoute.post('/translate', async (c) => {
   try {
     // 最小限の実装でテスト
-    const body = (await c.req.json()) as any;
+    const body = (await c.req.json()) as TranslationRequest;
 
     return c.json({
       success: true,
@@ -360,20 +360,20 @@ async function translateWithMyMemory(
   targetLang: 'ja' | 'en'
 ): Promise<string> {
   try {
-    // デバッグログ
-    console.log('Translating text:', { text, sourceLang, targetLang });
+    // デバッグログ（本番環境では非表示）
+    // console.log('Translating text:', { text, sourceLang, targetLang });
 
     // MyMemory APIのエンドポイント
     const langPair = `${sourceLang}|${targetLang}`;
     const encodedText = encodeURIComponent(text);
     const url = `https://api.mymemory.translated.net/get?q=${encodedText}&langpair=${langPair}`;
 
-    console.log('MyMemory API URL:', url);
+    // console.log('MyMemory API URL:', url);
 
     // APIリクエスト
     const response = await fetch(url);
 
-    console.log('MyMemory API response status:', response.status);
+    // console.log('MyMemory API response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -381,8 +381,14 @@ async function translateWithMyMemory(
       throw new Error(`MyMemory API returned ${response.status}: ${errorText}`);
     }
 
-    const data = (await response.json()) as any;
-    console.log('MyMemory API response data:', data);
+interface MyMemoryResponse {
+      responseData: {
+        translatedText: string;
+      };
+      responseStatus: number;
+    }
+    const data = (await response.json()) as MyMemoryResponse;
+    // console.log('MyMemory API response data:', data);
 
     // レスポンスの検証
     if (!data || !data.responseData) {

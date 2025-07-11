@@ -119,7 +119,7 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
           <select
             id="model-select"
             value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value as any)}
+            onChange={(e) => setSelectedModel(e.target.value as 'flux-fill' | 'flux-variations' | 'flux-canny')}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
             disabled={isGenerating}
           >
@@ -144,6 +144,10 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
             onChange={(e) => setStrength(parseFloat(e.target.value))}
             className="w-full"
             disabled={isGenerating}
+            aria-valuemin={0}
+            aria-valuemax={1}
+            aria-valuenow={strength}
+            aria-valuetext={`${strength} - ${strength < 0.5 ? '弱い（元画像に近い）' : '強い（プロンプトに近い）'}`}
           />
           <div className="flex justify-between text-xs text-gray-500 mt-1">
             <span>弱い（元画像に近い）</span>

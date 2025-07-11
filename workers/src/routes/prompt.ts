@@ -25,7 +25,7 @@ promptRoute.post(
   async (c) => {
     const { promptData, options } = c.req.valid('json');
 
-    console.log('[API] Received request:', JSON.stringify({ promptData, options }, null, 2));
+    // console.log('[API] Received request:', JSON.stringify({ promptData, options }, null, 2));
 
     try {
       // customTextのundefinedをnullに変換

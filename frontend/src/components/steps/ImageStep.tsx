@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react';
 import { usePromptStore } from '@/stores/promptStore';
+import { useToastStore } from '@/stores/toastStore';
 import { Button } from '@/components/common/Button';
 import { Upload, X } from 'lucide-react';
 
 export function ImageStep({ onNext }: { onNext: () => void }) {
   const { setReferenceImage } = usePromptStore();
+  const { addToast } = useToastStore();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -15,13 +17,19 @@ export function ImageStep({ onNext }: { onNext: () => void }) {
 
     // ファイルサイズチェック（最大5MB）
     if (file.size > 5 * 1024 * 1024) {
-      alert('ファイルサイズは5MB以下にしてください');
+      addToast({
+        type: 'error',
+        message: 'ファイルサイズは5MB以下にしてください',
+      });
       return;
     }
 
     // ファイルタイプチェック
     if (!file.type.startsWith('image/')) {
-      alert('画像ファイルを選択してください');
+      addToast({
+        type: 'error',
+        message: '画像ファイルを選択してください',
+      });
       return;
     }
 
@@ -38,7 +46,10 @@ export function ImageStep({ onNext }: { onNext: () => void }) {
       reader.readAsDataURL(file);
     } catch (error) {
       console.error('画像の読み込みに失敗しました:', error);
-      alert('画像の読み込みに失敗しました');
+      addToast({
+        type: 'error',
+        message: '画像の読み込みに失敗しました',
+      });
       setIsLoading(false);
     }
   };
@@ -93,7 +104,6 @@ export function ImageStep({ onNext }: { onNext: () => void }) {
                     disabled={isLoading}
                   />
                 </label>
-                <p className="mt-2 text-sm text-gray-500">またはドラッグ＆ドロップ</p>
               </div>
               <p className="text-xs text-gray-500 mt-2">PNG、JPG、GIF（最大5MB）</p>
             </div>
@@ -103,12 +113,11 @@ export function ImageStep({ onNext }: { onNext: () => void }) {
             <img
               src={selectedImage}
               alt="選択された画像"
-              className="max-w-full h-auto rounded-lg shadow-lg"
-              style={{ maxHeight: '400px', margin: '0 auto', display: 'block' }}
+              className="max-w-full h-auto rounded-lg shadow-lg max-h-[400px] mx-auto block"
             />
             <button
               onClick={handleRemoveImage}
-              className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+              className="absolute top-2 right-2 p-3 bg-red-500 text-white rounded-full hover:bg-red-600 min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="画像を削除"
             >
               <X className="h-5 w-5" />
