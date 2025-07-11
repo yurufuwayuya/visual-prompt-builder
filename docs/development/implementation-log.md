@@ -678,3 +678,35 @@ mainブランチから最新の変更をマージし、作業を再開。前回�
 - Cloudflare Workers環境でのBase64画像処理
 - 型安全性を保ちながらのプロバイダー切り替え可能なアーキテクチャ
 - エラーハンドリングとユーザーフィードバック
+
+#### 実装内容（続き）
+
+4. **フロントエンドコンポーネントの作成**
+   - ImageStep.tsx: 画像アップロードステップ（ドラッグ＆ドロップ対応）
+   - ImageGenerationI2ISection.tsx: AI画像生成セクション
+   - imageGeneration.ts: 画像生成APIサービス
+
+5. **ステップフローの拡張**
+   - PromptBuilder.tsxを5段階のステップに拡張
+   - 画像アップロードステップを詳細選択の後に配置
+   - キーボードショートカットの更新（1-5キー）
+
+6. **型エラーの修正**
+   - テストファイルのJSON型アサーション追加
+   - Cloudflare Workers環境でImageオブジェクトが使えない問題の対処
+   - プロンプト生成時のundefined/null変換処理
+
+#### 成果物
+
+- PR #64: https://github.com/yurufuwayuya/visual-prompt-builder/pull/64
+- 画像アップロード機能（Base64変換、サイズ検証）
+- 3つのモデル選択（FLUX Variations/Fill/Canny）
+- 変換強度の調整機能
+- 生成画像のダウンロード機能
+
+#### 次のステップ
+
+- Replicate APIキーの環境変数設定と動作確認
+- エラーケースの詳細なテストとハンドリング改善
+- 画像生成のパフォーマンス最適化
+- UIの改善とアクセシビリティ対応
