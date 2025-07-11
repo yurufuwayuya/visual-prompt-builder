@@ -5,6 +5,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { Button } from '@/components/common/Button';
 import { API_ENDPOINTS } from '@/config/api';
 import { ImageGenerationSection } from '../ImageGenerationSection';
+import { ImageGenerationI2ISection } from '../ImageGenerationI2ISection';
 
 interface ResultStepProps {
   onNew: () => void;
@@ -643,6 +644,9 @@ export function ResultStep({ onNew }: ResultStepProps) {
 
       {/* 画像生成セクション */}
       <ImageGenerationSection prompt={generatedPrompt} />
+
+      {/* AI画像生成（i2i）セクション */}
+      <ImageGenerationI2ISection prompt={generatedPrompt} />
 
       {/* アクションボタン */}
       <div className="flex justify-center">

@@ -25,12 +25,47 @@ promptRoute.post(
   async (c) => {
     const { promptData, options } = c.req.valid('json');
 
-    console.log('[API] Received request:', JSON.stringify({ promptData, options }, null, 2));
+    // console.log('[API] Received request:', JSON.stringify({ promptData, options }, null, 2));
 
     try {
+      // customTextのundefinedをnullに変換
+      const normalizedPromptData = {
+        ...promptData,
+        category: {
+          ...promptData.category,
+          customText: promptData.category.customText ?? null,
+        },
+        details: promptData.details.map((detail) => ({
+          ...detail,
+          customText: detail.customText ?? null,
+        })),
+        colors: promptData.colors.map((color) => ({
+          ...color,
+          customText: color.customText ?? null,
+        })),
+        style: promptData.style
+          ? {
+              ...promptData.style,
+              customText: promptData.style.customText ?? null,
+            }
+          : undefined,
+        mood: promptData.mood
+          ? {
+              ...promptData.mood,
+              customText: promptData.mood.customText ?? null,
+            }
+          : undefined,
+        lighting: promptData.lighting
+          ? {
+              ...promptData.lighting,
+              customText: promptData.lighting.customText ?? null,
+            }
+          : undefined,
+      };
+
       // プロンプト生成
       const startTime = Date.now();
-      const prompt = await generatePrompt(promptData, options);
+      const prompt = await generatePrompt(normalizedPromptData, options);
 
       // 使用されたキーワードの抽出
       const usedKeywords = extractKeywords(prompt);
