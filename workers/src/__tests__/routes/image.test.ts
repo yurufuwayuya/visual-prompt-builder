@@ -19,6 +19,9 @@ vi.mock('../../services/imageProviders/replicate', () => ({
 describe('Image API Routes', () => {
   let app: Hono<{ Bindings: Bindings }>;
   let mockEnv: Bindings;
+  
+  // テスト用の1x1 PNG画像（Base64エンコード）
+  const TEST_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
   beforeEach(() => {
     app = new Hono<{ Bindings: Bindings }>();
@@ -78,8 +81,6 @@ describe('Image API Routes', () => {
         },
       });
 
-      const testImage =
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
       const response = await app.request(
         '/api/v1/image/generate',
@@ -89,7 +90,7 @@ describe('Image API Routes', () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            baseImage: testImage,
+            baseImage: TEST_IMAGE,
             prompt: 'A beautiful landscape',
             options: {
               width: 512,
@@ -117,8 +118,6 @@ describe('Image API Routes', () => {
       // API キーなしの環境
       const envWithoutKey = { ...mockEnv, IMAGE_API_KEY: undefined };
 
-      const testImage =
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
       const response = await app.request(
         '/api/v1/image/generate',
@@ -128,7 +127,7 @@ describe('Image API Routes', () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            baseImage: testImage,
+            baseImage: TEST_IMAGE,
             prompt: 'test prompt',
           }),
         },
@@ -151,8 +150,6 @@ describe('Image API Routes', () => {
         })
       );
 
-      const testImage =
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
       const response = await app.request(
         '/api/v1/image/generate',
@@ -162,7 +159,7 @@ describe('Image API Routes', () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            baseImage: testImage,
+            baseImage: TEST_IMAGE,
             prompt: 'test prompt',
           }),
         },
@@ -173,6 +170,125 @@ describe('Image API Routes', () => {
       const result = await response.json();
       expect(result.data.image).toBe('cached-image');
       expect(mockEnv.IMAGE_CACHE!.get).toHaveBeenCalled();
+    });
+
+    it('should handle different providers', async () => {
+      const openaiEnv = { ...mockEnv, IMAGE_PROVIDER: 'openai' };
+
+      const response = await app.request(
+        '/api/v1/image/generate',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            baseImage: TEST_IMAGE,
+            prompt: 'test prompt',
+          }),
+        },
+        openaiEnv
+      );
+
+      expect(response.status).toBe(500);
+      const result = await response.json();
+      expect(result.error).toContain('OpenAI API実装は準備中です');
+    });
+
+    it('should handle unsupported provider', async () => {
+      const unknownEnv = { ...mockEnv, IMAGE_PROVIDER: 'unknown' };
+
+      const response = await app.request(
+        '/api/v1/image/generate',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            baseImage: TEST_IMAGE,
+            prompt: 'test prompt',
+          }),
+        },
+        unknownEnv
+      );
+
+      expect(response.status).toBe(500);
+      const result = await response.json();
+      expect(result.error).toContain('サポートされていないプロバイダー');
+    });
+
+    it('should validate image format', async () => {
+      const response = await app.request(
+        '/api/v1/image/generate',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            baseImage: 'invalid-image-data',
+            prompt: 'test prompt',
+          }),
+        },
+        mockEnv
+      );
+
+      // Still should handle the request but might fail in processing
+      expect(response.status).toBe(500);
+    });
+
+    it('should handle request with custom options', async () => {
+      const { generateWithReplicate } = await import('../../services/imageProviders/replicate');
+      vi.mocked(generateWithReplicate).mockResolvedValueOnce({
+        image: 'generated-image',
+        generationTime: 3000,
+        model: 'replicate/flux-variations',
+        cost: { amount: 0.03, currency: 'USD' },
+      });
+
+      const response = await app.request(
+        '/api/v1/image/generate',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            baseImage: TEST_IMAGE,
+            prompt: 'test prompt',
+            options: {
+              width: 1024,
+              height: 1024,
+              strength: 0.8,
+              steps: 40,
+              guidanceScale: 8.0,
+              negativePrompt: 'ugly, blurry',
+              outputFormat: 'jpeg',
+            },
+          }),
+        },
+        mockEnv
+      );
+
+      expect(response.status).toBe(200);
+      const result = await response.json();
+      expect(result.success).toBe(true);
+      expect(generateWithReplicate).toHaveBeenCalledWith(
+        TEST_IMAGE,
+        'test prompt',
+        expect.objectContaining({
+          width: 1024,
+          height: 1024,
+          strength: 0.8,
+          steps: 40,
+          guidanceScale: 8.0,
+          negativePrompt: 'ugly, blurry',
+          outputFormat: 'jpeg',
+        }),
+        'test-api-key',
+        'flux-fill'
+      );
     });
   });
 

@@ -80,9 +80,14 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
   }
 
   try {
-    // キャッシュキーの生成
+    // キャッシュキーの生成 - 画像全体のハッシュを使用してキー衝突を防ぐ
+    const imageHash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(baseImage))
+      .then(hash => Array.from(new Uint8Array(hash))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join(''));
+    
     const cacheKey = await generateCacheKey('image', {
-      baseImage: baseImage.substring(0, 100), // 最初の100文字のみ使用
+      baseImage: imageHash,
       prompt,
       options: finalOptions,
     });
@@ -244,7 +249,7 @@ async function generateWithReplicate(
 async function generateWithOpenAI(
   _baseImage: string,
   _prompt: string,
-  _options: any,
+  _options: ImageGenerationOptions,
   _apiKey: string
 ): Promise<GenerateImageResponse> {
   // TODO: OpenAI API実装
@@ -254,7 +259,7 @@ async function generateWithOpenAI(
 async function generateWithStability(
   _baseImage: string,
   _prompt: string,
-  _options: any,
+  _options: ImageGenerationOptions,
   _apiKey: string
 ): Promise<GenerateImageResponse> {
   // TODO: Stability AI API実装

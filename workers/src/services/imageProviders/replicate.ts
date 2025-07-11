@@ -142,18 +142,60 @@ export async function generateWithReplicate(
 
   const outputImageUrl = finalPrediction.output[0];
 
-  // 画像をダウンロードしてBase64に変換
-  const imageResponse = await fetch(outputImageUrl);
-  if (!imageResponse.ok) {
-    throw new Error(`Failed to download generated image: ${imageResponse.status}`);
+  // 画像をダウンロードしてBase64に変換（リトライ機能付き）
+  const MAX_RETRIES = 3;
+  const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB limit
+  let lastError: Error | null = null;
+  let imageBuffer: ArrayBuffer;
+
+  for (let retry = 0; retry < MAX_RETRIES; retry++) {
+    try {
+      const imageResponse = await fetch(outputImageUrl);
+      if (!imageResponse.ok) {
+        throw new Error(`Failed to download generated image: ${imageResponse.status}`);
+      }
+
+      // 画像サイズチェック
+      const contentLength = imageResponse.headers.get('content-length');
+      if (contentLength && parseInt(contentLength) > MAX_IMAGE_SIZE) {
+        throw new Error('Generated image exceeds size limit (10MB)');
+      }
+
+      imageBuffer = await imageResponse.arrayBuffer();
+      
+      // バッファサイズの最終チェック
+      if (imageBuffer.byteLength > MAX_IMAGE_SIZE) {
+        throw new Error('Generated image exceeds size limit (10MB)');
+      }
+      
+      break; // 成功したのでループを抜ける
+    } catch (error) {
+      lastError = error as Error;
+      if (retry < MAX_RETRIES - 1) {
+        // 次のリトライまで待機（指数バックオフ）
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retry + 1)));
+      }
+    }
   }
 
-  const imageBuffer = await imageResponse.arrayBuffer();
-  const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+  if (lastError) {
+    throw lastError;
+  }
+  
+  // 大きな画像でもスタックオーバーフローを防ぐため、チャンク単位で処理
+  const uint8Array = new Uint8Array(imageBuffer);
+  let binary = '';
+  const chunkSize = 0x8000; // 32KB chunks
+  for (let i = 0; i < uint8Array.length; i += chunkSize) {
+    const chunk = uint8Array.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  const base64Image = btoa(binary);
 
   // コスト計算（Replicateの時間ベース課金）
   const predictTime = finalPrediction.metrics?.predict_time || 0;
-  const costPerSecond = 0.000225; // $0.000225/秒（Nvidia T4 GPUの料金）
+  // 環境変数でコスト単価を設定可能にする（デフォルト: $0.000225/秒）
+  const costPerSecond = 0.000225; // Note: 環境変数対応は将来的に検討
   const cost = predictTime * costPerSecond;
 
   return {
