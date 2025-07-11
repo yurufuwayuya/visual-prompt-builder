@@ -290,6 +290,101 @@ describe('Image API Routes', () => {
         'flux-fill'
       );
     });
+
+    it('should handle stability provider', async () => {
+      const stabilityEnv = { ...mockEnv, IMAGE_PROVIDER: 'stability' };
+
+      const response = await app.request(
+        '/api/v1/image/generate',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            baseImage: TEST_IMAGE,
+            prompt: 'test prompt',
+          }),
+        },
+        stabilityEnv
+      );
+
+      expect(response.status).toBe(500);
+      const result = await response.json();
+      expect(result.error).toContain('Stability AI API実装は準備中です');
+    });
+
+    it('should handle image generation timeout', async () => {
+      const { generateWithReplicate } = await import('../../services/imageProviders/replicate');
+      vi.mocked(generateWithReplicate).mockRejectedValueOnce(new Error('Image generation timed out'));
+
+      const response = await app.request(
+        '/api/v1/image/generate',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            baseImage: TEST_IMAGE,
+            prompt: 'test prompt',
+          }),
+        },
+        mockEnv
+      );
+
+      expect(response.status).toBe(500);
+      const result = await response.json();
+      expect(result.error).toContain('Image generation timed out');
+    });
+
+    it('should handle malformed API response', async () => {
+      const { generateWithReplicate } = await import('../../services/imageProviders/replicate');
+      vi.mocked(generateWithReplicate).mockRejectedValueOnce(new Error('Failed to download generated image: 404'));
+
+      const response = await app.request(
+        '/api/v1/image/generate',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            baseImage: TEST_IMAGE,
+            prompt: 'test prompt',
+          }),
+        },
+        mockEnv
+      );
+
+      expect(response.status).toBe(500);
+      const result = await response.json();
+      expect(result.error).toContain('Failed to download generated image: 404');
+    });
+
+    it('should handle invalid image format gracefully', async () => {
+      const { generateWithReplicate } = await import('../../services/imageProviders/replicate');
+      vi.mocked(generateWithReplicate).mockRejectedValueOnce(new Error('Invalid image format'));
+
+      const response = await app.request(
+        '/api/v1/image/generate',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            baseImage: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+            prompt: 'test prompt',
+          }),
+        },
+        mockEnv
+      );
+
+      expect(response.status).toBe(500);
+      const result = await response.json();
+      expect(result.error).toContain('Invalid image format');
+    });
   });
 
   describe('GET /api/v1/image/models', () => {
@@ -308,6 +403,36 @@ describe('Image API Routes', () => {
       expect(result.data).toHaveProperty('provider', 'replicate');
       expect(result.data).toHaveProperty('models');
       expect(Array.isArray(result.data.models)).toBe(true);
+    });
+
+    it('should return different models for different providers', async () => {
+      const openaiEnv = { ...mockEnv, IMAGE_PROVIDER: 'openai' };
+      const stabilityEnv = { ...mockEnv, IMAGE_PROVIDER: 'stability' };
+
+      // Test OpenAI models
+      const openaiResponse = await app.request(
+        '/api/v1/image/models',
+        { method: 'GET' },
+        openaiEnv
+      );
+      expect(openaiResponse.status).toBe(200);
+      const openaiResult = await openaiResponse.json();
+      expect(openaiResult.data.provider).toBe('openai');
+      expect(openaiResult.data.models).toHaveLength(1);
+      expect(openaiResult.data.models[0].id).toBe('dall-e-3');
+
+      // Test Stability models
+      const stabilityResponse = await app.request(
+        '/api/v1/image/models',
+        { method: 'GET' },
+        stabilityEnv
+      );
+      expect(stabilityResponse.status).toBe(200);
+      const stabilityResult = await stabilityResponse.json();
+      expect(stabilityResult.data.provider).toBe('stability');
+      expect(stabilityResult.data.models).toHaveLength(2);
+      expect(stabilityResult.data.models[0].id).toBe('sd-3.5-large');
+      expect(stabilityResult.data.models[1].id).toBe('stable-image-ultra');
     });
   });
 });
