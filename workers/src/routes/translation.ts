@@ -121,7 +121,7 @@ translationRoute.post('/trans', zValidator('json', translationSchema), async (c)
 translationRoute.post('/translate', async (c) => {
   try {
     // 最小限の実装でテスト
-    const body = (await c.req.json()) as TranslationRequest;
+    const body = await c.req.json<TranslationRequest>();
 
     return c.json({
       success: true,
@@ -233,8 +233,9 @@ translationRoute.post('/translate-old',
     const errorResponse = createErrorResponse(error, '翻訳に失敗しました');
     // デバッグ用にスタックトレースを追加
     if (error instanceof Error) {
-      (errorResponse as any).stack = error.stack;
-      (errorResponse as any).name = error.name;
+      const debugResponse = errorResponse as { stack?: string; name?: string };
+      debugResponse.stack = error.stack;
+      debugResponse.name = error.name;
     }
     return c.json(errorResponse, 500);
   }
@@ -381,13 +382,13 @@ async function translateWithMyMemory(
       throw new Error(`MyMemory API returned ${response.status}: ${errorText}`);
     }
 
-interface MyMemoryResponse {
+    interface MyMemoryResponse {
       responseData: {
         translatedText: string;
       };
       responseStatus: number;
     }
-    const data = (await response.json()) as MyMemoryResponse;
+    const data = await response.json<MyMemoryResponse>();
     // console.log('MyMemory API response data:', data);
 
     // レスポンスの検証

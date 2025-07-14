@@ -3,6 +3,7 @@ import { usePromptStore } from '@/stores/promptStore';
 import { useToastStore } from '@/stores/toastStore';
 import { Button } from '@/components/common/Button';
 import { Upload, X } from 'lucide-react';
+import { validateImageSize, resizeImage } from '@/services/imageGeneration';
 
 export function ImageStep({ onNext }: { onNext: () => void }) {
   const { setReferenceImage } = usePromptStore();
@@ -37,10 +38,44 @@ export function ImageStep({ onNext }: { onNext: () => void }) {
     try {
       // 画像をBase64に変換
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        setSelectedImage(base64);
-        setReferenceImage(base64);
+      reader.onload = async (e) => {
+        try {
+          let base64 = e.target?.result as string;
+          if (!base64) {
+            throw new Error('画像データの読み込みに失敗しました');
+          }
+
+          // 画像サイズをチェックし、必要に応じてリサイズ
+          if (!validateImageSize(base64, 5)) {
+            addToast({
+              type: 'info',
+              message: '画像をリサイズしています...',
+            });
+            base64 = await resizeImage(base64, 1920, 1920, 0.85);
+          }
+
+          setSelectedImage(base64);
+          setReferenceImage(base64);
+          addToast({
+            type: 'success',
+            message: '画像をアップロードしました',
+          });
+        } catch (error) {
+          console.error('画像処理エラー:', error);
+          addToast({
+            type: 'error',
+            message: '画像の処理に失敗しました',
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      reader.onerror = () => {
+        console.error('FileReader error');
+        addToast({
+          type: 'error',
+          message: '画像の読み込みに失敗しました',
+        });
         setIsLoading(false);
       };
       reader.readAsDataURL(file);
@@ -112,7 +147,7 @@ export function ImageStep({ onNext }: { onNext: () => void }) {
           <div className="relative">
             <img
               src={selectedImage}
-              alt="選択された画像"
+              alt="アップロードされた参考画像のプレビュー"
               className="max-w-full h-auto rounded-lg shadow-lg max-h-[400px] mx-auto block"
             />
             <button

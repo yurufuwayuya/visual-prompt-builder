@@ -70,17 +70,25 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
   const handleDownload = () => {
     if (!generatedImage) return;
 
-    const link = document.createElement('a');
-    link.href = generatedImage;
-    link.download = `generated-image-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const link = document.createElement('a');
+      link.href = generatedImage;
+      link.download = `generated-image-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-    addToast({
-      type: 'success',
-      message: '画像をダウンロードしました',
-    });
+      addToast({
+        type: 'success',
+        message: '画像をダウンロードしました',
+      });
+    } catch (error) {
+      console.error('Download failed:', error);
+      addToast({
+        type: 'error',
+        message: 'ダウンロードに失敗しました',
+      });
+    }
   };
 
   if (!referenceImage) {
@@ -105,9 +113,8 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
           <p className="text-sm font-medium mb-2">参考画像</p>
           <img
             src={referenceImage}
-            alt="参考画像"
-            className="max-w-xs h-auto rounded border border-gray-300"
-            style={{ maxHeight: '200px' }}
+            alt="AI画像生成の参考画像"
+            className="max-w-xs h-auto rounded border border-gray-300 max-h-[200px]"
           />
         </div>
 
@@ -119,7 +126,9 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
           <select
             id="model-select"
             value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value as 'flux-fill' | 'flux-variations' | 'flux-canny')}
+            onChange={(e) =>
+              setSelectedModel(e.target.value as 'flux-fill' | 'flux-variations' | 'flux-canny')
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
             disabled={isGenerating}
           >
@@ -183,9 +192,8 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
             <p className="text-sm font-medium">生成結果</p>
             <img
               src={generatedImage}
-              alt="生成された画像"
-              className="max-w-full h-auto rounded border border-gray-300"
-              style={{ maxHeight: '400px' }}
+              alt="AIによって生成された画像結果"
+              className="max-w-full h-auto rounded border border-gray-300 max-h-[400px]"
             />
             <Button onClick={handleDownload} variant="secondary" className="w-full">
               <Download className="w-4 h-4 mr-2" />

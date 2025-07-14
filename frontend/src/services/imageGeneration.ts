@@ -36,17 +36,29 @@ export async function generateImage(
       },
       body: JSON.stringify({
         prompt: options.prompt,
-        referenceImage: options.referenceImage,
-        model: options.model || 'flux-variations',
-        strength: options.strength || 0.8,
+        baseImage: options.referenceImage, // Backend expects 'baseImage', not 'referenceImage'
+        options: {
+          model: options.model || 'flux-variations',
+          strength: options.strength || 0.8,
+        },
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      // Handle both simple error strings and complex error objects
+      let errorMessage = '画像生成に失敗しました';
+      if (typeof errorData.error === 'string') {
+        errorMessage = errorData.error;
+      } else if (errorData.error && typeof errorData.error === 'object') {
+        // Handle Zod validation errors or other error objects
+        errorMessage = errorData.error.message || errorData.error.toString() || errorMessage;
+      } else if (errorData.message) {
+        errorMessage = errorData.message;
+      }
       return {
         success: false,
-        error: errorData.error || `画像生成に失敗しました (${response.status})`,
+        error: `${errorMessage} (${response.status})`,
       };
     }
 
@@ -94,4 +106,59 @@ export function validateImageSize(base64: string, maxSizeMB: number = 5): boolea
   const sizeInBytes = (base64Data.length * 3) / 4;
   const sizeInMB = sizeInBytes / (1024 * 1024);
   return sizeInMB <= maxSizeMB;
+}
+
+/**
+ * 画像をリサイズしてBase64形式で返す
+ * @param base64 元のBase64画像
+ * @param maxWidth 最大幅
+ * @param maxHeight 最大高さ
+ * @param quality 画質 (0.0 - 1.0)
+ */
+export async function resizeImage(
+  base64: string,
+  maxWidth: number = 1024,
+  maxHeight: number = 1024,
+  quality: number = 0.9
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        // アスペクト比を維持してリサイズ
+        let { width, height } = img;
+        if (width > maxWidth || height > maxHeight) {
+          const aspectRatio = width / height;
+          if (width > height) {
+            width = maxWidth;
+            height = maxWidth / aspectRatio;
+          } else {
+            height = maxHeight;
+            width = maxHeight * aspectRatio;
+          }
+        }
+
+        // Canvas でリサイズ
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          throw new Error('Canvas context が取得できませんでした');
+        }
+
+        // 画像を描画
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Base64に変換
+        const resizedBase64 = canvas.toDataURL('image/jpeg', quality);
+        resolve(resizedBase64);
+      } catch (error) {
+        console.error('画像リサイズエラー:', error);
+        reject(error);
+      }
+    };
+    img.onerror = () => reject(new Error('画像の読み込みに失敗しました'));
+    img.src = base64;
+  });
 }
