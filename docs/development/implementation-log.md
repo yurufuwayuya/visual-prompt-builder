@@ -219,12 +219,12 @@ Builderプロジェクトの実装進捗を詳細に記録するためのログ�
 
 2. **APIエンドポイントの整理**
 
-   ```text
+   ```
    実際のエンドポイント:
    - POST /api/v1/prompt/generate - プロンプト生成
    - POST /api/v1/trans - 翻訳
    - GET /health - ヘルスチェック
-````
+   ```
 
 3. **フロントエンド側の修正**
    - `shared/src/utils/api.ts` の翻訳APIパスを修正

@@ -26,8 +26,8 @@ source .env
 set +a
 
 # Map REPLICATE_API_KEY to IMAGE_API_KEY for wrangler
-if [ ! -z "$REPLICATE_API_KEY" ]; then
-    export IMAGE_API_KEY="$REPLICATE_API_KEY"
+if [ -n "${REPLICATE_API_KEY:-}" ]; then
+    export IMAGE_API_KEY="${REPLICATE_API_KEY}"
     echo "✅ IMAGE_API_KEY を設定しました"
 else
     echo "⚠️  REPLICATE_API_KEY が設定されていません"

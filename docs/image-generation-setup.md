@@ -39,7 +39,7 @@ Builderの画像生成（Image-to-Image）機能を使用するための環境�
 
 ```bash
 # .env
-REPLICATE_API_KEY=r8_your_actual_api_key_here
+REPLICATE_API_KEY=<YOUR_REPLICATE_API_KEY>
 IMAGE_PROVIDER=replicate
 ```
 
