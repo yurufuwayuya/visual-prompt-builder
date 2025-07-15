@@ -58,4 +58,4 @@ test-results/
 
 # Problematic directories (should be removed but no permission)
 /src/
-/visual-prompt-builder/
+/visual-prompt-builder/.dev.vars

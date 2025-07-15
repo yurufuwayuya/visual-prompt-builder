@@ -77,15 +77,30 @@ app.onError((err, c) => {
   // 開発環境でのみスタックトレースを露出
   const isDevelopment = c.env.ENVIRONMENT === 'development' || c.req.url.includes('localhost');
 
+  // Handle Zod validation errors specially
+  let errorMessage = err.message;
+  let statusCode = 500;
+
+  // Check if it's a Zod error (has issues property)
+  if (err.name === 'ZodError' && 'issues' in err && Array.isArray((err as any).issues)) {
+    statusCode = 400;
+    // Extract validation error messages
+    const issues = (err as { issues: Array<{ message: string }> }).issues;
+    errorMessage = issues.map((issue: { message: string }) => issue.message).join(', ');
+  }
+
   return c.json(
     {
       success: false,
-      error: err.message,
-      ...(isDevelopment && { stack: err.stack }),
-      name: err.name,
+      error: errorMessage,
+      ...(isDevelopment && {
+        stack: err.stack,
+        name: err.name,
+        // Don't include the raw error object to avoid React rendering issues
+      }),
       timestamp: new Date().toISOString(),
     },
-    500
+    statusCode
   );
 });
 
