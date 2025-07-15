@@ -3,6 +3,7 @@ import { Toaster } from './components/common/Toaster';
 import { Home } from './pages/Home';
 import { PromptBuilder } from './pages/PromptBuilder';
 import { History } from './pages/History';
+import { ImageToImage } from './pages/ImageToImage';
 import { KeyboardShortcutsHelp } from './components/layout/KeyboardShortcutsHelp';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/builder" element={<PromptBuilder />} />
           <Route path="/history" element={<History />} />
+          <Route path="/i2i" element={<ImageToImage />} />
         </Routes>
         <Toaster />
         <KeyboardShortcutsHelp />

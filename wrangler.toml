@@ -16,7 +16,7 @@ port = 8787
 local_protocol = "http"
 
 # Default environment (development)
-vars = { ENVIRONMENT = "development" }
+vars = { ENVIRONMENT = "development", IMAGE_PROVIDER = "replicate" }
 
 # KV namespaces for development
 [[kv_namespaces]]
@@ -33,6 +33,11 @@ preview_id = "dev_session_preview"
 binding = "RATE_LIMIT_KV"
 id = "dev_rate_limit_namespace"
 preview_id = "dev_rate_limit_preview"
+
+[[kv_namespaces]]
+binding = "IMAGE_CACHE"
+id = "dev_image_cache_namespace"
+preview_id = "dev_image_cache_preview"
 
 # Staging environment
 [env.staging]

@@ -5,13 +5,11 @@
 import { createDataUrl } from '../../utils/imageProcessing';
 
 // Replicateの画像生成モデル
+// Using specific versions for each model
 const REPLICATE_MODELS = {
-  'flux-fill':
-    'xlabs-ai/flux-fill:c5c96dff71308ddaf96f8ab683c1329e3b1a15c1b9f82e573419bf4e544cbfdb',
-  'flux-variations':
-    'black-forest-labs/flux-1.1-pro:8f3e0f24cf10b5a2e97c7067c0fb5a14fe6b8923e455a54e893c30bb450de13f',
-  'flux-canny':
-    'xlabs-ai/flux-canny:433b22c332dd9e3a8ddb7b7c8e088e4de18d825e2b6bcd853e088bb0f1e0cf11',
+  'flux-fill': 'black-forest-labs/flux-fill-dev', // Inpainting model
+  'flux-variations': 'black-forest-labs/flux-redux-schnell', // Fast image variations
+  'flux-canny': 'black-forest-labs/flux-canny-dev', // Edge-guided generation
 } as const;
 
 type ModelId = keyof typeof REPLICATE_MODELS;
@@ -46,6 +44,56 @@ interface ReplicatePredictionResponse {
 }
 
 /**
+ * Get model-specific input parameters
+ */
+function getModelSpecificInput(
+  modelId: ModelId,
+  params: {
+    image: string;
+    prompt: string;
+    options: ReplicateOptions;
+  }
+): Record<string, unknown> {
+  const { image, prompt, options } = params;
+
+  switch (modelId) {
+    case 'flux-fill':
+      // flux-fill-pro parameters
+      return {
+        prompt: prompt,
+        image: image,
+        steps: options.steps,
+        guidance: options.guidanceScale,
+        output_format: options.outputFormat,
+      };
+
+    case 'flux-variations':
+      // flux-redux-schnell parameters
+      return {
+        redux_image: image, // Note: flux-redux uses redux_image, not image
+        num_outputs: 1,
+        megapixels: '1', // Use 1MP for 1024x1024
+        aspect_ratio: '1:1',
+        output_format: options.outputFormat,
+        // Note: flux-redux doesn't use prompt or guidance
+      };
+
+    case 'flux-canny':
+      // flux-schnell parameters (text-to-image)
+      return {
+        prompt: prompt,
+        num_outputs: 1,
+        aspect_ratio: '1:1',
+        output_format: options.outputFormat,
+        output_quality: 90,
+      };
+
+    default:
+      throw new Error(`Unknown model: ${modelId}`);
+  }
+}
+
+/**
  * Replicate APIで画像を生成
  */
 export async function generateWithReplicate(
@@ -71,27 +119,25 @@ export async function generateWithReplicate(
     : createDataUrl(baseImage, 'image/png');
 
   // Replicate APIに予測リクエストを送信
-  const createResponse = await fetch('https://api.replicate.com/v1/predictions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      version: REPLICATE_MODELS[modelId],
-      input: {
-        image: imageDataUrl,
-        prompt: prompt,
-        width: options.width,
-        height: options.height,
-        strength: options.strength,
-        num_inference_steps: options.steps,
-        guidance_scale: options.guidanceScale,
-        negative_prompt: options.negativePrompt || '',
-        output_format: options.outputFormat,
+  // Official models use the model endpoint directly without version
+  const modelName = REPLICATE_MODELS[modelId];
+  const createResponse = await fetch(
+    `https://api.replicate.com/v1/models/${modelName}/predictions`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
-    }),
-  });
+      body: JSON.stringify({
+        input: getModelSpecificInput(modelId, {
+          image: imageDataUrl,
+          prompt: prompt,
+          options: options,
+        }),
+      }),
+    }
+  );
 
   if (!createResponse.ok) {
     const error = await createResponse.text();

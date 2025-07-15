@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Palette, Clock, Sparkles, Zap, Heart } from 'lucide-react';
+import { Palette, Clock, Sparkles, Zap, Heart, Image } from 'lucide-react';
 
 export function Home() {
   return (
@@ -21,7 +21,7 @@ export function Home() {
         </header>
 
         <main className="py-8 sm:py-12 lg:py-16">
-          <div className="grid gap-6 sm:gap-8 md:grid-cols-2 max-w-3xl mx-auto">
+          <div className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
             <Link
               to="/builder"
               className="group relative overflow-hidden"
@@ -77,6 +77,42 @@ export function Home() {
                 </p>
                 <div className="mt-4 flex items-center text-purple-600 font-semibold text-base group-hover:text-purple-700">
                   <span>履歴を確認</span>
+                  <svg
+                    className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 7l5 5m0 0l-5 5m5-5H6"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              to="/i2i"
+              className="group relative overflow-hidden"
+              aria-label="Image-to-Image生成"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-teal-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              <div className="relative rounded-xl border-2 border-gray-100 bg-white p-6 sm:p-8 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] hover:border-green-200 duration-300">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-green-100 rounded-xl group-hover:bg-green-200 transition-colors">
+                    <Image className="h-8 w-8 text-green-600" aria-hidden="true" />
+                  </div>
+                  <Sparkles className="h-5 w-5 text-teal-400 animate-pulse" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">画像から生成</h2>
+                <p className="mt-2 text-sm sm:text-base text-gray-600 leading-relaxed">
+                  参考画像をベースに新しい画像を生成します
+                </p>
+                <div className="mt-4 flex items-center text-green-600 font-semibold text-base group-hover:text-green-700">
+                  <span>i2i生成</span>
                   <svg
                     className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform"
                     fill="none"

@@ -30,6 +30,6 @@
     }
   },
   "include": ["src"],
-  "exclude": ["src/test-imports.ts", "src/test/**"],
+  "exclude": ["src/test-imports.ts", "src/test/**", "**/*.test.ts", "**/*.test.tsx"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
