@@ -59,3 +59,7 @@ test-results/
 # Problematic directories (should be removed but no permission)
 /src/
 /visual-prompt-builder/.dev.vars
+
+# Environment files with secrets
+.dev.vars
+workers/.dev.vars
