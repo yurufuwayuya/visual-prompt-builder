@@ -13,11 +13,17 @@ export interface Bindings {
   IMAGE_API_KEY?: string;
   IMAGE_PROVIDER?: 'replicate' | 'openai' | 'stability';
 
+  // R2 設定
+  R2_CUSTOM_DOMAIN?: string; // R2バケットのカスタムドメイン
+
   // KV Namespaces
   CACHE: KVNamespace;
   SESSION: KVNamespace;
   RATE_LIMIT_KV: KVNamespace;
   IMAGE_CACHE?: KVNamespace;
+
+  // R2 Bucket
+  IMAGE_BUCKET: R2Bucket;
 }
 
 export interface Variables {

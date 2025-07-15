@@ -39,6 +39,12 @@ binding = "IMAGE_CACHE"
 id = "dev_image_cache_namespace"
 preview_id = "dev_image_cache_preview"
 
+# R2 bucket for temporary image storage
+[[r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "visual-prompt-builder-images-dev"
+preview_bucket_name = "visual-prompt-builder-images-preview"
+
 # Staging environment
 [env.staging]
 name = "visual-prompt-builder-staging"
@@ -59,6 +65,10 @@ id = "staging_rate_limit_namespace"
 [[env.staging.kv_namespaces]]
 binding = "IMAGE_CACHE"
 id = "staging_image_cache_namespace"
+
+[[env.staging.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "visual-prompt-builder-images-staging"
 
 # Production environment
 [env.production]
@@ -81,6 +91,10 @@ id = "f4948d4c905944cbbd95aa798985179a"
 binding = "IMAGE_CACHE"
 id = "production_image_cache_namespace"
 
+[[env.production.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "visual-prompt-builder-images"
+
 # Routes (will be configured later)
 # [[env.production.routes]]
 # pattern = "api.example.com/*"
@@ -92,3 +106,7 @@ id = "production_image_cache_namespace"
 
 # Pages configuration
 pages_build_output_dir = "frontend/dist"
+
+# Scheduled worker for cleanup tasks
+[triggers]
+crons = ["0 2 * * *"] # Run at 2 AM UTC every day

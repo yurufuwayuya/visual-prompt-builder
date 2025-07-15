@@ -3,6 +3,8 @@
  */
 
 import { createDataUrl } from '../../utils/imageProcessing';
+import { uploadToR2 } from '../r2Storage';
+import type { Bindings } from '../../types';
 
 // Replicateの画像生成モデル
 // Using official model names (versions are handled automatically by Replicate)
@@ -101,7 +103,8 @@ export async function generateWithReplicate(
   prompt: string,
   options: ReplicateOptions,
   apiKey: string,
-  modelId: ModelId = 'flux-fill'
+  modelId: ModelId = 'flux-fill',
+  env?: Bindings
 ): Promise<{
   image: string;
   generationTime: number;
@@ -118,6 +121,27 @@ export async function generateWithReplicate(
     ? baseImage
     : createDataUrl(baseImage, 'image/png');
 
+  // Upload image to R2 and get HTTP URL
+  let imageUrl: string;
+  let uploadedImageKey: string | null = null;
+
+  if (env?.IMAGE_BUCKET && env.R2_CUSTOM_DOMAIN) {
+    try {
+      const uploadResult = await uploadToR2(env.IMAGE_BUCKET, imageDataUrl, {
+        keyPrefix: 'replicate-input',
+        expiresIn: 3600, // 1 hour
+        customDomain: env.R2_CUSTOM_DOMAIN,
+      });
+      imageUrl = uploadResult.url;
+      uploadedImageKey = uploadResult.key;
+    } catch (error) {
+      console.error('Failed to upload image to R2:', error);
+      throw new Error('Failed to prepare image for processing');
+    }
+  } else {
+    throw new Error('R2 configuration missing. Please set R2_CUSTOM_DOMAIN environment variable.');
+  }
+
   // Replicate APIに予測リクエストを送信
   // Official models use the model endpoint directly without version
   const modelName = REPLICATE_MODELS[modelId];
@@ -131,7 +155,7 @@ export async function generateWithReplicate(
       },
       body: JSON.stringify({
         input: getModelSpecificInput(modelId, {
-          image: imageDataUrl,
+          image: imageUrl, // Use HTTP URL instead of data URL
           prompt: prompt,
           options: options,
         }),
@@ -241,6 +265,16 @@ export async function generateWithReplicate(
     binary += String.fromCharCode.apply(null, Array.from(chunk));
   }
   const base64Image = btoa(binary);
+
+  // Clean up uploaded input image from R2
+  if (uploadedImageKey && env?.IMAGE_BUCKET) {
+    try {
+      await env.IMAGE_BUCKET.delete(uploadedImageKey);
+    } catch (error) {
+      console.error('Failed to clean up uploaded image:', error);
+      // Don't throw here, as the main operation succeeded
+    }
+  }
 
   // コスト計算（Replicateの時間ベース課金）
   const predictTime = finalPrediction.metrics?.predict_time || 0;

@@ -81,11 +81,14 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
 
   try {
     // キャッシュキーの生成 - 画像全体のハッシュを使用してキー衝突を防ぐ
-    const imageHash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(baseImage))
-      .then(hash => Array.from(new Uint8Array(hash))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join(''));
-    
+    const imageHash = await crypto.subtle
+      .digest('SHA-256', new TextEncoder().encode(baseImage))
+      .then((hash) =>
+        Array.from(new Uint8Array(hash))
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('')
+      );
+
     const cacheKey = await generateCacheKey('image', {
       baseImage: imageHash,
       prompt,
@@ -122,7 +125,8 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
           baseImage,
           prompt,
           finalOptions,
-          c.env.IMAGE_API_KEY
+          c.env.IMAGE_API_KEY,
+          c.env
         );
         break;
       case 'openai':
@@ -215,7 +219,8 @@ async function generateWithReplicate(
   baseImage: string,
   prompt: string,
   options: ImageGenerationOptions,
-  apiKey: string
+  apiKey: string,
+  env?: Bindings
 ): Promise<GenerateImageResponse> {
   try {
     const result = await replicateGenerate(
@@ -231,7 +236,8 @@ async function generateWithReplicate(
         outputFormat: options.outputFormat,
       },
       apiKey,
-      'flux-fill' // デフォルトモデル
+      'flux-fill', // デフォルトモデル
+      env
     );
 
     return {

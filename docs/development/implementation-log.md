@@ -117,7 +117,6 @@ Builderプロジェクトの実装進捗を詳細に記録するためのログ�
 - 今後のための注意点
 
 ```markdown
-
 ---
 
 ## 2025-01-08 - プロンプト生成APIの調査と動作確認
@@ -218,25 +217,25 @@ Builderプロジェクトの実装進捗を詳細に記録するためのログ�
    - ルーティング設定の確認と修正
 
 2. **APIエンドポイントの整理**
+```text
+実際のエンドポイント:
 
-   ```
-   実際のエンドポイント:
-   - POST /api/v1/prompt/generate - プロンプト生成
-   - POST /api/v1/trans - 翻訳
-   - GET /health - ヘルスチェック
-   ```
+- POST /api/v1/prompt/generate - プロンプト生成
+- POST /api/v1/trans - 翻訳
+- GET /health - ヘルスチェック
+```
 
 3. **フロントエンド側の修正**
-   - `shared/src/utils/api.ts` の翻訳APIパスを修正
-   - `/api/v1/translation/trans` → `/api/v1/trans`
+- `shared/src/utils/api.ts` の翻訳APIパスを修正
+- `/api/v1/translation/trans` → `/api/v1/trans`
 
 #### 問題の原因
 
 - ルーターの登録時のパスとハンドラーのパスの組み合わせに関する誤解
 - `app.route('/api/v1/translation', translationRoute)` で登録されたルートは、
-  `translationRoute.post('/trans')` のハンドラーに対して
-  `/api/v1/translation/trans` ではなく `/api/v1/trans`
-  でアクセスする必要があった
+`translationRoute.post('/trans')` のハンドラーに対して
+`/api/v1/translation/trans` ではなく `/api/v1/trans`
+でアクセスする必要があった
 
 #### 成果物
 
@@ -260,18 +259,18 @@ Builderプロジェクトの実装進捗を詳細に記録するためのログ�
 プロンプト生成時のカスタム値翻訳機能の実装：
 
 1. **問題の特定**
-   - カスタム入力値が日本語の場合でも英語翻訳されない
-   - 選択肢の英語値は正しく使用されているが、カスタム値が未翻訳
+- カスタム入力値が日本語の場合でも英語翻訳されない
+- 選択肢の英語値は正しく使用されているが、カスタム値が未翻訳
 
 2. **実装内容**
-   - プロンプト生成前にカスタム値を翻訳するロジックを追加
-   - `promptGenerator.ts` で翻訳APIを呼び出す処理を実装
-   - カテゴリーごとにカスタム値を収集し、一括翻訳
+- プロンプト生成前にカスタム値を翻訳するロジックを追加
+- `promptGenerator.ts` で翻訳APIを呼び出す処理を実装
+- カテゴリーごとにカスタム値を収集し、一括翻訳
 
 3. **技術的な工夫**
-   - 翻訳が必要なカスタム値のみを抽出
-   - エラー時は元の値を使用するフォールバック
-   - デバッグログで翻訳プロセスを可視化
+- 翻訳が必要なカスタム値のみを抽出
+- エラー時は元の値を使用するフォールバック
+- デバッグログで翻訳プロセスを可視化
 
 #### 成果物
 
@@ -295,32 +294,32 @@ Builderプロジェクトの実装進捗を詳細に記録するためのログ�
 PR #64のCodeRabbitレビューコメントに基づいて、以下の改善を実装：
 
 1. **型安全性の改善**
-   - translation.tsのany型使用を具体的な型に置き換え
-   - `await c.req.json<TranslationRequest>()` 形式に統一
-   - MyMemoryResponse インターフェイスを定義して型安全性を向上
+- translation.tsのany型使用を具体的な型に置き換え
+- `await c.req.json<TranslationRequest>()` 形式に統一
+- MyMemoryResponse インターフェイスを定義して型安全性を向上
 
 2. **アクセシビリティの改善**
-   - 画像のalt属性をより具体的で意味のあるテキストに変更
-   - 「アップロードされた参考画像のプレビュー」「AI画像生成の参考画像」など
+- 画像のalt属性をより具体的で意味のあるテキストに変更
+- 「アップロードされた参考画像のプレビュー」「AI画像生成の参考画像」など
 
 3. **UIの改善**
-   - インラインスタイルをTailwindクラスに置き換え
-   - `max-h-[400px]` などのユーティリティクラスを使用
+- インラインスタイルをTailwindクラスに置き換え
+- `max-h-[400px]` などのユーティリティクラスを使用
 
 4. **エラーハンドリングの改善**
-   - ダウンロード処理にtry-catchブロックを追加
-   - FileReaderのonerrorハンドラーを実装
-   - より詳細なエラーメッセージとログ出力
+- ダウンロード処理にtry-catchブロックを追加
+- FileReaderのonerrorハンドラーを実装
+- より詳細なエラーメッセージとログ出力
 
 5. **パフォーマンスの改善**
-   - 画像リサイズ機能を実装（resizeImage関数）
-   - 5MB以上の画像を自動的にリサイズ
-   - Canvas APIを使用して最適化
+- 画像リサイズ機能を実装（resizeImage関数）
+- 5MB以上の画像を自動的にリサイズ
+- Canvas APIを使用して最適化
 
 6. **テストカバレッジの追加**
-   - ImageStep.test.tsxを新規作成
-   - 主要な機能とエッジケースをカバー
-   - FileReaderのモックを実装
+- ImageStep.test.tsxを新規作成
+- 主要な機能とエッジケースをカバー
+- FileReaderのモックを実装
 
 #### 成果物
 
@@ -345,17 +344,17 @@ PR #64のCodeRabbitレビューコメントに基づいて、以下の改善を�
 翻訳APIのレスポンス形式不一致によるバグの修正：
 
 1. **バグの原因**
-   - 翻訳APIが単一の翻訳テキストを返すが、コードは配列を期待
-   - `translations[0]` へのアクセスでundefinedエラー
+- 翻訳APIが単一の翻訳テキストを返すが、コードは配列を期待
+- `translations[0]` へのアクセスでundefinedエラー
 
 2. **修正内容**
-   - APIレスポンスを直接文字列として扱うように修正
-   - 型安全性を確保するためのチェックを追加
+- APIレスポンスを直接文字列として扱うように修正
+- 型安全性を確保するためのチェックを追加
 
 3. **動作確認**
-   - 日本語カスタム値 → 英語翻訳 ✓
-   - 選択肢の英語値使用 ✓
-   - プロンプト生成成功 ✓
+- 日本語カスタム値 → 英語翻訳 ✓
+- 選択肢の英語値使用 ✓
+- プロンプト生成成功 ✓
 
 #### 成果物
 
@@ -373,28 +372,28 @@ PR #64のCodeRabbitレビューコメントに基づいて、以下の改善を�
 プロンプト生成時にカスタム項目の値が正しく英語に翻訳されない問題を修正した。
 
 1. **問題の詳細**
-   - 日本語で入力されたカスタム値（例：「イラストや」）がそのまま英語プロンプトに含まれていた
-   - 原因：カスタム値に対する翻訳処理が実装されていなかった
+- 日本語で入力されたカスタム値（例：「イラストや」）がそのまま英語プロンプトに含まれていた
+- 原因：カスタム値に対する翻訳処理が実装されていなかった
 
 2. **解決方法**
-   - `/workers/src/services/promptGenerator.ts` に翻訳処理を追加
-   - カスタム値を持つ選択項目を収集し、翻訳APIに送信
-   - 翻訳された値でプロンプトを生成するよう修正
+- `/workers/src/services/promptGenerator.ts` に翻訳処理を追加
+- カスタム値を持つ選択項目を収集し、翻訳APIに送信
+- 翻訳された値でプロンプトを生成するよう修正
 
 3. **実装の詳細**
-   ```typescript
-   // カスタム値を収集
-   const customTranslations = new Map<string, string>();
-   for (const [categoryId, selections] of Object.entries(
-     promptData.selectedDetails
-   )) {
-     for (const selection of selections) {
-       if (selection.customValue) {
-         // カスタム値を翻訳
-       }
-     }
-   }
-   ```
+```typescript
+// カスタム値を収集
+const customTranslations = new Map<string, string>();
+for (const [categoryId, selections] of Object.entries(
+  promptData.selectedDetails
+)) {
+  for (const selection of selections) {
+    if (selection.customValue) {
+      // カスタム値を翻訳
+    }
+  }
+}
+````
 
 #### 成果物
 
@@ -989,6 +988,65 @@ PR #65のCodeRabbitレビューコメントで指摘されたドキュメント�
 - 自動化されたコードレビューツールの指摘は品質向上に有効
 - ドキュメントの構造化により後から読みやすくなる
 - 感情ログと実装ログの役割分担を明確に保つ重要性
+
+---
+
+## 2025-07-15 - Cloudflare R2統合によるReplicate API問題の解決
+
+### 実施内容 (10:30 - 11:00)
+
+#### 背景
+
+GitHub Issue #66で報告された問題：Replicate APIがdata URLを受け付けず、HTTP(S)
+URLのみを受け付けることが判明。
+
+#### 実施内容
+
+1. **Cloudflare R2統合の実装**
+   - `r2Storage.ts` - R2へのアップロード・削除機能を実装
+   - 一時画像ストレージとして使用（24時間後に自動削除）
+   - data URL → R2アップロード → HTTP URL変換の処理フロー
+
+2. **wrangler.toml更新**
+   - R2バケットバインディングを全環境に追加
+   - スケジュールワーカー設定（毎日2AM UTCに期限切れ画像削除）
+
+3. **Replicate API実装の修正**
+   - `generateWithReplicate`関数にR2アップロード処理を追加
+   - HTTP URLをReplicate APIに送信するよう変更
+   - 処理完了後の一時画像削除を実装
+
+4. **環境変数の追加**
+   - `R2_CUSTOM_DOMAIN` - R2バケットのカスタムドメイン
+   - `IMAGE_BUCKET` - R2バケットバインディング
+
+5. **テストとエラーハンドリング**
+   - R2ストレージサービスのユニットテスト作成
+   - エラーハンドリングの強化
+
+6. **ドキュメント更新**
+   - セットアップガイドにR2設定手順を追加
+   - トラブルシューティング情報を更新
+
+#### 成果物
+
+- `/workers/src/services/r2Storage.ts` - R2ストレージサービス
+- `/workers/src/scheduled.ts` - スケジュールワーカー
+- `/workers/src/__tests__/services/r2Storage.test.ts` - R2サービステスト
+- wrangler.toml - R2バインディング追加
+- ドキュメント更新
+
+#### 技術的詳細
+
+- Replicate APIは画像入力としてHTTP(S) URLのみ受け付ける
+- R2を使用して一時的な公開URLを生成
+- セキュリティ：ランダムなファイル名、処理後即削除、24時間での自動削除
+
+#### 次のステップ
+
+- R2バケットの実際の作成とカスタムドメイン設定
+- 本番環境でのテスト
+- パフォーマンス最適化の検討
 
 ---
 
