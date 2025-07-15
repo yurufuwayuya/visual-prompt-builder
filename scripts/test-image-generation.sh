@@ -1,6 +1,15 @@
 #!/bin/bash
+set -euo pipefail
 
 # Test script for image generation API
+
+# Check dependencies
+for cmd in curl jq; do
+    if ! command -v "$cmd" &> /dev/null; then
+        echo "❌ $cmd がインストールされていません"
+        exit 1
+    fi
+done
 
 echo "=== 画像生成API テストスクリプト ==="
 echo ""

@@ -69,7 +69,7 @@ AI）に対応するための設計です。
    npm run dev:all
    ```
 
-2. ブラウザで http://localhost:5173 にアクセス
+2. ブラウザで [http://localhost:5173](http://localhost:5173) にアクセス
 
 3. 画像生成機能をテスト：
    - ステップ1-3でプロンプトを作成

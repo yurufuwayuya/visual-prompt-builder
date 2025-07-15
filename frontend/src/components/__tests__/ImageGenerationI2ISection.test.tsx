@@ -61,8 +61,10 @@ describe('ImageGenerationI2ISection', () => {
   it('画像生成が成功する', async () => {
     const mockGeneratedImage = 'data:image/png;base64,generated...';
     vi.mocked(imageGenerationService.generateImage).mockResolvedValue({
-      generatedImage: mockGeneratedImage,
-      error: null,
+      success: true,
+      image: mockGeneratedImage,
+      error: undefined,
+      cached: false,
     });
 
     render(<ImageGenerationI2ISection {...mockProps} />);
@@ -79,7 +81,7 @@ describe('ImageGenerationI2ISection', () => {
     });
 
     expect(imageGenerationService.generateImage).toHaveBeenCalledWith({
-      image: mockProps.uploadedImage,
+      referenceImage: mockProps.uploadedImage,
       prompt: mockProps.prompt,
       model: 'variations',
       strength: 0.7,
@@ -89,8 +91,10 @@ describe('ImageGenerationI2ISection', () => {
   it('画像生成が失敗する', async () => {
     const mockError = 'API key not found';
     vi.mocked(imageGenerationService.generateImage).mockResolvedValue({
-      generatedImage: null,
+      success: false,
+      image: undefined,
       error: mockError,
+      cached: false,
     });
 
     render(<ImageGenerationI2ISection {...mockProps} />);
@@ -107,8 +111,10 @@ describe('ImageGenerationI2ISection', () => {
   it('生成された画像をダウンロードできる', async () => {
     const mockGeneratedImage = 'data:image/png;base64,generated...';
     vi.mocked(imageGenerationService.generateImage).mockResolvedValue({
-      generatedImage: mockGeneratedImage,
-      error: null,
+      success: true,
+      image: mockGeneratedImage,
+      error: undefined,
+      cached: false,
     });
 
     // ダウンロード関数をモック
@@ -157,8 +163,10 @@ describe('ImageGenerationI2ISection', () => {
   it('エラーメッセージがクリアされる', async () => {
     const mockError = 'API key not found';
     vi.mocked(imageGenerationService.generateImage).mockResolvedValue({
-      generatedImage: null,
+      success: false,
+      image: undefined,
       error: mockError,
+      cached: false,
     });
 
     render(<ImageGenerationI2ISection {...mockProps} />);

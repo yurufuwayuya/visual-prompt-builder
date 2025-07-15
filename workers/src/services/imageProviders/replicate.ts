@@ -5,7 +5,7 @@
 import { createDataUrl } from '../../utils/imageProcessing';
 
 // Replicateの画像生成モデル
-// Using specific versions for each model
+// Using official model names (versions are handled automatically by Replicate)
 const REPLICATE_MODELS = {
   'flux-fill': 'black-forest-labs/flux-fill-dev', // Inpainting model
   'flux-variations': 'black-forest-labs/flux-redux-schnell', // Fast image variations
@@ -228,7 +228,7 @@ export async function generateWithReplicate(
     throw lastError;
   }
 
-  if (!imageBuffer!) {
+  if (!imageBuffer) {
     throw new Error('Failed to download image after retries');
   }
 

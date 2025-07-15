@@ -42,7 +42,7 @@ preview_id = "dev_image_cache_preview"
 # Staging environment
 [env.staging]
 name = "visual-prompt-builder-staging"
-vars = { ENVIRONMENT = "staging" }
+vars = { ENVIRONMENT = "staging", IMAGE_PROVIDER = "replicate" }
 
 [[env.staging.kv_namespaces]]
 binding = "CACHE"
@@ -56,10 +56,14 @@ id = "staging_session_namespace"
 binding = "RATE_LIMIT_KV"
 id = "staging_rate_limit_namespace"
 
+[[env.staging.kv_namespaces]]
+binding = "IMAGE_CACHE"
+id = "staging_image_cache_namespace"
+
 # Production environment
 [env.production]
 name = "visual-prompt-builder"
-vars = { ENVIRONMENT = "production" }
+vars = { ENVIRONMENT = "production", IMAGE_PROVIDER = "replicate" }
 
 [[env.production.kv_namespaces]]
 binding = "CACHE"
@@ -72,6 +76,10 @@ id = "bc2a774a46324cdab41089aa659ece23"
 [[env.production.kv_namespaces]]
 binding = "RATE_LIMIT_KV"
 id = "f4948d4c905944cbbd95aa798985179a"
+
+[[env.production.kv_namespaces]]
+binding = "IMAGE_CACHE"
+id = "production_image_cache_namespace"
 
 # Routes (will be configured later)
 # [[env.production.routes]]

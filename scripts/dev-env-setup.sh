@@ -1,7 +1,15 @@
 #!/bin/bash
+set -euo pipefail  # Exit on error, undefined variables, and pipe failures
 
 # Development environment setup script
 # Maps REPLICATE_API_KEY to IMAGE_API_KEY for wrangler
+
+# Check if wrangler is installed
+if ! command -v wrangler &> /dev/null; then
+    echo "❌ wranglerがインストールされていません"
+    echo "   npm install -g wrangler を実行してください"
+    exit 1
+fi
 
 echo "=== 開発環境の環境変数設定 ==="
 
@@ -12,8 +20,10 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-# Source .env file
-export $(cat .env | grep -v '^#' | xargs)
+# Source .env file safely
+set -a
+source .env
+set +a
 
 # Map REPLICATE_API_KEY to IMAGE_API_KEY for wrangler
 if [ ! -z "$REPLICATE_API_KEY" ]; then

@@ -22,10 +22,30 @@ export const ImageToImage: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Enhanced file validation
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      addToast({
+        type: 'error',
+        message: 'ファイルサイズは5MB以下にしてください',
+      });
+      return;
+    }
+
     if (!file.type.startsWith('image/')) {
       addToast({
         type: 'error',
         message: '画像ファイルを選択してください',
+      });
+      return;
+    }
+
+    // Additional supported format validation
+    const supportedFormats = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!supportedFormats.includes(file.type)) {
+      addToast({
+        type: 'error',
+        message: '対応形式: JPG, PNG, GIF, WebP',
       });
       return;
     }
@@ -35,6 +55,12 @@ export const ImageToImage: React.FC = () => {
       setReferenceImage(e.target?.result as string);
       setGeneratedImage(null);
       setError(null);
+    };
+    reader.onerror = () => {
+      addToast({
+        type: 'error',
+        message: 'ファイルの読み込みに失敗しました',
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -134,17 +160,30 @@ export const ImageToImage: React.FC = () => {
                 <h2 className="text-lg font-semibold mb-4">参考画像</h2>
 
                 {!referenceImage ? (
-                  <label className="block">
+                  <label className="block" htmlFor="image-upload">
                     <input
+                      id="image-upload"
                       type="file"
                       accept="image/*"
                       onChange={handleImageUpload}
                       className="hidden"
+                      aria-describedby="upload-help"
                     />
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors">
+                    <div 
+                      className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200"
+                      role="button"
+                      tabIndex={0}
+                      aria-label="画像をアップロード"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          document.getElementById('image-upload')?.click();
+                        }
+                      }}
+                    >
                       <Upload className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                       <p className="text-sm text-gray-600">クリックして画像をアップロード</p>
-                      <p className="text-xs text-gray-500 mt-2">対応形式: JPG, PNG, GIF, WebP</p>
+                      <p id="upload-help" className="text-xs text-gray-500 mt-2">対応形式: JPG, PNG, GIF, WebP（最大5MB）</p>
                     </div>
                   </label>
                 ) : (
@@ -170,8 +209,14 @@ export const ImageToImage: React.FC = () => {
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="生成したい画像の説明を入力してください..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-md min-h-[120px] resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-describedby="prompt-help"
+                  aria-label="プロンプト入力"
+                  maxLength={500}
                   disabled={isGenerating}
                 />
+                <div id="prompt-help" className="text-xs text-gray-500 mt-1">
+                  {500 - prompt.length} 文字残り
+                </div>
               </div>
 
               {/* 設定 */}

@@ -82,13 +82,11 @@ app.onError((err, c) => {
   let statusCode = 500;
 
   // Check if it's a Zod error (has issues property)
-  if (err.name === 'ZodError' && 'issues' in err) {
+  if (err.name === 'ZodError' && 'issues' in err && Array.isArray((err as any).issues)) {
     statusCode = 400;
-    // Extract the first validation error message
+    // Extract validation error messages
     const issues = (err as { issues: Array<{ message: string }> }).issues;
-    if (Array.isArray(issues) && issues.length > 0) {
-      errorMessage = issues.map((issue: { message: string }) => issue.message).join(', ');
-    }
+    errorMessage = issues.map((issue: { message: string }) => issue.message).join(', ');
   }
 
   return c.json(

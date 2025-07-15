@@ -10,7 +10,6 @@ config({ path: resolve(process.cwd(), '../.env') });
 // Map REPLICATE_API_KEY to IMAGE_API_KEY
 if (process.env.REPLICATE_API_KEY && !process.env.IMAGE_API_KEY) {
   process.env.IMAGE_API_KEY = process.env.REPLICATE_API_KEY;
-  // console.log('✅ Mapped REPLICATE_API_KEY to IMAGE_API_KEY');
 }
 
 // Export for use in wrangler

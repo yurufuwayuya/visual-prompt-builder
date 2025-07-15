@@ -30,8 +30,11 @@ echo ""
 echo "1. Replicate APIキー"
 echo "   取得方法: https://replicate.com/account"
 read -p "   APIキー (r8_xxxxx): " REPLICATE_KEY
+if [ ! -z "$REPLICATE_KEY" ] && [[ ! "$REPLICATE_KEY" =~ ^r8_ ]]; then
+    echo "⚠️  Replicate APIキーは 'r8_' で始まる必要があります"
+fi
 if [ ! -z "$REPLICATE_KEY" ]; then
-    sed -i.bak "s/your_replicate_api_key/$REPLICATE_KEY/" .env
+    sed "s/your_replicate_api_key/$REPLICATE_KEY/" .env > .env.tmp && mv .env.tmp .env
 fi
 
 # OpenAI API Key (optional)
@@ -40,7 +43,7 @@ echo "2. OpenAI APIキー (オプション - Enterでスキップ)"
 echo "   取得方法: https://platform.openai.com/api-keys"
 read -p "   APIキー (sk-xxxxx): " OPENAI_KEY
 if [ ! -z "$OPENAI_KEY" ]; then
-    sed -i.bak "s/your_openai_api_key/$OPENAI_KEY/" .env
+    sed "s/your_openai_api_key/$OPENAI_KEY/" .env > .env.tmp && mv .env.tmp .env
 fi
 
 # Stability API Key (optional)
@@ -49,7 +52,7 @@ echo "3. Stability AI APIキー (オプション - Enterでスキップ)"
 echo "   取得方法: https://platform.stability.ai/account/keys"
 read -p "   APIキー: " STABILITY_KEY
 if [ ! -z "$STABILITY_KEY" ]; then
-    sed -i.bak "s/your_stability_api_key/$STABILITY_KEY/" .env
+    sed "s/your_stability_api_key/$STABILITY_KEY/" .env > .env.tmp && mv .env.tmp .env
 fi
 
 # Image Provider
@@ -60,10 +63,7 @@ read -p "   プロバイダー (デフォルト: replicate): " IMAGE_PROVIDER
 if [ -z "$IMAGE_PROVIDER" ]; then
     IMAGE_PROVIDER="replicate"
 fi
-sed -i.bak "s/IMAGE_PROVIDER=replicate/IMAGE_PROVIDER=$IMAGE_PROVIDER/" .env
-
-# Clean up backup files
-rm -f .env.bak
+sed "s/IMAGE_PROVIDER=replicate/IMAGE_PROVIDER=$IMAGE_PROVIDER/" .env > .env.tmp && mv .env.tmp .env
 
 echo ""
 echo "✅ .envファイルの作成が完了しました！"

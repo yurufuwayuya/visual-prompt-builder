@@ -20,14 +20,14 @@ describe('imageGeneration service', () => {
     });
 
     const result = await generateImage({
-      image: 'data:image/png;base64,test...',
+      referenceImage: 'data:image/png;base64,test...',
       prompt: 'A beautiful landscape',
       model: 'variations',
       strength: 0.7,
     });
 
-    expect(result.generatedImage).toBe(mockResponse.generatedImage);
-    expect(result.error).toBeNull();
+    expect(result.image).toBe(mockResponse.generatedImage);
+    expect(result.success).toBe(true);
 
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/api/v1/image/generate'),
@@ -37,10 +37,12 @@ describe('imageGeneration service', () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          image: 'data:image/png;base64,test...',
           prompt: 'A beautiful landscape',
-          model: 'variations',
-          strength: 0.7,
+          baseImage: 'data:image/png;base64,test...',
+          options: {
+            model: 'variations',
+            strength: 0.7,
+          },
         }),
       })
     );
@@ -57,13 +59,14 @@ describe('imageGeneration service', () => {
     });
 
     const result = await generateImage({
-      image: 'data:image/png;base64,test...',
+      referenceImage: 'data:image/png;base64,test...',
       prompt: 'A beautiful landscape',
       model: 'variations',
       strength: 0.7,
     });
 
-    expect(result.generatedImage).toBeNull();
+    expect(result.image).toBeUndefined();
+    expect(result.success).toBe(false);
     expect(result.error).toBe('API key not found');
   });
 
@@ -71,13 +74,14 @@ describe('imageGeneration service', () => {
     (fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
     const result = await generateImage({
-      image: 'data:image/png;base64,test...',
+      referenceImage: 'data:image/png;base64,test...',
       prompt: 'A beautiful landscape',
       model: 'variations',
       strength: 0.7,
     });
 
-    expect(result.generatedImage).toBeNull();
+    expect(result.image).toBeUndefined();
+    expect(result.success).toBe(false);
     expect(result.error).toBe('画像生成に失敗しました');
   });
 
@@ -91,13 +95,14 @@ describe('imageGeneration service', () => {
     });
 
     const result = await generateImage({
-      image: 'data:image/png;base64,test...',
+      referenceImage: 'data:image/png;base64,test...',
       prompt: 'A beautiful landscape',
       model: 'variations',
       strength: 0.7,
     });
 
-    expect(result.generatedImage).toBeNull();
+    expect(result.image).toBeUndefined();
+    expect(result.success).toBe(false);
     expect(result.error).toBe('画像生成に失敗しました');
   });
 
@@ -112,14 +117,14 @@ describe('imageGeneration service', () => {
     });
 
     const result = await generateImage({
-      image: 'data:image/png;base64,test...',
+      referenceImage: 'data:image/png;base64,test...',
       prompt: '',
       model: 'variations',
       strength: 0.7,
     });
 
-    expect(result.generatedImage).toBe(mockResponse.generatedImage);
-    expect(result.error).toBeNull();
+    expect(result.image).toBe(mockResponse.generatedImage);
+    expect(result.success).toBe(true);
   });
 
   it('すべてのモデルタイプをサポートする', async () => {
@@ -135,14 +140,14 @@ describe('imageGeneration service', () => {
       });
 
       const result = await generateImage({
-        image: 'data:image/png;base64,test...',
+        referenceImage: 'data:image/png;base64,test...',
         prompt: 'Test prompt',
         model: model as any,
         strength: 0.5,
       });
 
-      expect(result.generatedImage).toBe(mockResponse.generatedImage);
-      expect(result.error).toBeNull();
+      expect(result.image).toBe(mockResponse.generatedImage);
+      expect(result.success).toBe(true);
     }
   });
 
@@ -159,13 +164,13 @@ describe('imageGeneration service', () => {
       });
 
       const result = await generateImage({
-        image: 'data:image/png;base64,test...',
+        referenceImage: 'data:image/png;base64,test...',
         prompt: 'Test prompt',
         model: 'variations',
         strength,
       });
 
-      expect(result.generatedImage).toBe(mockResponse.generatedImage);
+      expect(result.image).toBe(mockResponse.generatedImage);
       expect(fetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
