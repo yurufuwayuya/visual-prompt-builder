@@ -32,12 +32,26 @@ function getContentTypeFromDataURL(dataURL: string): string {
 }
 
 /**
+ * Get file extension from MIME type
+ */
+function getExtensionFromMimeType(mimeType: string): string {
+  const extensions: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+  };
+  return extensions[mimeType] || 'png';
+}
+
+/**
  * Generate unique object key
  */
-function generateObjectKey(prefix: string = 'temp'): string {
+function generateObjectKey(prefix: string = 'temp', mimeType?: string): string {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 15);
-  return `${prefix}/${timestamp}-${random}`;
+  const extension = mimeType ? getExtensionFromMimeType(mimeType) : 'png';
+  return `${prefix}/${timestamp}-${random}.${extension}`;
 }
 
 /**
@@ -54,12 +68,12 @@ export async function uploadToR2(
 ): Promise<R2UploadResult> {
   const { keyPrefix = 'temp', expiresIn = 86400, customDomain } = options; // 24 hours default
 
-  // Generate unique key
-  const key = `${generateObjectKey(keyPrefix)}.png`;
-
-  // Convert data URL to ArrayBuffer
+  // Convert data URL to ArrayBuffer and get content type
   const arrayBuffer = dataURLToArrayBuffer(dataURL);
   const contentType = getContentTypeFromDataURL(dataURL);
+
+  // Generate unique key with proper extension
+  const key = generateObjectKey(keyPrefix, contentType);
 
   // Upload to R2
   const object = await bucket.put(key, arrayBuffer, {
@@ -106,29 +120,35 @@ export async function deleteFromR2(bucket: R2Bucket, key: string): Promise<void>
 }
 
 /**
- * Clean up expired images
+ * Clean up expired images with pagination support
  */
 export async function cleanupExpiredImages(bucket: R2Bucket): Promise<number> {
   let deletedCount = 0;
   const now = new Date();
+  let cursor: string | undefined;
 
-  // List objects with temp prefix
-  const listed = await bucket.list({
-    prefix: 'temp/',
-    limit: 1000,
-  });
+  do {
+    // List objects with temp prefix and pagination
+    const listed = await bucket.list({
+      prefix: 'temp/',
+      limit: 1000,
+      cursor,
+    });
 
-  for (const object of listed.objects) {
-    // Check if object has expiration metadata
-    const headResult = await bucket.head(object.key);
-    if (headResult?.customMetadata?.expiresAt) {
-      const expiresAt = new Date(headResult.customMetadata.expiresAt);
-      if (expiresAt < now) {
-        await bucket.delete(object.key);
-        deletedCount++;
+    for (const object of listed.objects) {
+      // Check if object has expiration metadata
+      const headResult = await bucket.head(object.key);
+      if (headResult?.customMetadata?.expiresAt) {
+        const expiresAt = new Date(headResult.customMetadata.expiresAt);
+        if (expiresAt < now) {
+          await bucket.delete(object.key);
+          deletedCount++;
+        }
       }
     }
-  }
+
+    cursor = listed.truncated ? listed.cursor : undefined;
+  } while (cursor);
 
   return deletedCount;
 }

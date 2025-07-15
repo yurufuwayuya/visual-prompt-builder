@@ -15,15 +15,12 @@ export default {
     _ctx: ExecutionContext
   ): Promise<void> {
     // Clean up expired images every day at 2 AM UTC
-    // eslint-disable-next-line no-console
     console.log('[Scheduled] Starting cleanup of expired images');
 
     try {
       const deletedCount = await cleanupExpiredImages(env.IMAGE_BUCKET);
-      // eslint-disable-next-line no-console
       console.log(`[Scheduled] Cleaned up ${deletedCount} expired images`);
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('[Scheduled] Error during cleanup:', error);
       // Don't throw here to prevent the worker from crashing
     }
