@@ -7,6 +7,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
+    "dev:remote": "wrangler dev --remote",
     "build": "wrangler deploy --dry-run",
     "deploy": "wrangler deploy",
     "test": "vitest",

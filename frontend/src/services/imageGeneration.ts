@@ -70,6 +70,14 @@ export async function generateImage(
     };
   } catch (error) {
     console.error('画像生成エラー:', error);
+    // ネットワークエラーの詳細情報を提供
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      console.error('APIエンドポイント:', API_ENDPOINTS.generateImage);
+      return {
+        success: false,
+        error: 'APIサーバーに接続できません。ワーカーが起動していることを確認してください。',
+      };
+    }
     return {
       success: false,
       error: error instanceof Error ? error.message : '画像生成中にエラーが発生しました',

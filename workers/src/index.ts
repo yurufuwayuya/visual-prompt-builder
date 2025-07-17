@@ -24,9 +24,12 @@ const validateOrigin = (origin: string | undefined, env: Bindings): string | nul
   // 許可するオリジンのリスト
   const allowedOrigins = [
     'http://localhost:5173', // 開発環境
+    'http://localhost:5174', // 開発環境（代替ポート）
     'http://localhost:3000', // 代替開発環境
     'https://visual-prompt-builder.pages.dev', // 本番環境
     'https://57774477.visual-prompt-builder.pages.dev', // デプロイされたURL
+    'https://kantanprompt.com', // 本番ドメイン
+    'https://www.kantanprompt.com', // 本番ドメイン（www付き）
   ];
 
   // 開発環境では環境変数から追加のオリジンを許可
