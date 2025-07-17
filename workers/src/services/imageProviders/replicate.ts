@@ -46,6 +46,43 @@ interface ReplicatePredictionResponse {
 }
 
 /**
+ * Upload image to file.io as a fallback method
+ */
+async function uploadToFileIo(imageDataUrl: string): Promise<string> {
+  const base64 = imageDataUrl.split(',')[1];
+  if (!base64) {
+    throw new Error('Invalid data URL: missing base64 data');
+  }
+  const mimeType = imageDataUrl.match(/^data:([^;]+);/)?.[1] || 'image/png';
+
+  try {
+    const formData = new FormData();
+    const blob = new Blob([Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))], {
+      type: mimeType,
+    });
+    formData.append('file', blob, 'image.png');
+
+    const uploadResponse = await fetch('https://file.io/?expires=1h', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!uploadResponse.ok) {
+      throw new Error(`Failed to upload to file.io: ${uploadResponse.status}`);
+    }
+
+    const uploadData = (await uploadResponse.json()) as { success: boolean; link: string };
+    if (!uploadData.success || !uploadData.link) {
+      throw new Error('file.io upload failed');
+    }
+
+    return uploadData.link;
+  } catch (error) {
+    throw new Error('Invalid base64 data in image URL');
+  }
+}
+
+/**
  * Get model-specific input parameters
  */
 function getModelSpecificInput(
@@ -151,31 +188,7 @@ export async function generateWithReplicate(
         console.log('[DEBUG] R2 upload failed in development, trying alternative method');
 
         try {
-          // Try using file.io as a more reliable temporary hosting service
-          const base64 = imageDataUrl.split(',')[1];
-          const mimeType = imageDataUrl.match(/^data:([^;]+);/)?.[1] || 'image/png';
-
-          const formData = new FormData();
-          const blob = new Blob([Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))], {
-            type: mimeType,
-          });
-          formData.append('file', blob, 'image.png');
-
-          const uploadResponse = await fetch('https://file.io/?expires=1h', {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (!uploadResponse.ok) {
-            throw new Error(`Failed to upload to file.io: ${uploadResponse.status}`);
-          }
-
-          const uploadData = (await uploadResponse.json()) as { success: boolean; link: string };
-          if (!uploadData.success || !uploadData.link) {
-            throw new Error('file.io upload failed');
-          }
-
-          imageUrl = uploadData.link;
+          imageUrl = await uploadToFileIo(imageDataUrl);
           console.log('[DEBUG] Temporary upload successful to file.io:', { url: imageUrl });
         } catch (tempError) {
           console.error('Failed to upload to temporary service:', tempError);
@@ -193,31 +206,7 @@ export async function generateWithReplicate(
       console.log('[DEBUG] R2 not publicly accessible, using fallback method');
 
       try {
-        // Try using file.io as a more reliable temporary hosting service
-        const base64 = imageDataUrl.split(',')[1];
-        const mimeType = imageDataUrl.match(/^data:([^;]+);/)?.[1] || 'image/png';
-
-        const formData = new FormData();
-        const blob = new Blob([Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))], {
-          type: mimeType,
-        });
-        formData.append('file', blob, 'image.png');
-
-        const uploadResponse = await fetch('https://file.io/?expires=1h', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error(`Failed to upload to file.io: ${uploadResponse.status}`);
-        }
-
-        const uploadData = (await uploadResponse.json()) as { success: boolean; link: string };
-        if (!uploadData.success || !uploadData.link) {
-          throw new Error('file.io upload failed');
-        }
-
-        imageUrl = uploadData.link;
+        imageUrl = await uploadToFileIo(imageDataUrl);
         console.log('[DEBUG] Temporary upload successful to file.io:', { url: imageUrl });
       } catch (tempError) {
         console.error('Failed to upload to temporary service:', tempError);
