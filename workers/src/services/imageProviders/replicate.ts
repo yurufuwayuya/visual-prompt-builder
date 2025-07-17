@@ -6,6 +6,22 @@ import { createDataUrl } from '../../utils/imageProcessing';
 import { uploadToR2 } from '../r2Storage';
 import type { Bindings } from '../../types';
 
+// Simple logging utility to control console output
+const logger = {
+  debug: (message: string, data?: any) => {
+    // Only log in development environment
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+      console.log(`[DEBUG] ${message}`, data);
+    }
+  },
+  error: (message: string, error?: any) => {
+    console.error(`[ERROR] ${message}`, error);
+  },
+  info: (message: string, data?: any) => {
+    console.log(`[INFO] ${message}`, data);
+  }
+};
+
 // Replicateの画像生成モデル
 // Using official model names (versions are handled automatically by Replicate)
 const REPLICATE_MODELS = {
@@ -179,19 +195,19 @@ export async function generateWithReplicate(
       });
       imageUrl = uploadResult.url;
       uploadedImageKey = uploadResult.key;
-      console.log('[DEBUG] R2 upload successful:', { url: imageUrl, key: uploadedImageKey });
+      logger.debug('R2 upload successful:', { url: imageUrl, key: uploadedImageKey });
     } catch (error) {
-      console.error('Failed to upload image to R2:', error);
+      logger.error('Failed to upload image to R2:', error);
 
       // In development, try alternative methods
       if (isLocalDev) {
-        console.log('[DEBUG] R2 upload failed in development, trying alternative method');
+        logger.debug('R2 upload failed in development, trying alternative method');
 
         try {
           imageUrl = await uploadToFileIo(imageDataUrl);
-          console.log('[DEBUG] Temporary upload successful to file.io:', { url: imageUrl });
+          logger.debug('Temporary upload successful to file.io:', { url: imageUrl });
         } catch (tempError) {
-          console.error('Failed to upload to temporary service:', tempError);
+          logger.error('Failed to upload to temporary service:', tempError);
           throw new Error(
             'Failed to prepare image for processing in development. Please ensure R2 is properly configured.'
           );
@@ -203,13 +219,13 @@ export async function generateWithReplicate(
   } else {
     // If R2 is not configured or not publicly accessible, use fallback in development
     if (isLocalDev) {
-      console.log('[DEBUG] R2 not publicly accessible, using fallback method');
+      logger.debug('R2 not publicly accessible, using fallback method');
 
       try {
         imageUrl = await uploadToFileIo(imageDataUrl);
-        console.log('[DEBUG] Temporary upload successful to file.io:', { url: imageUrl });
+        logger.debug('Temporary upload successful to file.io:', { url: imageUrl });
       } catch (tempError) {
-        console.error('Failed to upload to temporary service:', tempError);
+        logger.error('Failed to upload to temporary service:', tempError);
         throw new Error(
           'Failed to prepare image for processing in development. Please configure R2 with public access.'
         );
@@ -277,7 +293,7 @@ export async function generateWithReplicate(
 
   // エラーチェック
   if (finalPrediction.status === 'failed') {
-    console.error('[DEBUG] Replicate prediction failed:', {
+    logger.error('Replicate prediction failed:', {
       error: finalPrediction.error,
       logs: finalPrediction.logs,
       status: finalPrediction.status,
@@ -355,7 +371,7 @@ export async function generateWithReplicate(
     try {
       await env.IMAGE_BUCKET.delete(uploadedImageKey);
     } catch (error) {
-      console.error('Failed to clean up uploaded image:', error);
+      logger.error('Failed to clean up uploaded image:', error);
       // Don't throw here, as the main operation succeeded
     }
   }
