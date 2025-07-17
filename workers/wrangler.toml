@@ -6,27 +6,41 @@ compatibility_date = "2024-12-01"
 [[kv_namespaces]]
 binding = "CACHE"
 id = "cache_namespace_id"
+preview_id = "0214ee29e371415a9fa6ef0a9f229509"
 
 [[kv_namespaces]]
 binding = "SESSION"
 id = "session_namespace_id"
+preview_id = "de725a4a38fc43f28cca9afd16c4d5f9"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
 id = "rate_limit_namespace_id"
+preview_id = "d0a6740231fd4448b5e84313dbea0129"
 
 [[kv_namespaces]]
 binding = "IMAGE_CACHE"
 id = "image_cache_namespace_id"
+preview_id = "14ecb1acbc0348018c09a34efb215c7e"
+
+# R2 Bucket
+[[r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "prompt-builder"
+preview_bucket_name = "prompt-builder-dev"
 
 # 環境変数（開発環境）
 [vars]
 ENVIRONMENT = "development"
 IMAGE_PROVIDER = "replicate"
+R2_CUSTOM_DOMAIN = "https://image.kantanprompt.com"
 
 # 本番環境用の設定
 [env.production]
-vars = { ENVIRONMENT = "production" }
+routes = [
+  { pattern = "api.kantanprompt.com/*", custom_domain = true }
+]
+vars = { ENVIRONMENT = "production", R2_CUSTOM_DOMAIN = "https://image.kantanprompt.com" }
 
 # シークレット（実際の値は wrangler secret put で設定）
 # IMAGE_API_KEY = "your-api-key"

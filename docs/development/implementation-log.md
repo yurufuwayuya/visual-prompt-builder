@@ -76,6 +76,51 @@ Builderプロジェクトの実装進捗を詳細に記録するためのログ�
 
 ---
 
+## 2025-01-17
+
+### R2カスタムドメイン設定の更新 (作業中)
+
+#### 実施内容
+
+- R2バケットのカスタムドメイン設定を更新
+- 新しいカスタムドメイン: image.kantanprompt.com
+- wrangler.tomlに環境変数を追加
+- R2ストレージサービスのURL生成ロジックを改善
+
+#### 変更内容
+
+1. **wrangler.toml**
+   - 開発環境と本番環境の両方にR2_CUSTOM_DOMAINを追加
+   - 値: `https://image.kantanprompt.com`
+
+2. **r2Storage.ts**
+   - URLの末尾スラッシュを適切に処理するロジックを追加
+   - カスタムドメインの正規化
+
+3. **replicate.ts**
+   - 開発環境でもR2を使用できるように条件を更新
+   - `env.ENVIRONMENT !== 'development'`の条件を削除
+
+4. **ドキュメント更新**
+   - R2_CONFIGURATION.mdにカスタムドメイン設定を反映
+   - 現在の設定情報を明記
+
+#### 成果物
+
+- 修正したファイル:
+  - `/workers/wrangler.toml`
+  - `/workers/src/services/r2Storage.ts`
+  - `/workers/src/services/imageProviders/replicate.ts`
+  - `/workers/docs/R2_CONFIGURATION.md`
+
+#### 次の作業
+
+- Cloudflareダッシュボードでカスタムドメインが有効になっているか確認
+- 実際にR2を使用した画像アップロードのテスト
+- CORS設定の確認と必要に応じた調整
+
+---
+
 ## 2025-01-14
 
 ### 画像生成APIの接続エラー修正 (19:09 - 19:15)
@@ -1138,3 +1183,243 @@ URLのみを受け付けることが判明。
 - 実際の画像生成機能のテスト
 - R2へのアップロードと削除の動作確認
 - Replicate APIとの統合テスト
+
+---
+
+## 2025-07-15 - R2バケット設定エラーの解決
+
+### 実施内容 (17:20 - 17:30)
+
+#### 実施内容
+
+1. **エラーの特定**
+   - `wrangler dev --remote`実行時にR2バケット設定エラー
+   - 開発環境と本番環境で別のR2バケットを使用する必要がある
+
+2. **開発用R2バケットの作成**
+   - `wrangler r2 bucket create prompt-builder-dev`で開発用バケット作成
+   - バケット名: `prompt-builder-dev`（Standard storage class）
+
+3. **wrangler.toml設定の更新**
+   - `preview_bucket_name = "prompt-builder-dev"`を追加
+   - 開発環境では`prompt-builder-dev`、本番環境では`prompt-builder`を使用
+
+4. **CORS設定の更新**
+   - `localhost:5174`を許可するオリジンリストに追加（フロントエンドの代替ポート）
+   - 開発環境でのCORS問題を防止
+
+5. **動作確認**
+   - ワーカーが正常に起動し、R2統合が動作
+   - 画像生成リクエストを受信し、R2へのアップロードが成功
+
+#### 成果物
+
+- 開発用R2バケット（prompt-builder-dev）の作成
+- wrangler.tomlへのpreview_bucket_name設定追加
+- CORS設定の改善
+- 画像生成フローの正常動作確認
+
+#### 技術的詳細
+
+- Cloudflare Workersは開発環境と本番環境で異なるR2バケットを推奨
+- preview_bucket_nameディレクティブで開発用バケットを指定
+- R2アップロードは成功し、HTTP URLが生成される
+
+#### 次のステップ
+
+- Replicate APIの完全な統合テスト
+- エラーハンドリングの改善
+- パフォーマンス最適化
+
+---
+
+## 2025-01-15 - Replicate API R2アクセス問題の修正（続き）
+
+### 午前の作業 (17:40 - 18:00)
+
+#### 実施内容
+
+1. **R2アクセス問題の根本原因特定**
+   - Replicate APIがCloudflare R2のURLにアクセスできない（400 Bad Request）
+   - R2のパブリックアクセス設定とCORS設定の問題
+
+2. **ローカル開発用フォールバック実装**
+   - tmpfiles.orgを使用した一時ファイルアップロード機能を実装
+   - 開発環境では自動的にtmpfiles.orgにフォールバック
+   - 本番環境では引き続きR2を使用
+
+3. **実装の詳細**
+   ```typescript
+   // 開発環境での動作フロー
+   if (isLocalDev) {
+     1. Base64画像データをBlobに変換
+     2. FormDataでtmpfiles.orgに一時アップロード
+     3. 直接アクセス可能なURLに変換（/dl/パスを使用）
+     4. ReplicateAPIに渡す
+   }
+   ```
+
+#### 成果物
+
+- `workers/src/services/imageProviders/replicate.ts` の修正
+  - ローカル開発用フォールバック機能の実装
+  - tmpfiles.orgへのアップロード処理
+  - エラーハンドリングの改善
+  - クリーンアップ処理の条件分岐
+
+#### 学んだこと
+
+1. **R2のパブリックアクセス制限**
+   - R2は標準でパブリックアクセスを許可しない
+   - カスタムドメインとCORS設定が必要
+   - 開発環境では代替手段が必要
+
+2. **Cloudflare Workers のAPI制限**
+   - FormData/Blob APIはWeb標準準拠
+   - ファイルアップロード処理の実装に注意
+
+#### 課題と解決策
+
+1. **問題**: R2バケットのパブリックアクセス
+   - 解決策: 開発環境ではtmpfiles.orgを使用
+   - 本番環境: R2カスタムドメインとパブリックアクセス設定
+
+2. **問題**: 画像URLの一時性
+   - 解決策: tmpfiles.orgは1時間有効（開発には十分）
+   - 本番環境: R2での永続的な管理
+
+#### 次のステップ
+
+- フォールバック実装のテスト
+- 本番環境用R2設定ドキュメントの作成
+- 画像生成機能の完全なE2Eテスト
+
+---
+
+## 2025-01-15 - Replicate API画像アクセスエラーの修正
+
+### 作業内容 (続き)
+
+#### 実施内容
+
+1. **エラーの詳細調査**
+   - Replicate APIエラー: `'NoneType' object has no attribute 'read'`
+   - 原因: Replicate APIが一時画像ホスティングサービスのURLにアクセスできない
+   - tmpfiles.orgのURLがReplicate側でアクセス拒否される可能性
+
+2. **解決策の実装**
+   - R2ストレージを優先的に使用するよう変更
+   - 開発環境でR2が使用できない場合のフォールバック処理を改善
+   - file.ioを代替の一時ホスティングサービスとして追加
+
+3. **コード修正内容**
+   ```typescript
+   // workers/src/services/imageProviders/replicate.ts
+   // R2を優先的に使用し、失敗時のみ一時ホスティングにフォールバック
+   if (env?.IMAGE_BUCKET && env.R2_CUSTOM_DOMAIN) {
+     // R2へのアップロードを試行
+   } else if (isLocalDev) {
+     // 開発環境では file.io にフォールバック
+   }
+   ```
+
+#### 技術的課題
+
+1. **R2バケットの設定問題**
+   - wrangler.tomlでR2バケットは定義されているが、開発環境で正しくバインドされていない
+   - アカウントIDが`your_account_id`のままで実際のIDが設定されていない
+
+2. **Replicate APIの制限**
+   - 公開アクセス可能なHTTP(S) URLが必須
+   - 一部の一時ホスティングサービスはブロックされる可能性
+   - セキュアで信頼性の高いURLが必要
+
+#### 今後の対応
+
+1. **短期的対応**
+   - より信頼性の高い一時画像ホスティングサービスの検討
+   - 開発環境でのR2エミュレーション（miniflare）の設定
+
+2. **長期的対応**
+   - 本番環境でのR2設定の完全な実装
+   - カスタムドメインとパブリックアクセスの設定
+   - CDNを通じた画像配信の最適化
+
+---
+
+## 2025-01-17 - R2カスタムドメイン設定とCORS設定
+
+### 作業内容
+
+#### 実施内容
+
+1. **R2カスタムドメイン設定の実装**
+   - カスタムドメイン: `image.kantanprompt.com`
+   - バケット名: `prompt-builder`
+   - S3 API:
+     `https://1b154d8dab68e47be1d8dc7734f1d802.r2.cloudflarestorage.com/prompt-builder`
+
+2. **設定ファイルの更新**
+   - `wrangler.toml`に`R2_CUSTOM_DOMAIN`環境変数を追加
+   - 開発環境と本番環境の両方に設定
+   - R2ストレージサービスでカスタムドメインURL生成ロジックを実装
+
+3. **CORS設定の適用と確認**
+   - Cloudflareダッシュボードから以下のCORS設定を適用：
+     ```json
+     {
+       "AllowedOrigins": [
+         "http://localhost:5173",
+         "http://localhost:5174",
+         "http://localhost:3000",
+         "https://visual-prompt-builder.pages.dev",
+         "https://*.visual-prompt-builder.pages.dev"
+       ],
+       "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+       "AllowedHeaders": ["*"],
+       "ExposeHeaders": ["ETag", "Content-Length", "Content-Type"],
+       "MaxAgeSeconds": 3600
+     }
+     ```
+
+4. **CORS設定の動作確認**
+   - curlコマンドでCORSヘッダーの確認を実施
+   - 正しくCORSヘッダーが返されることを確認
+   - `Access-Control-Allow-Origin`が適切に設定されている
+
+#### 完成物
+
+1. **更新されたファイル**
+   - `workers/wrangler.toml` - R2_CUSTOM_DOMAIN環境変数追加
+   - `workers/src/types.ts` - R2_CUSTOM_DOMAINの型定義追加
+   - `workers/src/services/r2Storage.ts` - カスタムドメインURL生成ロジック
+   - `workers/src/services/imageProviders/replicate.ts` - R2使用条件の改善
+
+2. **新規作成ファイル**
+   - `workers/docs/R2_CONFIGURATION.md` - R2設定ドキュメント
+   - `workers/docs/R2_CORS_CONFIG.json` - CORS設定テンプレート
+   - `workers/test-r2-config.sh` - R2設定確認スクリプト
+   - `workers/test-cors.sh` - CORS設定確認スクリプト
+   - `workers/scripts/apply-cors.sh` - CORS適用スクリプト
+   - `workers/scripts/apply-cors-aws-cli.sh` - AWS CLI版CORS適用スクリプト
+
+#### 技術的決定事項
+
+1. **URL形式の統一**
+   - カスタムドメインURLの末尾スラッシュを自動除去
+   - 生成されるURL形式: `https://image.kantanprompt.com/path/to/file.jpg`
+   - 二重スラッシュを防ぐ処理を実装
+
+2. **環境による動作の切り替え**
+   - カスタムドメインが設定されていてr2.cloudflarestorage.comを含まない場合のみR2を使用
+   - 開発環境でもR2が使用可能に（以前は本番環境のみに制限）
+
+#### 今後の作業
+
+1. **本番環境の最終調整**
+   - `[env.production]`セクションに`IMAGE_PROVIDER = "replicate"`を追加
+   - 実際の画像アップロード・生成テストの実施
+
+2. **パフォーマンス最適化**
+   - CloudflareのCDN設定の最適化
+   - キャッシュ戦略の実装

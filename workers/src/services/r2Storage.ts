@@ -75,6 +75,13 @@ export async function uploadToR2(
   // Generate unique key with proper extension
   const key = generateObjectKey(keyPrefix, contentType);
 
+  console.log('[DEBUG] R2 Upload attempt:', {
+    key,
+    contentType,
+    dataSize: arrayBuffer.byteLength,
+    bucketAvailable: !!bucket,
+  });
+
   // Upload to R2
   const object = await bucket.put(key, arrayBuffer, {
     httpMetadata: {
@@ -86,6 +93,13 @@ export async function uploadToR2(
     },
   });
 
+  console.log('[DEBUG] R2 put() result:', {
+    success: !!object,
+    key: object?.key,
+    httpEtag: object?.httpEtag,
+    uploaded: object?.uploaded,
+  });
+
   if (!object) {
     throw new Error('Failed to upload image to R2');
   }
@@ -93,7 +107,9 @@ export async function uploadToR2(
   // Generate public URL
   let url: string;
   if (customDomain) {
-    url = `${customDomain}/${key}`;
+    // Ensure custom domain has trailing slash removed
+    const domain = customDomain.endsWith('/') ? customDomain.slice(0, -1) : customDomain;
+    url = `${domain}/${key}`;
   } else {
     // Use R2 public URL format
     // This requires the bucket to have public access enabled

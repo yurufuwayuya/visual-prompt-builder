@@ -125,7 +125,15 @@ export async function generateWithReplicate(
   let imageUrl: string;
   let uploadedImageKey: string | null = null;
 
-  if (env?.IMAGE_BUCKET && env.R2_CUSTOM_DOMAIN) {
+  // For local development, try using a public image hosting service as fallback
+  const isLocalDev = env?.ENVIRONMENT === 'development';
+
+  // Check if R2 domain is properly configured for public access
+  const isR2PubliclyAccessible =
+    env.R2_CUSTOM_DOMAIN && !env.R2_CUSTOM_DOMAIN.includes('r2.cloudflarestorage.com');
+
+  // Use R2 when custom domain is properly configured
+  if (env?.IMAGE_BUCKET && isR2PubliclyAccessible) {
     try {
       const uploadResult = await uploadToR2(env.IMAGE_BUCKET, imageDataUrl, {
         keyPrefix: 'replicate-input',
@@ -134,12 +142,94 @@ export async function generateWithReplicate(
       });
       imageUrl = uploadResult.url;
       uploadedImageKey = uploadResult.key;
+      console.log('[DEBUG] R2 upload successful:', { url: imageUrl, key: uploadedImageKey });
     } catch (error) {
       console.error('Failed to upload image to R2:', error);
-      throw new Error('Failed to prepare image for processing');
+
+      // In development, try alternative methods
+      if (isLocalDev) {
+        console.log('[DEBUG] R2 upload failed in development, trying alternative method');
+
+        try {
+          // Try using file.io as a more reliable temporary hosting service
+          const base64 = imageDataUrl.split(',')[1];
+          const mimeType = imageDataUrl.match(/^data:([^;]+);/)?.[1] || 'image/png';
+
+          const formData = new FormData();
+          const blob = new Blob([Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))], {
+            type: mimeType,
+          });
+          formData.append('file', blob, 'image.png');
+
+          const uploadResponse = await fetch('https://file.io/?expires=1h', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!uploadResponse.ok) {
+            throw new Error(`Failed to upload to file.io: ${uploadResponse.status}`);
+          }
+
+          const uploadData = (await uploadResponse.json()) as { success: boolean; link: string };
+          if (!uploadData.success || !uploadData.link) {
+            throw new Error('file.io upload failed');
+          }
+
+          imageUrl = uploadData.link;
+          console.log('[DEBUG] Temporary upload successful to file.io:', { url: imageUrl });
+        } catch (tempError) {
+          console.error('Failed to upload to temporary service:', tempError);
+          throw new Error(
+            'Failed to prepare image for processing in development. Please ensure R2 is properly configured.'
+          );
+        }
+      } else {
+        throw new Error('Failed to prepare image for processing');
+      }
     }
   } else {
-    throw new Error('R2 configuration missing. Please set R2_CUSTOM_DOMAIN environment variable.');
+    // If R2 is not configured or not publicly accessible, use fallback in development
+    if (isLocalDev) {
+      console.log('[DEBUG] R2 not publicly accessible, using fallback method');
+
+      try {
+        // Try using file.io as a more reliable temporary hosting service
+        const base64 = imageDataUrl.split(',')[1];
+        const mimeType = imageDataUrl.match(/^data:([^;]+);/)?.[1] || 'image/png';
+
+        const formData = new FormData();
+        const blob = new Blob([Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))], {
+          type: mimeType,
+        });
+        formData.append('file', blob, 'image.png');
+
+        const uploadResponse = await fetch('https://file.io/?expires=1h', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Failed to upload to file.io: ${uploadResponse.status}`);
+        }
+
+        const uploadData = (await uploadResponse.json()) as { success: boolean; link: string };
+        if (!uploadData.success || !uploadData.link) {
+          throw new Error('file.io upload failed');
+        }
+
+        imageUrl = uploadData.link;
+        console.log('[DEBUG] Temporary upload successful to file.io:', { url: imageUrl });
+      } catch (tempError) {
+        console.error('Failed to upload to temporary service:', tempError);
+        throw new Error(
+          'Failed to prepare image for processing in development. Please configure R2 with public access.'
+        );
+      }
+    } else {
+      throw new Error(
+        'R2 must be configured with public access. Please use a custom domain, not r2.cloudflarestorage.com.'
+      );
+    }
   }
 
   // Replicate APIに予測リクエストを送信
@@ -198,6 +288,11 @@ export async function generateWithReplicate(
 
   // エラーチェック
   if (finalPrediction.status === 'failed') {
+    console.error('[DEBUG] Replicate prediction failed:', {
+      error: finalPrediction.error,
+      logs: finalPrediction.logs,
+      status: finalPrediction.status,
+    });
     throw new Error(`Image generation failed: ${finalPrediction.error || 'Unknown error'}`);
   }
 
@@ -266,8 +361,8 @@ export async function generateWithReplicate(
   }
   const base64Image = btoa(binary);
 
-  // Clean up uploaded input image from R2
-  if (uploadedImageKey && env?.IMAGE_BUCKET) {
+  // Clean up uploaded input image from R2 (only if we actually uploaded to R2)
+  if (uploadedImageKey && env?.IMAGE_BUCKET && !isLocalDev) {
     try {
       await env.IMAGE_BUCKET.delete(uploadedImageKey);
     } catch (error) {

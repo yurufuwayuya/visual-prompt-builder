@@ -12,7 +12,9 @@
   "scripts": {
     "dev": "npm run dev --workspace=frontend",
     "dev:worker": "npm run dev --workspace=workers",
+    "dev:worker:remote": "npm run dev:remote --workspace=workers",
     "dev:all": "concurrently \"npm run dev:worker\" \"npm run dev\"",
+    "dev:all:remote": "concurrently \"npm run dev:worker:remote\" \"npm run dev\"",
     "build": "npm run build:workers && npm run build:frontend",
     "build:shared": "echo 'Shared package does not require build'",
     "build:frontend": "npm run build --workspace=frontend",
