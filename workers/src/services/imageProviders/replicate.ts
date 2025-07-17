@@ -78,7 +78,7 @@ async function uploadToFileIo(imageDataUrl: string): Promise<string> {
 
     return uploadData.link;
   } catch (error) {
-    throw new Error('Invalid base64 data in image URL');
+    throw new Error(`Failed to upload to file.io: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
