@@ -42,6 +42,28 @@ routes = [
 ]
 vars = { ENVIRONMENT = "production", R2_CUSTOM_DOMAIN = "https://image.kantanprompt.com" }
 
+# 本番環境用のKV Namespaces
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+id = "ac4cfe9a60374e0982097a6dda928044"
+
+[[env.production.kv_namespaces]]
+binding = "SESSION"
+id = "bc2a774a46324cdab41089aa659ece23"
+
+[[env.production.kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "f4948d4c905944cbbd95aa798985179a"
+
+[[env.production.kv_namespaces]]
+binding = "IMAGE_CACHE"
+id = "a1b2c3d4e5f6789012345678901234567" # 仮のID - 実際のIDに置き換える必要あり
+
+# 本番環境用のR2 Bucket
+[[env.production.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "visual-prompt-builder-images"
+
 # シークレット（実際の値は wrangler secret put で設定）
 # IMAGE_API_KEY = "your-api-key"
 # TRANSLATION_API_KEY = "your-translation-api-key"
