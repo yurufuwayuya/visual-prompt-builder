@@ -38,9 +38,9 @@ R2_CUSTOM_DOMAIN = "https://image.kantanprompt.com"
 # 本番環境用の設定
 [env.production]
 routes = [
-  { pattern = "api.kantanprompt.com/*", custom_domain = true }
+  { pattern = "api.kantanprompt.com", custom_domain = true }
 ]
-vars = { ENVIRONMENT = "production", R2_CUSTOM_DOMAIN = "https://image.kantanprompt.com" }
+vars = { ENVIRONMENT = "production", IMAGE_PROVIDER = "replicate", R2_CUSTOM_DOMAIN = "https://image.kantanprompt.com" }
 
 # 本番環境用のKV Namespaces
 [[env.production.kv_namespaces]]
