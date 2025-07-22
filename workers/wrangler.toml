@@ -57,7 +57,7 @@ id = "f4948d4c905944cbbd95aa798985179a"
 
 [[env.production.kv_namespaces]]
 binding = "IMAGE_CACHE"
-id = "a1b2c3d4e5f6789012345678901234567" # 仮のID - 実際のIDに置き換える必要あり
+id = "14ecb1acbc0348018c09a34efb215c7e" # 開発環境と同じIDを一時使用
 
 # 本番環境用のR2 Bucket
 [[env.production.r2_buckets]]
