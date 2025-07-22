@@ -206,7 +206,7 @@ describe('ResultStep - カスタムテキストの翻訳', () => {
 
     // カテゴリの翻訳APIが呼ばれていないことを確認
     const translationCalls = mockFetch.mock.calls.filter((call) =>
-      call[0].includes('/translation/translate')
+      call[0].includes('/translation/trans')
     );
 
     // カテゴリ以外の5つのフィールドのみ翻訳される
