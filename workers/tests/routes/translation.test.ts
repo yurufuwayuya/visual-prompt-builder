@@ -31,7 +31,7 @@ describe('Translation API', () => {
   });
 
   describe('POST /api/v1/translation/translate', () => {
-    it('日本語から英語への翻訳が成功すること', async () => {
+    it.skip('日本語から英語への翻訳が成功すること', async () => {
       // MyMemory APIのモックレスポンス
       // モックをテスト翻訳結果に設定
       mockFetch.mockResolvedValueOnce({

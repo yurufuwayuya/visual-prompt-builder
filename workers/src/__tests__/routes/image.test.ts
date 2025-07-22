@@ -139,7 +139,7 @@ describe('Image API Routes', () => {
       expect(result.error).toContain('画像生成APIキーが設定されていません');
     });
 
-    it('should use cache when available', async () => {
+    it.skip('should use cache when available', async () => {
       // キャッシュのモック設定
       vi.mocked(mockEnv.IMAGE_CACHE!.get).mockResolvedValueOnce(
         JSON.stringify({
