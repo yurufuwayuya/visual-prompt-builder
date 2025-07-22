@@ -1423,3 +1423,44 @@ URLのみを受け付けることが判明。
 2. **パフォーマンス最適化**
    - CloudflareのCDN設定の最適化
    - キャッシュ戦略の実装
+
+---
+
+## 2025-01-17 本番環境ドメイン移行
+
+### 作業内容
+
+#### 実施内容
+
+1. **本番環境を新ドメインkantanprompt.comに移行**
+   - API: `api.kantanprompt.com`
+   - R2画像: `image.kantanprompt.com`（既存）
+
+2. **設定ファイル更新**
+   - `wrangler.toml`: カスタムドメイン設定追加
+   ```toml
+   [env.production]
+   routes = [
+     { pattern = "api.kantanprompt.com/*", custom_domain = true }
+   ]
+   ```
+   - `.env.production`: API URLを新ドメインに更新
+   - CORS許可リストに`kantanprompt.com`と`www.kantanprompt.com`を追加
+
+### 完成物
+
+- ドメイン移行設定完了
+- PR #70作成: https://github.com/yurufuwayuya/visual-prompt-builder/pull/70
+
+### 課題・TODO
+
+1. **デプロイ前の設定**
+   - CloudflareでDNSレコード設定（api.kantanprompt.com → Workers）
+   - 本番環境のシークレット確認
+   - デプロイ実行と動作確認
+
+### 次回の作業予定
+
+- PRマージ後の本番デプロイ
+- DNS設定と動作確認
+- フロントエンドのドメイン設定（kantanprompt.com）
