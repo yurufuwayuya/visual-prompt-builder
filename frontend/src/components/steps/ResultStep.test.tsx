@@ -440,12 +440,10 @@ describe('ResultStep', () => {
       // すべてのfetch呼び出しに対応するモック設定
       mockFetch.mockImplementation((url: string) => {
         // 翻訳APIのモック
-        if (url.includes('/translation/translate')) {
+        if (url.includes('/api/v1/translation/trans')) {
           return Promise.resolve({
             ok: true,
-            json: async () => ({
-              translatedText: 'translated text',
-            }),
+            json: async () => 'translated text',
           });
         }
 
@@ -511,12 +509,10 @@ describe('ResultStep', () => {
       // すべてのfetch呼び出しに対応するモック設定
       mockFetch.mockImplementation((url: string) => {
         // 翻訳APIのモック
-        if (url.includes('/translation/translate')) {
+        if (url.includes('/api/v1/translation/trans')) {
           return Promise.resolve({
             ok: true,
-            json: async () => ({
-              translatedText: 'translated text',
-            }),
+            json: async () => 'translated text',
           });
         }
 
