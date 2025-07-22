@@ -62,7 +62,7 @@ id = "14ecb1acbc0348018c09a34efb215c7e" # 開発環境と同じIDを一時使用
 # 本番環境用のR2 Bucket
 [[env.production.r2_buckets]]
 binding = "IMAGE_BUCKET"
-bucket_name = "visual-prompt-builder-images"
+bucket_name = "prompt-builder"
 
 # シークレット（実際の値は wrangler secret put で設定）
 # IMAGE_API_KEY = "your-api-key"
