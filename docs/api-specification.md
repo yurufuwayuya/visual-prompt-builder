@@ -233,6 +233,85 @@ Accept: application/json
 }
 ```
 
+### 5. 画像生成
+
+#### `POST /api/v1/image/generate`
+
+プロンプトとベース画像からAI画像を生成します。
+
+**リクエストボディ:**
+
+```json
+{
+  "prompt": "A cute orange cat sitting in natural light",
+  "baseImage": "data:image/png;base64,...",
+  "model": "flux-fill",
+  "options": {
+    "steps": 20,
+    "guidanceScale": 7.5,
+    "strength": 0.8,
+    "outputFormat": "png"
+  }
+}
+```
+
+**パラメータ説明:**
+
+| パラメータ | 型 | 必須 | 説明 |
+|-----------|---|------|------|
+| prompt | string | ✓ | 生成用プロンプト（英語） |
+| baseImage | string | ✓ | ベース画像（data URL形式） |
+| model | string | × | 使用するモデル（デフォルト: "flux-fill"） |
+| options | object | × | 生成オプション |
+| options.steps | number | × | 推論ステップ数（20-50、デフォルト: 20） |
+| options.guidanceScale | number | × | ガイダンススケール（1-20、デフォルト: 7.5） |
+| options.strength | number | × | 変換強度（0-1、デフォルト: 0.8） |
+| options.outputFormat | string | × | 出力形式（"png" または "jpg"、デフォルト: "png"） |
+
+**対応モデル:**
+- `flux-fill`: FLUX Fill（インペインティング）
+- `flux-variations`: FLUX Variations（バリエーション生成）
+- `flux-canny`: FLUX Canny（エッジ検出ベース）
+- `sdxl-img2img`: SDXL Image-to-Image
+
+**レスポンス例（成功時）:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "image": "data:image/png;base64,...",
+    "generationTime": 8523,
+    "model": "flux-fill",
+    "cost": {
+      "amount": 0.005,
+      "currency": "USD"
+    }
+  },
+  "timestamp": "2025-01-25T10:30:00.000Z"
+}
+```
+
+**レスポンス例（エラー時）:**
+
+```json
+{
+  "success": false,
+  "error": "画像生成に失敗しました",
+  "details": "Image storage is not properly configured",
+  "timestamp": "2025-01-25T10:30:00.000Z"
+}
+```
+
+**レート制限:**
+- 10リクエスト/分
+- 最大画像サイズ: 10MB
+
+**注意事項:**
+- APIキーが設定されている必要があります
+- Cloudflare R2が正しく設定されている必要があります
+- 生成には数秒から数十秒かかることがあります
+
 ## エラーレスポンス
 
 ### バリデーションエラー
@@ -291,6 +370,7 @@ Retry-After: 60
 
 - 認証機能の追加
 - WebSocket APIの追加
-- 画像アップロードエンドポイント
 - プロンプト履歴API
 - ユーザー設定API
+- 複数画像のバッチ生成
+- 生成履歴の保存機能

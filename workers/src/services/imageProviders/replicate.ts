@@ -4,21 +4,19 @@
 
 import { createDataUrl } from '../../utils/imageProcessing';
 import { uploadToR2 } from '../r2Storage';
+import { uploadToR2S3, deleteFromR2S3 } from '../r2S3Upload';
 import type { Bindings } from '../../types';
 
 // Simple logging utility to control console output
 const logger = {
   debug: (message: string, data?: any) => {
-    // Only log in development environment
-    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
-      console.log(`[DEBUG] ${message}`, data);
-    }
+    console.log(`[DEBUG] ${message}`, data || '');
   },
   error: (message: string, error?: any) => {
-    console.error(`[ERROR] ${message}`, error);
+    console.error(`[ERROR] ${message}`, error || '');
   },
   info: (message: string, data?: any) => {
-    console.log(`[INFO] ${message}`, data);
+    console.log(`[INFO] ${message}`, data || '');
   }
 };
 
@@ -28,6 +26,7 @@ const REPLICATE_MODELS = {
   'flux-fill': 'black-forest-labs/flux-fill-dev', // Inpainting model
   'flux-variations': 'black-forest-labs/flux-redux-schnell', // Fast image variations
   'flux-canny': 'black-forest-labs/flux-canny-dev', // Edge-guided generation
+  'sdxl-img2img': 'stability-ai/sdxl', // Stable Diffusion XL img2img
 } as const;
 
 type ModelId = keyof typeof REPLICATE_MODELS;
@@ -61,42 +60,6 @@ interface ReplicatePredictionResponse {
   };
 }
 
-/**
- * Upload image to file.io as a fallback method
- */
-async function uploadToFileIo(imageDataUrl: string): Promise<string> {
-  const base64 = imageDataUrl.split(',')[1];
-  if (!base64) {
-    throw new Error('Invalid data URL: missing base64 data');
-  }
-  const mimeType = imageDataUrl.match(/^data:([^;]+);/)?.[1] || 'image/png';
-
-  try {
-    const formData = new FormData();
-    const blob = new Blob([Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))], {
-      type: mimeType,
-    });
-    formData.append('file', blob, 'image.png');
-
-    const uploadResponse = await fetch('https://file.io/?expires=1h', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!uploadResponse.ok) {
-      throw new Error(`Failed to upload to file.io: ${uploadResponse.status}`);
-    }
-
-    const uploadData = (await uploadResponse.json()) as { success: boolean; link: string };
-    if (!uploadData.success || !uploadData.link) {
-      throw new Error('file.io upload failed');
-    }
-
-    return uploadData.link;
-  } catch (error) {
-    throw new Error(`Failed to upload to file.io: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
 
 /**
  * Get model-specific input parameters
@@ -143,6 +106,19 @@ function getModelSpecificInput(
         output_quality: 90,
       };
 
+    case 'sdxl-img2img':
+      // SDXL img2img parameters
+      return {
+        prompt: prompt,
+        image: image,
+        refine: 'no_refiner',
+        num_inference_steps: Math.min(options.steps, 50),
+        guidance_scale: options.guidanceScale,
+        prompt_strength: options.strength,
+        num_outputs: 1,
+        scheduler: 'DPMSolverMultistep',
+      };
+
     default:
       throw new Error(`Unknown model: ${modelId}`);
   }
@@ -179,62 +155,67 @@ export async function generateWithReplicate(
   let uploadedImageKey: string | null = null;
 
   // For local development, try using a public image hosting service as fallback
-  const isLocalDev = env?.ENVIRONMENT === 'development';
+  const isLocalDev = env?.ENVIRONMENT === 'development' || env?.NODE_ENV === 'development';
 
-  // Check if R2 domain is properly configured for public access
-  const isR2PubliclyAccessible =
-    env.R2_CUSTOM_DOMAIN && !env.R2_CUSTOM_DOMAIN.includes('r2.cloudflarestorage.com');
+  // Check if we should use S3 API (preferred) or R2 binding
+  const useS3Api = env?.R2_ACCESS_KEY_ID && env?.R2_SECRET_ACCESS_KEY && 
+                   (env?.R2_S3_API_DEV || env?.R2_S3_API_PROD);
 
-  // Use R2 when custom domain is properly configured
-  if (env?.IMAGE_BUCKET && isR2PubliclyAccessible) {
+  if (useS3Api) {
+    // Use S3-compatible API
     try {
-      const uploadResult = await uploadToR2(env.IMAGE_BUCKET, imageDataUrl, {
+      const uploadResult = await uploadToR2S3(imageDataUrl, env, {
         keyPrefix: 'replicate-input',
         expiresIn: 3600, // 1 hour
-        customDomain: env.R2_CUSTOM_DOMAIN,
       });
       imageUrl = uploadResult.url;
       uploadedImageKey = uploadResult.key;
-      logger.debug('R2 upload successful:', { url: imageUrl, key: uploadedImageKey });
+      logger.debug('R2 S3 upload successful:', { url: imageUrl, key: uploadedImageKey });
     } catch (error) {
-      logger.error('Failed to upload image to R2:', error);
-
-      // In development, try alternative methods
-      if (isLocalDev) {
-        logger.debug('R2 upload failed in development, trying alternative method');
-
+      logger.error('Failed to upload image to R2 via S3 API:', error);
+      
+      // In production, try one more time with a delay
+      if (!isLocalDev) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
         try {
-          imageUrl = await uploadToFileIo(imageDataUrl);
-          logger.debug('Temporary upload successful to file.io:', { url: imageUrl });
-        } catch (tempError) {
-          logger.error('Failed to upload to temporary service:', tempError);
-          throw new Error(
-            'Failed to prepare image for processing in development. Please ensure R2 is properly configured.'
-          );
+          const uploadResult = await uploadToR2S3(imageDataUrl, env, {
+            keyPrefix: 'replicate-input',
+            expiresIn: 3600, // 1 hour
+          });
+          imageUrl = uploadResult.url;
+          uploadedImageKey = uploadResult.key;
+          logger.info('R2 S3 upload retry successful:', { url: imageUrl, key: uploadedImageKey });
+        } catch (retryError) {
+          logger.error('R2 S3 upload retry failed:', retryError);
+          throw new Error('Failed to prepare image for processing. R2 storage is unavailable.');
         }
       } else {
-        throw new Error('Failed to prepare image for processing');
+        throw new Error('Failed to prepare image for processing in development. Please check R2 configuration.');
       }
     }
-  } else {
-    // If R2 is not configured or not publicly accessible, use fallback in development
-    if (isLocalDev) {
-      logger.debug('R2 not publicly accessible, using fallback method');
-
+  } else if (env?.IMAGE_BUCKET && env?.R2_CUSTOM_DOMAIN) {
+    // Fallback to R2 binding
+    const isR2PubliclyAccessible = !env.R2_CUSTOM_DOMAIN.includes('r2.cloudflarestorage.com');
+    
+    if (isR2PubliclyAccessible) {
       try {
-        imageUrl = await uploadToFileIo(imageDataUrl);
-        logger.debug('Temporary upload successful to file.io:', { url: imageUrl });
-      } catch (tempError) {
-        logger.error('Failed to upload to temporary service:', tempError);
-        throw new Error(
-          'Failed to prepare image for processing in development. Please configure R2 with public access.'
-        );
+        const uploadResult = await uploadToR2(env.IMAGE_BUCKET, imageDataUrl, {
+          keyPrefix: 'replicate-input',
+          expiresIn: 3600, // 1 hour
+          customDomain: env.R2_CUSTOM_DOMAIN,
+        });
+        imageUrl = uploadResult.url;
+        uploadedImageKey = uploadResult.key;
+        logger.debug('R2 upload successful:', { url: imageUrl, key: uploadedImageKey });
+      } catch (error) {
+        logger.error('Failed to upload image to R2:', error);
+        throw new Error('Failed to prepare image for processing. R2 storage is unavailable.');
       }
     } else {
-      throw new Error(
-        'R2 must be configured with public access. Please use a custom domain, not r2.cloudflarestorage.com.'
-      );
+      throw new Error('R2 custom domain is not properly configured for public access.');
     }
+  } else {
+    throw new Error('Image storage is not properly configured. Please check R2 configuration.');
   }
 
   // Replicate APIに予測リクエストを送信
@@ -367,9 +348,13 @@ export async function generateWithReplicate(
   const base64Image = btoa(binary);
 
   // Clean up uploaded input image from R2 (only if we actually uploaded to R2)
-  if (uploadedImageKey && env?.IMAGE_BUCKET && !isLocalDev) {
+  if (uploadedImageKey && !isLocalDev) {
     try {
-      await env.IMAGE_BUCKET.delete(uploadedImageKey);
+      if (useS3Api) {
+        await deleteFromR2S3(uploadedImageKey, env);
+      } else if (env?.IMAGE_BUCKET) {
+        await env.IMAGE_BUCKET.delete(uploadedImageKey);
+      }
     } catch (error) {
       logger.error('Failed to clean up uploaded image:', error);
       // Don't throw here, as the main operation succeeded

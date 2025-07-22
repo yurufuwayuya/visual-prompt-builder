@@ -51,6 +51,10 @@ interface GenerateImageResponse {
     amount: number;
     currency: string;
   };
+  // R2に保存された画像のURL（オプション）
+  imageUrl?: string;
+  // R2に保存された画像のキー（オプション）
+  imageKey?: string;
 }
 
 export const imageRoute = new Hono<{ Bindings: Bindings }>();
@@ -146,6 +150,40 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
 
     response.generationTime = Date.now() - startTime;
 
+    // 生成された画像をR2に保存
+    if (c?.env?.IMAGE_BUCKET && c?.env?.R2_CUSTOM_DOMAIN) {
+      try {
+        const imageDataUrl = `data:image/${finalOptions.outputFormat};base64,${response.image}`;
+        const uploadResult = await uploadToR2(c.env.IMAGE_BUCKET, imageDataUrl, {
+          keyPrefix: 'generated',
+          customDomain: c.env.R2_CUSTOM_DOMAIN,
+        });
+        
+        // レスポンスに画像URLを追加
+        const enhancedResponse = {
+          ...response,
+          imageUrl: uploadResult.url,
+          imageKey: uploadResult.key,
+        };
+        
+        // キャッシュに保存（24時間）
+        if (c?.env?.ENVIRONMENT !== 'development' && c?.env?.IMAGE_CACHE) {
+          try {
+            await c.env.IMAGE_CACHE.put(cacheKey, JSON.stringify(enhancedResponse), {
+              expirationTtl: 86400, // 24時間
+            });
+          } catch (cacheError) {
+            console.warn('Cache save failed:', cacheError);
+          }
+        }
+        
+        return c.json(createSuccessResponse(enhancedResponse));
+      } catch (uploadError) {
+        console.error('Failed to upload generated image to R2:', uploadError);
+        // アップロードに失敗しても、生成された画像は返す
+      }
+    }
+
     // キャッシュに保存（24時間）
     if (c?.env?.ENVIRONMENT !== 'development' && c?.env?.IMAGE_CACHE) {
       try {
@@ -203,6 +241,7 @@ imageRoute.get('/models', async (c) => {
 
 // プロバイダー別の実装
 import { generateWithReplicate as replicateGenerate } from '../services/imageProviders/replicate';
+import { uploadToR2 } from '../services/r2Storage';
 
 // 画像生成オプションの型
 type ImageGenerationOptions = {

@@ -93,8 +93,8 @@ This error occurs when:
 2. Use the correct custom domain URL: `https://image.kantanprompt.com`
 3. Verify the bucket binding matches your wrangler.toml configuration
 4. Check that the custom domain is active in the Cloudflare dashboard
-5. **Development workaround**: The system automatically falls back to file.io in
-   development mode if R2 is not accessible
+5. **Development workaround**: Ensure R2 bucket is properly configured with
+   public access for development mode
 
 ## Security Considerations
 
@@ -119,5 +119,6 @@ This script will:
 
 ## Alternative for Development
 
-If R2 public access cannot be configured, the system will automatically fall
-back to using file.io for temporary image hosting in development mode only.
+If R2 public access cannot be configured in development, consider using
+alternative image hosting services or configuring a local development
+environment with appropriate CORS settings.

@@ -12,6 +12,8 @@ export interface ImageGenerationResponse {
   image?: string; // Base64エンコードされた画像
   error?: string;
   cached?: boolean;
+  imageUrl?: string; // R2に保存された画像のURL
+  imageKey?: string; // R2に保存された画像のキー
 }
 
 /**
@@ -67,6 +69,8 @@ export async function generateImage(
       success: true,
       image: data.image,
       cached: data.cached,
+      imageUrl: data.imageUrl,
+      imageKey: data.imageKey,
     };
   } catch (error) {
     console.error('画像生成エラー:', error);
