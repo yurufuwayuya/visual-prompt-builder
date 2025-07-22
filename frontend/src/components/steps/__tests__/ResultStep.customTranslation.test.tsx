@@ -62,6 +62,9 @@ describe('ResultStep - カスタムテキストの翻訳', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // console.errorをモック
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
     // fetchモックをグローバルに設定
     global.fetch = mockFetch;
 
@@ -81,7 +84,7 @@ describe('ResultStep - カスタムテキストの翻訳', () => {
       const body = JSON.parse(options.body);
 
       // 翻訳APIのモック
-      if (url.includes('/translation/translate')) {
+      if (url.includes('/translation/trans')) {
         const translationMap: Record<string, string> = {
           美しい風景: 'beautiful landscape',
           山と湖: 'mountains and lake',
@@ -136,20 +139,24 @@ describe('ResultStep - カスタムテキストの翻訳', () => {
     });
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('カスタムテキストの日本語を検出して翻訳する', async () => {
     render(<ResultStep onNew={vi.fn()} />);
 
     // プロンプト生成が自動的に開始される
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/translation/translate'),
+        expect.stringContaining('/translation/trans'),
         expect.any(Object)
       );
     });
 
     // 翻訳APIが各カスタムテキストに対して呼ばれていることを確認
     const translationCalls = mockFetch.mock.calls.filter((call) =>
-      call[0].includes('/translation/translate')
+      call[0].includes('/translation/trans')
     );
 
     expect(translationCalls).toHaveLength(6); // 6つのカスタムフィールド

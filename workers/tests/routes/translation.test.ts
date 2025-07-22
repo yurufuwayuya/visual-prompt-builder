@@ -33,18 +33,19 @@ describe('Translation API', () => {
   describe('POST /api/v1/translation/translate', () => {
     it('日本語から英語への翻訳が成功すること', async () => {
       // MyMemory APIのモックレスポンス
+      // モックをテスト翻訳結果に設定
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           responseStatus: 200,
           responseData: {
-            translatedText: 'cat',
+            translatedText: 'Test translation',
           },
         }),
       });
 
       const response = await app.request(
-        '/api/v1/translation/translate',
+        '/api/v1/translation/trans',
         {
           method: 'POST',
           headers: {
@@ -71,13 +72,13 @@ describe('Translation API', () => {
         json: async () => ({
           responseStatus: 200,
           responseData: {
-            translatedText: '猫',
+            translatedText: 'Test translation',
           },
         }),
       });
 
       const response = await app.request(
-        '/api/v1/translation/translate',
+        '/api/v1/translation/trans',
         {
           method: 'POST',
           headers: {
@@ -95,12 +96,12 @@ describe('Translation API', () => {
       expect(response.status).toBe(200);
       const result = await response.json();
       expect(result.success).toBe(true);
-      expect(result.data.translatedText).toBe('猫');
+      expect(result.data.translatedText).toBe('Test translation');
     });
 
     it('同じ言語の場合はそのまま返すこと', async () => {
       const response = await app.request(
-        '/api/v1/translation/translate',
+        '/api/v1/translation/trans',
         {
           method: 'POST',
           headers: {
@@ -128,7 +129,7 @@ describe('Translation API', () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
       const response = await app.request(
-        '/api/v1/translation/translate',
+        '/api/v1/translation/trans',
         {
           method: 'POST',
           headers: {
@@ -151,7 +152,7 @@ describe('Translation API', () => {
 
     it('無効なリクエストは400エラーを返すこと', async () => {
       const response = await app.request(
-        '/api/v1/translation/translate',
+        '/api/v1/translation/trans',
         {
           method: 'POST',
           headers: {

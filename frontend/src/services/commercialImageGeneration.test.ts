@@ -129,11 +129,23 @@ describe('commercialImageGeneration', () => {
     });
 
     it('エラー時はnullを返す', () => {
+      // console.errorをモック
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
       (localStorage.getItem as any).mockImplementation(() => {
         throw new Error('Storage error');
       });
       const result = getLastUsedService();
       expect(result).toBeNull();
+
+      // console.errorが呼ばれたことを確認
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Failed to get last used service:',
+        expect.any(Error)
+      );
+
+      // モックをリセット
+      consoleErrorSpy.mockRestore();
     });
   });
 });
