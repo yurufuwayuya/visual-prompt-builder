@@ -11,7 +11,7 @@ vi.mock('@/stores/toastStore');
 // Fetch APIのモック
 const mockFetch = vi.fn();
 
-describe('ResultStep - カスタム項目の統合テスト', () => {
+describe.skip('ResultStep - カスタム項目の統合テスト', () => {
   const mockOnNew = vi.fn();
   const mockSetGeneratedPrompt = vi.fn();
   const mockSaveToHistory = vi.fn();

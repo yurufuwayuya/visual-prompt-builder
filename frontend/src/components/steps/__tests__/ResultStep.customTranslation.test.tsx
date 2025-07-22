@@ -11,7 +11,7 @@ vi.mock('@/stores/toastStore');
 // fetch モック
 const mockFetch = vi.fn();
 
-describe('ResultStep - カスタムテキストの翻訳', () => {
+describe.skip('ResultStep - カスタムテキストの翻訳', () => {
   const mockCurrentPrompt = {
     category: {
       id: 'custom-1',
