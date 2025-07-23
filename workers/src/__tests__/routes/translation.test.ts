@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import app from '../../src/index';
+import app from '../../index';
 
 // fetchのモック
 const mockFetch = vi.fn();
