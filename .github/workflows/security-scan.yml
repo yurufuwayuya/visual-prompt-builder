@@ -60,7 +60,7 @@ jobs:
         continue-on-error: true
 
       - name: Run TruffleHog (Filesystem)
-        if: steps.trufflehog-git.outcome == 'failure'
+        if: steps.trufflehog-git.conclusion != 'success'
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
