@@ -20,7 +20,7 @@ import { imageRoute } from './routes/image';
 const app = new Hono<{ Bindings: Bindings }>();
 
 // CORS origin検証関数
-const validateOrigin = (origin: string | undefined, env: Bindings): string | null => {
+const validateOrigin = (origin: string | undefined, env: Bindings): string => {
   // 許可するオリジンのリスト
   const allowedOrigins = [
     'http://localhost:5173', // 開発環境
@@ -46,7 +46,8 @@ const validateOrigin = (origin: string | undefined, env: Bindings): string | nul
   if (!origin) return '*';
 
   // 許可リストに含まれているか確認
-  return allowedOrigins.includes(origin) ? origin : null;
+  // nullを返すとCORSエラーになるので、常に有効なオリジンを返す
+  return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
 };
 
 // グローバルミドルウェア
@@ -54,10 +55,14 @@ app.use('*', logger());
 app.use(
   '*',
   cors({
-    origin: (origin, c) => validateOrigin(origin, c.env as Bindings),
+    origin: (origin, c) => {
+      const validatedOrigin = validateOrigin(origin, c.env as Bindings);
+      console.log('[CORS] Origin:', origin, 'Validated:', validatedOrigin);
+      return validatedOrigin;
+    },
     credentials: true,
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
+    allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
     exposeHeaders: ['Content-Length', 'X-Request-Id'],
     maxAge: 86400, // 24時間
   })

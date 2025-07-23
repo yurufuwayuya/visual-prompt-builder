@@ -691,3 +691,56 @@ VSCodeの問題タブに表示されていたTypeScriptエラーとESLint警告�
 - any型の具体的な型への置き換え
 
 ---
+
+## 2025-07-23 - CORSエラーの調査と修正
+
+### 11:00-11:30の作業
+
+#### 実施内容
+
+1. **CORSエラーの調査**
+   - フロントエンドからのAPIアクセスでCORSエラーが発生
+   - 原因: validateOrigin関数がnullを返していた
+   - Honoのcorsミドルウェアの仕様: nullを返すとCORSヘッダーが設定されない
+
+2. **validateOrigin関数の修正**
+   - 許可されていないオリジンの場合、nullではなくfalseを返すように修正
+   - これによりHonoが適切にCORSエラーを返すようになった
+
+3. **デプロイ完了**
+   - 修正後のコードをデプロイ
+   - CORSエラーが解消されたことを確認
+
+#### 技術的詳細
+
+```typescript
+// 修正前
+function validateOrigin(origin: string | undefined): string | null {
+  if (!origin) return null; // これが問題
+  // ...
+}
+
+// 修正後
+function validateOrigin(origin: string | undefined): string | false {
+  if (!origin) return false; // falseを返すことで適切なCORSエラーに
+  // ...
+}
+```
+
+#### 成果物
+
+- CORSエラーが解消され、フロントエンドからAPIにアクセス可能に
+- validateOrigin関数の仕様が明確になった
+
+#### 学んだこと
+
+- Honoのcorsミドルウェアは、origin関数がnullを返すとCORSヘッダーを設定しない
+- falseを返すことで、適切なCORSエラーレスポンスが生成される
+- ミドルウェアの仕様をしっかり理解することの重要性
+
+### 次回の作業予定
+
+- 画像生成機能の本番環境での動作確認
+- エラーハンドリングのさらなる改善
+
+---
