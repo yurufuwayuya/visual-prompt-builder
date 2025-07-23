@@ -65,7 +65,7 @@ promptRoute.post(
 
       // プロンプト生成
       const startTime = Date.now();
-      const prompt = await generatePrompt(normalizedPromptData, options);
+      const prompt = await generatePrompt(normalizedPromptData, options, c.env);
 
       // 使用されたキーワードの抽出
       const usedKeywords = extractKeywords(prompt);
@@ -87,6 +87,7 @@ promptRoute.post(
             });
           }
         } catch (cacheError) {
+          // Logger is not available here, using console.warn for cache errors
           console.warn('Cache save failed:', cacheError);
           // キャッシュ保存失敗は無視して続行
         }
@@ -94,6 +95,7 @@ promptRoute.post(
 
       return c.json(createSuccessResponse(response));
     } catch (error) {
+      // Logger is not available here, using console.error for critical errors
       console.error('Prompt generation error:', error);
       return c.json(createErrorResponse(error, 'プロンプト生成に失敗しました'), 500);
     }

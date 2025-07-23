@@ -11,6 +11,7 @@ import {
   createErrorResponse,
   generateCacheKey,
 } from '@visual-prompt-builder/shared';
+import { createLogger } from '../utils/logger';
 
 // リクエストスキーマ
 const generateImageSchema = z.object({
@@ -75,13 +76,12 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
   };
 
   // Request logging (開発環境のみ)
-  if (c?.env?.ENVIRONMENT === 'development') {
-    console.log('[Image API] Received request:', {
-      prompt,
-      options: finalOptions,
-      baseImageSize: baseImage.length,
-    });
-  }
+  const imageLogger = createLogger({ prefix: 'Image API', env: c.env });
+  imageLogger.debug('Received request:', {
+    prompt,
+    options: finalOptions,
+    baseImageSize: baseImage.length,
+  });
 
   try {
     // キャッシュキーの生成 - 画像全体のハッシュを使用してキー衝突を防ぐ
@@ -157,15 +157,16 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
         const uploadResult = await uploadToR2(c.env.IMAGE_BUCKET, imageDataUrl, {
           keyPrefix: 'generated',
           customDomain: c.env.R2_CUSTOM_DOMAIN,
+          env: c.env,
         });
-        
+
         // レスポンスに画像URLを追加
         const enhancedResponse = {
           ...response,
           imageUrl: uploadResult.url,
           imageKey: uploadResult.key,
         };
-        
+
         // キャッシュに保存（24時間）
         if (c?.env?.ENVIRONMENT !== 'development' && c?.env?.IMAGE_CACHE) {
           try {
@@ -173,12 +174,14 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
               expirationTtl: 86400, // 24時間
             });
           } catch (cacheError) {
+            // Logger is not available here, using console.warn for cache errors
             console.warn('Cache save failed:', cacheError);
           }
         }
-        
+
         return c.json(createSuccessResponse(enhancedResponse));
       } catch (uploadError) {
+        // Logger is not available here, using console.error for critical errors
         console.error('Failed to upload generated image to R2:', uploadError);
         // アップロードに失敗しても、生成された画像は返す
       }

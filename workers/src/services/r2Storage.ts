@@ -3,6 +3,8 @@
  * Handles temporary image storage for Replicate API
  */
 
+import { createLogger } from '../utils/logger';
+
 interface R2UploadResult {
   key: string;
   url: string;
@@ -64,8 +66,10 @@ export async function uploadToR2(
     keyPrefix?: string;
     expiresIn?: number; // seconds
     customDomain?: string;
+    env?: unknown; // For logger environment context
   } = {}
 ): Promise<R2UploadResult> {
+  const logger = createLogger({ prefix: 'R2Storage', env: options.env });
   const { keyPrefix = 'temp', expiresIn = 86400, customDomain } = options; // 24 hours default
 
   // Convert data URL to ArrayBuffer and get content type
@@ -75,7 +79,7 @@ export async function uploadToR2(
   // Generate unique key with proper extension
   const key = generateObjectKey(keyPrefix, contentType);
 
-  console.log('[DEBUG] R2 Upload attempt:', {
+  logger.debug('R2 Upload attempt:', {
     key,
     contentType,
     dataSize: arrayBuffer.byteLength,
@@ -93,7 +97,7 @@ export async function uploadToR2(
     },
   });
 
-  console.log('[DEBUG] R2 put() result:', {
+  logger.debug('R2 put() result:', {
     success: !!object,
     key: object?.key,
     httpEtag: object?.httpEtag,

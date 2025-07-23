@@ -16,16 +16,20 @@ import {
   LIGHTINGS,
   QUALITY_KEYWORDS,
 } from '@visual-prompt-builder/shared';
+import { createLogger } from '../utils/logger';
+import type { Bindings } from '../types';
 
 export async function generatePrompt(
   promptData: ApiPromptData,
-  options: PromptGenerationOptions
+  options: PromptGenerationOptions,
+  env?: Bindings
 ): Promise<string> {
+  const logger = createLogger({ prefix: 'PromptGenerator', env });
   const parts: string[] = [];
 
   // デバッグログ
-  console.log('[generatePrompt] Input promptData:', JSON.stringify(promptData, null, 2));
-  console.log('[generatePrompt] Input options:', JSON.stringify(options, null, 2));
+  logger.debug('Input promptData:', JSON.stringify(promptData, null, 2));
+  logger.debug('Input options:', JSON.stringify(options, null, 2));
 
   // 常に英語でプロンプトを生成する
   const language = 'en';
@@ -40,17 +44,17 @@ export async function generatePrompt(
 
   // 詳細
   if (promptData.details && promptData.details.length > 0) {
-    console.log('[generatePrompt] Processing details:', promptData.details);
+    logger.debug('Processing details:', promptData.details);
     const sortedDetails = [...promptData.details].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     for (const detail of sortedDetails) {
       const detailText = getDetailText(detail, language);
-      console.log('[generatePrompt] Detail:', detail, '→ Text:', detailText);
+      logger.debug(`Detail: ${JSON.stringify(detail)} → Text: ${detailText}`);
       if (detailText) {
         parts.push(detailText);
       }
     }
   } else {
-    console.log('[generatePrompt] No details provided');
+    logger.debug('No details provided');
   }
 
   // スタイル
@@ -111,8 +115,8 @@ export async function generatePrompt(
   parts.push('high quality', 'detailed', 'masterpiece');
 
   const result = parts.join(', ');
-  console.log('[generatePrompt] Final parts:', parts);
-  console.log('[generatePrompt] Final prompt:', result);
+  logger.debug('Final parts:', parts);
+  logger.debug('Final prompt:', result);
   return result;
 }
 

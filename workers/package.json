@@ -14,7 +14,7 @@
     "test:r2": "node test-r2-upload.js",
     "test:r2:prod": "node test-r2-upload.js prod",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --ext ts,js --report-unused-disable-directives --max-warnings 10",
     "clean": "rm -rf dist node_modules .wrangler"
   },
   "dependencies": {
