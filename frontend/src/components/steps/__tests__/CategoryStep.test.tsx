@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CategoryStep } from './CategoryStep';
+import { CategoryStep } from '../CategoryStep';
 import { usePromptStore } from '@/stores/promptStore';
 
 // Mock the store

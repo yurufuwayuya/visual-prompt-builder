@@ -4,8 +4,8 @@ import {
   checkPromptLength,
   saveLastUsedService,
   getLastUsedService,
-} from './commercialImageGeneration';
-import { ImageGenerationService } from '../config/commercialImageServices';
+} from '../commercialImageGeneration';
+import { ImageGenerationService } from '../../config/commercialImageServices';
 
 describe('commercialImageGeneration', () => {
   beforeEach(() => {
