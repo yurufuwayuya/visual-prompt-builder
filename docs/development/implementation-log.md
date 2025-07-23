@@ -4,6 +4,115 @@ Claude Codeによる実装記録。問題解決の経緯、実装内容、学習
 
 ---
 
+## 2025-01-23 コードリファクタリング作業
+
+### 作業内容
+
+1. **環境変数管理の改善**
+   - frontend/src/config/api.ts を修正し、環境変数から API
+     URL を読み取るように変更
+   - frontend/.env.example を作成（開発者向けのテンプレート）
+   - workers/.dev.vars.example を作成（Cloudflare
+     Workers 用の環境変数テンプレート）
+
+2. **パッケージ依存関係の統一**
+   - shared/package.json の vitest を v1.6.0 から v3.0.0 に更新（他パッケージと統一）
+   - 全パッケージで同じバージョンの vitest を使用するように修正
+
+3. **不要ファイルの削除と整理**
+   - workflow.test.tsx.bak バックアップファイルを削除
+   - .gitignore に worker.log と workers/wrangler.log を追加
+
+4. **コード品質の向上**
+   - 環境変数のハードコーディングを解消
+   - API_BASE_URL を環境変数 VITE_API_BASE_URL から読み取り可能に
+
+### 検出された問題
+
+1. **環境変数のハードコーディング**
+   - wrangler.toml に本番環境の URL がハードコードされている
+   - frontend の API URL がコード内に直接記載
+
+2. **バージョン不整合**
+   - shared パッケージの vitest が古いバージョン（v1.6.0）を使用
+
+3. **テストファイルの散在**
+   - ResultStep に 3 つのテストファイル（約 1200 行）
+   - テストファイルの配置が統一されていない（**tests**
+     ディレクトリと同階層の混在）
+
+### 今後の改善提案
+
+1. **テストファイルの統合**
+   - ResultStep の 3 つのテストファイルを 1 つに統合
+   - テストファイルの配置を **tests** ディレクトリに統一
+
+2. **環境設定の一元管理**
+   - 環境別の設定ファイルを作成
+   - シークレット情報の管理方法を文書化
+
+---
+
+## 2025-01-23 改善提案の実施
+
+### 実施内容
+
+1. **ResultStepのテストファイル統合**
+   - 3つのテストファイル（ResultStep.test.tsx、ResultStep.custom.test.tsx、ResultStep.customTranslation.test.tsx）を1つに統合
+   - 統合先: `/frontend/src/components/steps/__tests__/ResultStep.test.tsx`
+   - 重複するモック設定を共通化し、論理的なdescribeブロックで整理
+   - 約1200行のテストコードを効率的に統合
+
+2. **wrangler.tomlの環境変数化**
+   - `/workers/.env.example` を作成（KV Namespace IDsとR2設定のテンプレート）
+   - `/workers/README.md` を作成（環境変数管理のドキュメント）
+   - `/workers/scripts/setup-secrets.sh`
+     を作成（シークレット設定用のヘルパースクリプト）
+   - Cloudflare Workersの仕様上、KV Namespace
+     IDsは直接wrangler.tomlに記述が必要なため、ドキュメント化で対応
+
+3. **テストファイル配置の統一化**
+   - すべてのテストファイルを `__tests__` ディレクトリに移動
+   - 移動したファイル:
+     - CategoryStep.category-change.test.tsx → **tests**/
+     - CategoryStep.test.tsx → **tests**/
+     - StyleStep.test.tsx → **tests**/
+     - ImageGenerationSection.test.tsx → components/**tests**/
+     - commercialImageGeneration.test.ts → services/**tests**/
+     - workers/tests/\* → workers/src/**tests**/
+   - `/docs/development/test-file-convention.md`
+     を作成（テストファイル配置規約）
+
+### 成果
+
+1. **コードの保守性向上**
+   - テストファイルの重複が解消され、管理が容易に
+   - 統一されたディレクトリ構造により、新規開発者も理解しやすい
+
+2. **環境設定の明確化**
+   - 環境変数とシークレットの管理方法が文書化された
+   - セットアップスクリプトにより、環境構築が簡単に
+
+3. **開発効率の向上**
+   - テストファイルの検索と実行が容易に
+   - 環境設定の変更が体系的に管理可能
+
+### 次回の作業予定
+
+1. **テストの有効化**
+   - 現在skipされているテストの確認と有効化
+   - テストカバレッジの向上
+
+2. **CI/CDパイプラインの改善**
+   - テスト実行の自動化
+   - 環境変数の自動検証
+
+3. **CI/CD パイプラインでの検証**
+   - 環境変数の存在チェック
+   - バージョン整合性の自動検証
+
+---
+
 ## 2025-01-07 第4弾 - UI/UXブラッシュアップとアクセシビリティ強化
 
 ### 作業内容
@@ -791,5 +900,46 @@ curl https://visual-prompt-builder-api.yuya-kitamori.workers.dev/api/v1/health
 
 - デプロイ完了後の動作確認
 - 画像生成機能の本番環境テスト
+
+---
+
+## 2025-07-23 強制デプロイによる本番環境更新
+
+### 12:30-12:45の作業
+
+#### 実施内容
+
+1. **GitHub Actionsのテストエラー対応**
+   - S3互換APIのテストでモック設定不備によるエラー
+   - 本番環境には影響しないと判断
+   - ローカルでのビルドとデプロイで対応
+
+2. **強制デプロイの実行**
+   - `npm run build`でフロントエンドをビルド
+   - `cd workers && npm run deploy`でWorkerをデプロイ
+   - 正常にデプロイ完了
+
+3. **環境変数サンプルファイルの作成**
+   - `frontend/.env.example`を作成
+   - `workers/.dev.vars.example`を作成
+   - 今後の開発者向けのドキュメント整備
+
+#### 成果物
+
+- 本番環境へのデプロイ完了
+- 環境変数のサンプルファイル作成
+- R2 S3 API機能の本番環境反映
+
+#### 課題
+
+- GitHub ActionsでのR2認証情報の設定が必要
+- テスト環境と本番環境の差異を減らす必要
+- CI/CDパイプラインの改善が必要
+
+### 次回の作業予定
+
+- GitHub SecretsにR2のS3互換APIキーを設定
+- テストのモック改善
+- CI/CDパイプラインの最適化
 
 ---

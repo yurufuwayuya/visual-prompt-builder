@@ -4,7 +4,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import app from '../../src/index';
-import type { TranslationResponse } from '@visual-prompt-builder/shared';
 
 // fetchのモック
 const mockFetch = vi.fn();

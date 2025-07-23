@@ -276,7 +276,7 @@ describe('Image API Routes', () => {
       expect(generateWithReplicate).toHaveBeenCalledWith(
         TEST_IMAGE,
         'test prompt',
-        expect.objectContaining({
+        {
           width: 1024,
           height: 1024,
           strength: 0.8,
@@ -284,9 +284,10 @@ describe('Image API Routes', () => {
           guidanceScale: 8.0,
           negativePrompt: 'ugly, blurry',
           outputFormat: 'jpeg',
-        }),
+        },
         'test-api-key',
-        'flux-fill'
+        'flux-fill',
+        mockEnv
       );
     });
 

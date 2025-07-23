@@ -13,7 +13,7 @@ export default defineConfig({
         ENVIRONMENT: 'test',
       },
     },
-    setupFiles: './tests/setup.ts',
+    setupFiles: './src/__tests__/setup.ts',
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

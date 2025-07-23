@@ -10,7 +10,10 @@ global.Request = Request;
 global.Headers = Headers;
 
 // 環境変数のモック
-(global as any).env = {
+interface GlobalWithEnv {
+  env: Record<string, unknown>;
+}
+(global as GlobalWithEnv).env = {
   CACHE: {
     get: vi.fn(),
     put: vi.fn(),
