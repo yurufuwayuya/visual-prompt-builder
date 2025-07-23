@@ -5,22 +5,22 @@ compatibility_date = "2024-12-01"
 # KV Namespaces
 [[kv_namespaces]]
 binding = "CACHE"
-id = "cache_namespace_id"
+id = "4b2c535505b7438ab4d382e170f3758e"
 preview_id = "0214ee29e371415a9fa6ef0a9f229509"
 
 [[kv_namespaces]]
 binding = "SESSION"
-id = "session_namespace_id"
+id = "aa2e97aef4e14eb7a39872875b59ec74"
 preview_id = "de725a4a38fc43f28cca9afd16c4d5f9"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
-id = "rate_limit_namespace_id"
+id = "0e0422b2b9f14a99b40adcb4906441e5"
 preview_id = "d0a6740231fd4448b5e84313dbea0129"
 
 [[kv_namespaces]]
 binding = "IMAGE_CACHE"
-id = "image_cache_namespace_id"
+id = "83ea1a9180c84ed4a23b325583dbe737"
 preview_id = "14ecb1acbc0348018c09a34efb215c7e"
 
 # R2 Bucket
