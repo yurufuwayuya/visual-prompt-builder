@@ -59,7 +59,7 @@ id = "f4948d4c905944cbbd95aa798985179a"
 
 [[env.production.kv_namespaces]]
 binding = "IMAGE_CACHE"
-id = "production_image_cache_namespace_id"
+id = "8c0fea232e374471a8778c1d9bcbba7a"
 
 # 本番環境用のR2 Bucket
 [[env.production.r2_buckets]]
