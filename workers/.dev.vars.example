@@ -1,0 +1,12 @@
+# Image Generation API Keys
+IMAGE_API_KEY=your-replicate-api-key
+
+# Translation API Key
+TRANSLATION_API_KEY=your-translation-api-key
+
+# R2 Configuration (S3-compatible API)
+R2_ACCESS_KEY_ID=your-r2-access-key-id
+R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
+
+# Environment
+ENVIRONMENT=development

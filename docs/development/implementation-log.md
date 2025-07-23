@@ -744,3 +744,52 @@ function validateOrigin(origin: string | undefined): string | false {
 - エラーハンドリングのさらなる改善
 
 ---
+
+## 2025-07-23 - APIエンドポイントの修正とデバッグ
+
+### 11:30-12:00の作業
+
+#### 実施内容
+
+1. **間違ったAPIエンドポイントの発見**
+   - フロントエンドが`visual-prompt-builder.yuya-kitamori.workers.dev`を使用していた
+   - 正しいエンドポイントは`visual-prompt-builder-api.yuya-kitamori.workers.dev`
+   - 2つの異なるWorkerがデプロイされていることに気づいた
+
+2. **問題の調査方法**
+   - curlコマンドでAPIを直接テスト
+   - 正しいエンドポイントでは200 OKが返ることを確認
+   - 間違ったエンドポイントでは404エラー
+
+3. **修正内容**
+   - `.env`ファイルのAPI_BASE_URLを修正
+   - フロントエンドのビルドとデプロイを実行
+   - GitHubにプッシュして自動デプロイを待機中
+
+#### 技術的詳細
+
+```bash
+# 間違ったエンドポイント（404エラー）
+curl https://visual-prompt-builder.yuya-kitamori.workers.dev/api/v1/health
+
+# 正しいエンドポイント（200 OK）
+curl https://visual-prompt-builder-api.yuya-kitamori.workers.dev/api/v1/health
+```
+
+#### 成果物
+
+- 正しいAPIエンドポイントへの接続
+- フロントエンドとバックエンドの正常な通信
+
+#### 学んだこと
+
+- Cloudflare Workersは複数デプロイできるが、名前に注意が必要
+- デバッグ時はcurlで直接APIを叩くのが効果的
+- 環境変数の設定ミスは早期に発見すべき
+
+### 次回の作業予定
+
+- デプロイ完了後の動作確認
+- 画像生成機能の本番環境テスト
+
+---
