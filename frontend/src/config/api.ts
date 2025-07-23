@@ -1,5 +1,5 @@
 export const API_BASE_URL = import.meta.env.PROD
-  ? 'https://visual-prompt-builder.yuya-kitamori.workers.dev'
+  ? 'https://visual-prompt-builder-api.yuya-kitamori.workers.dev'
   : 'http://localhost:8787';
 
 export const API_ENDPOINTS = {
