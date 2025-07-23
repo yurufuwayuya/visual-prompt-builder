@@ -33,7 +33,7 @@ preview_bucket_name = "prompt-builder-dev"
 [vars]
 ENVIRONMENT = "development"
 IMAGE_PROVIDER = "replicate"
-R2_CUSTOM_DOMAIN = "https://image.kantanprompt.com"
+R2_CUSTOM_DOMAIN = "https://image-dev.kantanprompt.com"
 R2_S3_API_DEV = "https://1b154d8dab68e47be1d8dc7734f1d802.r2.cloudflarestorage.com/prompt-builder-dev"
 R2_S3_API_PROD = "https://1b154d8dab68e47be1d8dc7734f1d802.r2.cloudflarestorage.com/prompt-builder"
 

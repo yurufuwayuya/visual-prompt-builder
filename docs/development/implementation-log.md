@@ -489,3 +489,54 @@ Claude Codeによる実装記録。問題解決の経緯、実装内容、学習
 - 動作確認とテスト
 
 ---
+
+## 2025-07-23 画像生成API 500エラーの修正
+
+### 15:20-15:30の作業
+
+#### 実施内容
+
+1. **Wranglerバージョンアップデート**
+   - 3.61.0 → 3.114.11 に更新
+   - 最新バージョンで動作確認
+
+2. **画像生成API 500エラーの調査**
+   - エラー原因: R2 S3互換APIのアクセスキーが未設定
+   - 開発環境でR2_ACCESS_KEY_IDとR2_SECRET_ACCESS_KEYが.dev.varsに未設定
+   - R2_CUSTOM_DOMAINが本番用URLを指していた問題も発見
+
+3. **設定ファイルの修正**
+   - wrangler.tomlの開発環境用R2_CUSTOM_DOMAINを修正
+   - https://image.kantanprompt.com → https://image-dev.kantanprompt.com
+   - .dev.varsにR2アクセスキーのプレースホルダーを追加
+
+#### 修正ファイル
+
+- `workers/package.json` - wranglerバージョン更新
+- `workers/wrangler.toml` - 開発環境用R2_CUSTOM_DOMAIN修正
+- `workers/.dev.vars` - R2アクセスキー設定追加
+
+#### 成果
+
+- Wrangler最新化完了
+- 画像生成APIエラーの原因特定
+- 開発環境設定の改善
+
+### 課題
+
+- R2アクセスキーの実際の値を設定する必要がある
+- 開発環境用のR2カスタムドメインが正しく設定されているか確認必要
+
+### 学習事項
+
+- Cloudflare WorkersでR2 S3互換APIを使用する場合はアクセスキーが必須
+- 開発と本番で異なるR2カスタムドメインを使用する場合は環境変数の管理が重要
+- .dev.varsファイルはローカル開発環境専用のシークレット管理
+
+### 次回の作業予定
+
+- R2アクセスキーの実際の値を設定
+- 画像生成機能の動作確認
+- 本番環境へのデプロイ
+
+---
