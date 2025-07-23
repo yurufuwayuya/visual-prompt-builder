@@ -2,12 +2,12 @@
 
 /**
  * R2 S3 API アップロードテストスクリプト
- * 
+ *
  * 使用方法:
  * 1. R2アクセスキーを環境変数に設定
  *    export R2_ACCESS_KEY_ID="your-access-key"
  *    export R2_SECRET_ACCESS_KEY="your-secret-key"
- * 
+ *
  * 2. スクリプトを実行
  *    node test-r2-upload.js
  */
@@ -17,11 +17,16 @@ import { AwsClient } from 'aws4fetch';
 // 設定
 const CONFIG = {
   // 開発環境のエンドポイント
-  DEV_ENDPOINT: 'https://1b154d8dab68e47be1d8dc7734f1d802.r2.cloudflarestorage.com/prompt-builder-dev',
+  DEV_ENDPOINT:
+    process.env.R2_DEV_ENDPOINT ||
+    'https://your-account-id.r2.cloudflarestorage.com/prompt-builder-dev',
   // 本番環境のエンドポイント
-  PROD_ENDPOINT: 'https://1b154d8dab68e47be1d8dc7734f1d802.r2.cloudflarestorage.com/prompt-builder',
+  PROD_ENDPOINT:
+    process.env.R2_PROD_ENDPOINT ||
+    'https://your-account-id.r2.cloudflarestorage.com/prompt-builder',
   // テスト用画像（1x1の透明PNG）
-  TEST_IMAGE: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  TEST_IMAGE:
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
 };
 
 /**
@@ -84,7 +89,7 @@ async function testR2Upload(environment = 'dev') {
     // 1. アップロード
     const uploadUrl = `${baseUrl}/${bucketName}/${testKey}`;
     console.log(`📎 URL: ${uploadUrl}`);
-    
+
     const uploadResponse = await client.fetch(uploadUrl, {
       method: 'PUT',
       body: imageData,
@@ -105,7 +110,7 @@ async function testR2Upload(environment = 'dev') {
 
     // 2. オブジェクトの存在確認（HEAD）
     console.log(`\n🔍 オブジェクト確認中...`);
-    
+
     const headResponse = await client.fetch(uploadUrl, {
       method: 'HEAD',
     });
@@ -120,7 +125,7 @@ async function testR2Upload(environment = 'dev') {
 
     // 3. 削除
     console.log(`\n🗑️  クリーンアップ中...`);
-    
+
     const deleteResponse = await client.fetch(uploadUrl, {
       method: 'DELETE',
     });
@@ -132,7 +137,6 @@ async function testR2Upload(environment = 'dev') {
     }
 
     console.log(`\n🎉 テスト完了! R2 S3 APIは正常に動作しています。`);
-
   } catch (error) {
     console.error(`\n❌ テスト失敗:`, error.message);
     console.error(`\n📝 トラブルシューティング:`);

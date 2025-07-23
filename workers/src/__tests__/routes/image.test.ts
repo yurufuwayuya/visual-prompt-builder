@@ -33,6 +33,7 @@ describe('Image API Routes', () => {
       ENVIRONMENT: 'development',
       IMAGE_API_KEY: 'test-api-key',
       IMAGE_PROVIDER: 'replicate',
+      IMAGE_BUCKET: {} as R2Bucket,
       CACHE: {} as KVNamespace,
       SESSION: {} as KVNamespace,
       RATE_LIMIT_KV: {} as KVNamespace,

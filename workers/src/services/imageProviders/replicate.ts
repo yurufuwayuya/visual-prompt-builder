@@ -17,7 +17,7 @@ const logger = {
   },
   info: (message: string, data?: any) => {
     console.log(`[INFO] ${message}`, data || '');
-  }
+  },
 };
 
 // Replicateの画像生成モデル
@@ -59,7 +59,6 @@ interface ReplicatePredictionResponse {
     predict_time?: number;
   };
 }
-
 
 /**
  * Get model-specific input parameters
@@ -155,11 +154,13 @@ export async function generateWithReplicate(
   let uploadedImageKey: string | null = null;
 
   // For local development, try using a public image hosting service as fallback
-  const isLocalDev = env?.ENVIRONMENT === 'development' || env?.NODE_ENV === 'development';
+  const isLocalDev = env?.ENVIRONMENT === 'development';
 
   // Check if we should use S3 API (preferred) or R2 binding
-  const useS3Api = env?.R2_ACCESS_KEY_ID && env?.R2_SECRET_ACCESS_KEY && 
-                   (env?.R2_S3_API_DEV || env?.R2_S3_API_PROD);
+  const useS3Api =
+    env?.R2_ACCESS_KEY_ID &&
+    env?.R2_SECRET_ACCESS_KEY &&
+    (env?.R2_S3_API_DEV || env?.R2_S3_API_PROD);
 
   if (useS3Api) {
     // Use S3-compatible API
@@ -173,10 +174,10 @@ export async function generateWithReplicate(
       logger.debug('R2 S3 upload successful:', { url: imageUrl, key: uploadedImageKey });
     } catch (error) {
       logger.error('Failed to upload image to R2 via S3 API:', error);
-      
+
       // In production, try one more time with a delay
       if (!isLocalDev) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         try {
           const uploadResult = await uploadToR2S3(imageDataUrl, env, {
             keyPrefix: 'replicate-input',
@@ -190,13 +191,15 @@ export async function generateWithReplicate(
           throw new Error('Failed to prepare image for processing. R2 storage is unavailable.');
         }
       } else {
-        throw new Error('Failed to prepare image for processing in development. Please check R2 configuration.');
+        throw new Error(
+          'Failed to prepare image for processing in development. Please check R2 configuration.'
+        );
       }
     }
   } else if (env?.IMAGE_BUCKET && env?.R2_CUSTOM_DOMAIN) {
     // Fallback to R2 binding
     const isR2PubliclyAccessible = !env.R2_CUSTOM_DOMAIN.includes('r2.cloudflarestorage.com');
-    
+
     if (isR2PubliclyAccessible) {
       try {
         const uploadResult = await uploadToR2(env.IMAGE_BUCKET, imageDataUrl, {
@@ -297,7 +300,7 @@ export async function generateWithReplicate(
   const MAX_RETRIES = 3;
   const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB limit
   let lastError: Error | null = null;
-  let imageBuffer: ArrayBuffer;
+  let imageBuffer: ArrayBuffer | undefined;
 
   for (let retry = 0; retry < MAX_RETRIES; retry++) {
     try {

@@ -96,7 +96,7 @@ describe.skip('Image API Edge Cases', () => {
         );
 
         expect(response.status).toBe(400);
-        const data = await response.json();
+        const data = (await response.json()) as { error: string };
         expect(data.error).toContain('strength');
       }
     });
@@ -121,7 +121,7 @@ describe.skip('Image API Edge Cases', () => {
       );
 
       expect(response.status).toBe(400);
-      const data = await response.json();
+      const data = (await response.json()) as { error: string };
       expect(data.error).toContain('too large');
     });
 
@@ -244,8 +244,8 @@ describe.skip('Image API Edge Cases', () => {
       expect(response1.status).toBe(200);
       expect(response2.status).toBe(200);
 
-      const data1 = await response1.json();
-      const data2 = await response2.json();
+      const data1 = (await response1.json()) as { generatedImage: string };
+      const data2 = (await response2.json()) as { generatedImage: string };
 
       // キャッシュから同じ結果が返される
       expect(data1.generatedImage).toBe(data2.generatedImage);
@@ -287,8 +287,8 @@ describe.skip('Image API Edge Cases', () => {
       expect(response1.status).toBe(200);
       expect(response2.status).toBe(200);
 
-      const data1 = await response1.json();
-      const data2 = await response2.json();
+      const data1 = (await response1.json()) as { generatedImage: string };
+      const data2 = (await response2.json()) as { generatedImage: string };
 
       // 異なる結果が生成される
       expect(data1.generatedImage).not.toBe(data2.generatedImage);

@@ -103,7 +103,7 @@ app.onError((err, c) => {
       }),
       timestamp: new Date().toISOString(),
     },
-    statusCode
+    statusCode as any
   );
 });
 
