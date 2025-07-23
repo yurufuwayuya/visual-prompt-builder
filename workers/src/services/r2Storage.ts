@@ -69,7 +69,10 @@ export async function uploadToR2(
     env?: unknown; // For logger environment context
   } = {}
 ): Promise<R2UploadResult> {
-  const logger = createLogger({ prefix: 'R2Storage', env: options.env });
+  const logger = createLogger({
+    prefix: 'R2Storage',
+    env: options.env as { ENVIRONMENT?: string },
+  });
   const { keyPrefix = 'temp', expiresIn = 86400, customDomain } = options; // 24 hours default
 
   // Convert data URL to ArrayBuffer and get content type

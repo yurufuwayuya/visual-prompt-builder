@@ -26,7 +26,7 @@ export function mockFetch(response: unknown = {}) {
     status: 200,
     json: vi.fn().mockResolvedValue(response),
     text: vi.fn().mockResolvedValue(JSON.stringify(response)),
-    ...response,
+    ...(typeof response === 'object' && response !== null ? response : {}),
   };
 
   return vi.fn().mockResolvedValue(mockResponse);

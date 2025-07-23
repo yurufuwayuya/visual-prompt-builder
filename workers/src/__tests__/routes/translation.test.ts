@@ -5,6 +5,31 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import app from '../../index';
 
+// 型定義
+interface TranslationResponse {
+  success: boolean;
+  data: {
+    translatedText: string;
+  };
+}
+
+interface BatchTranslationResponse {
+  success: boolean;
+  data: {
+    translations: Array<{
+      originalText: string;
+      translatedText: string;
+      index: number;
+    }>;
+  };
+}
+
+// ErrorResponseは今後のエラーテストで使用予定
+// interface ErrorResponse {
+//   success: boolean;
+//   error: string;
+// }
+
 // fetchのモック
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -60,7 +85,7 @@ describe('Translation API', () => {
       );
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = (await response.json()) as TranslationResponse;
       expect(result.success).toBe(true);
       expect(result.data.translatedText).toBe('cat');
     });
@@ -93,7 +118,7 @@ describe('Translation API', () => {
       );
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = (await response.json()) as TranslationResponse;
       expect(result.success).toBe(true);
       expect(result.data.translatedText).toBe('Test translation');
     });
@@ -116,7 +141,7 @@ describe('Translation API', () => {
       );
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = (await response.json()) as TranslationResponse;
       expect(result.success).toBe(true);
       expect(result.data.translatedText).toBe('Hello');
       // APIは呼ばれない
@@ -144,7 +169,7 @@ describe('Translation API', () => {
       );
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = (await response.json()) as TranslationResponse;
       expect(result.success).toBe(true);
       expect(result.data.translatedText).toBe('cat'); // フォールバック辞書から
     });
@@ -210,7 +235,7 @@ describe('Translation API', () => {
       );
 
       expect(response.status).toBe(200);
-      const result = await response.json();
+      const result = (await response.json()) as BatchTranslationResponse;
       expect(result.success).toBe(true);
       expect(result.data.translations).toHaveLength(2);
       expect(result.data.translations[0].translatedText).toBe('cat');
