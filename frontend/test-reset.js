@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // リセット機能の動作確認スクリプト
 
 const baseUrl = 'http://localhost:5174';

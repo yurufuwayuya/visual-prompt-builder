@@ -20,7 +20,7 @@ export function mockKVNamespace() {
 /**
  * グローバルなfetch APIのモック
  */
-export function mockFetch(response: any = {}) {
+export function mockFetch(response: unknown = {}) {
   const mockResponse = {
     ok: true,
     status: 200,
@@ -47,6 +47,6 @@ export function suppressConsoleError() {
   });
 
   return {
-    getConsoleErrorMock: () => console.error as any,
+    getConsoleErrorMock: () => console.error as ReturnType<typeof vi.fn>,
   };
 }

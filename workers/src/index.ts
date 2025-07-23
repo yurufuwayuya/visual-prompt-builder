@@ -9,6 +9,7 @@ import { prettyJSON } from 'hono/pretty-json';
 import { secureHeaders } from 'hono/secure-headers';
 import type { Bindings } from './types';
 // import { apiRateLimit } from './middleware/rateLimit';
+import { createLogger } from './utils/logger';
 
 // ルートのインポート
 import { healthRoute } from './routes/health';
@@ -57,7 +58,8 @@ app.use(
   cors({
     origin: (origin, c) => {
       const validatedOrigin = validateOrigin(origin, c.env as Bindings);
-      console.log('[CORS] Origin:', origin, 'Validated:', validatedOrigin);
+      const corsLogger = createLogger({ prefix: 'CORS', env: c.env as Bindings });
+      corsLogger.debug(`Origin: ${origin}, Validated: ${validatedOrigin}`);
       return validatedOrigin;
     },
     credentials: true,
@@ -80,7 +82,8 @@ app.onError((err, c) => {
   console.error('[Global Error Handler] Error message:', err.message);
   console.error('[Global Error Handler] Error stack:', err.stack);
   console.error('[Global Error Handler] Context env:', c?.env);
-  console.error('[Global Error Handler] Request path:', c?.req?.path);
+  const errorLogger = createLogger({ prefix: 'Global Error Handler', env: c.env as Bindings });
+  errorLogger.error(`Request path: ${c?.req?.path}`, err);
 
   // 開発環境でのみスタックトレースを露出
   const isDevelopment = c.env.ENVIRONMENT === 'development' || c.req.url.includes('localhost');
@@ -90,7 +93,11 @@ app.onError((err, c) => {
   let statusCode = 500;
 
   // Check if it's a Zod error (has issues property)
-  if (err.name === 'ZodError' && 'issues' in err && Array.isArray((err as any).issues)) {
+  if (
+    err.name === 'ZodError' &&
+    'issues' in err &&
+    Array.isArray((err as { issues: unknown }).issues)
+  ) {
     statusCode = 400;
     // Extract validation error messages
     const issues = (err as { issues: Array<{ message: string }> }).issues;
@@ -108,7 +115,7 @@ app.onError((err, c) => {
       }),
       timestamp: new Date().toISOString(),
     },
-    statusCode as any
+    statusCode as Parameters<typeof c.json>[1]
   );
 });
 

@@ -6,19 +6,10 @@ import { createDataUrl } from '../../utils/imageProcessing';
 import { uploadToR2 } from '../r2Storage';
 import { uploadToR2S3, deleteFromR2S3 } from '../r2S3Upload';
 import type { Bindings } from '../../types';
+import { createLogger } from '../../utils/logger';
 
-// Simple logging utility to control console output
-const logger = {
-  debug: (message: string, data?: any) => {
-    console.log(`[DEBUG] ${message}`, data || '');
-  },
-  error: (message: string, error?: any) => {
-    console.error(`[ERROR] ${message}`, error || '');
-  },
-  info: (message: string, data?: any) => {
-    console.log(`[INFO] ${message}`, data || '');
-  },
-};
+// Create logger instance
+const logger = createLogger({ prefix: 'Replicate' });
 
 // Replicateの画像生成モデル
 // Using official model names (versions are handled automatically by Replicate)
@@ -206,6 +197,7 @@ export async function generateWithReplicate(
           keyPrefix: 'replicate-input',
           expiresIn: 3600, // 1 hour
           customDomain: env.R2_CUSTOM_DOMAIN,
+          env: env,
         });
         imageUrl = uploadResult.url;
         uploadedImageKey = uploadResult.key;

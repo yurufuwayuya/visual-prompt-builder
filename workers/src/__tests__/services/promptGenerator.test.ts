@@ -18,7 +18,7 @@ describe('promptGenerator', () => {
       quality: 'high',
     };
 
-    const result = await generatePrompt(promptData, options);
+    const result = await generatePrompt(promptData, options, undefined);
 
     // Check that result contains expected elements (case insensitive)
     expect(result.toLowerCase()).toContain('person');
@@ -43,7 +43,7 @@ describe('promptGenerator', () => {
       language: 'en',
     };
 
-    const result = await generatePrompt(promptData, options);
+    const result = await generatePrompt(promptData, options, undefined);
 
     // Check that details are included
     expect(result.toLowerCase()).toContain('child');
@@ -61,7 +61,7 @@ describe('promptGenerator', () => {
       language: 'en',
     };
 
-    const result = await generatePrompt(promptData, options);
+    const result = await generatePrompt(promptData, options, undefined);
 
     expect(result).toContain('wearing a red dress');
   });
@@ -78,7 +78,7 @@ describe('promptGenerator', () => {
       language: 'ja',
     };
 
-    const result = await generatePrompt(promptData, options);
+    const result = await generatePrompt(promptData, options, undefined);
 
     // Prompts are always generated in English regardless of language option
     expect(result.toLowerCase()).toContain('person');

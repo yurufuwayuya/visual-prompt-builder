@@ -1,0 +1,59 @@
+# Gitleaks設定ファイル
+# https://github.com/gitleaks/gitleaks
+
+[extend]
+# デフォルトの設定を拡張
+useDefault = true
+
+# カスタムルールの追加
+[[rules]]
+id = "replicate-api-key"
+description = "Replicate API Key"
+regex = '''r8_[a-zA-Z0-9]{40}'''
+tags = ["key", "replicate"]
+
+[[rules]]
+id = "cloudflare-r2-access-key"
+description = "Cloudflare R2 Access Key"
+regex = '''[a-f0-9]{32}'''
+tags = ["key", "cloudflare", "r2"]
+
+# 除外設定
+[allowlist]
+paths = [
+  # テンプレートファイル
+  '''\.example$''',
+  '''\.sample$''',
+  '''\.template$''',
+  
+  # ドキュメント
+  '''^docs/examples/''',
+  
+  # テストファイル
+  '''test/fixtures/''',
+  '''__mocks__/''',
+  
+  # 設定例
+  '''^config/samples/'''
+]
+
+# 特定のコミットを除外
+commits = [
+  # 既知の誤検出コミット
+]
+
+# 特定のファイルパターンを除外
+files = [
+  '''(.*?)(test|spec)\.ts$''',
+  '''\.md$'''  # Markdownファイルは基本的に除外
+]
+
+# 特定の正規表現パターンを許可
+regexes = [
+  # プレースホルダー
+  '''<your-[a-z-]+>''',
+  '''your-[a-z-]+-here''',
+  '''REPLACE_WITH_[A-Z_]+''',
+  '''placeholder''',
+  '''example'''
+]

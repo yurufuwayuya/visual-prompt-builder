@@ -16,7 +16,7 @@ export function useStepState<T>(
   // ストアの値が変更されたら、ローカルstateも更新
   useEffect(() => {
     setLocalValue(storeValue ?? defaultValue);
-  }, [storeValue]); // defaultValueを依存配列から除外
+  }, [storeValue, defaultValue]);
 
   return [localValue, setLocalValue];
 }

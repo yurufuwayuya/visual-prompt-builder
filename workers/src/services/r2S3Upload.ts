@@ -5,6 +5,7 @@
 
 import { AwsClient } from 'aws4fetch';
 import type { Bindings } from '../types';
+import { createLogger } from '../utils/logger';
 
 interface R2S3UploadResult {
   key: string;
@@ -132,6 +133,7 @@ export async function uploadToR2S3(
   env: Bindings,
   options: S3UploadOptions = {}
 ): Promise<R2S3UploadResult> {
+  const logger = createLogger({ prefix: 'R2S3Upload', env });
   const { keyPrefix = 'temp', expiresIn = 86400 } = options; // 24 hours default
 
   // Create R2 client with validated credentials and parsed endpoint
@@ -142,7 +144,7 @@ export async function uploadToR2S3(
   const contentType = options.contentType || getContentTypeFromDataURL(dataURL);
   const key = generateObjectKey(keyPrefix, contentType);
 
-  console.log('[DEBUG] R2 S3 Upload attempt:', {
+  logger.debug('R2 S3 Upload attempt:', {
     endpoint: getS3Endpoint(env),
     bucketName,
     key,
@@ -164,7 +166,7 @@ export async function uploadToR2S3(
 
   if (!response.ok) {
     const error = await response.text();
-    console.error('[ERROR] R2 S3 upload failed:', {
+    logger.error('R2 S3 upload failed:', {
       status: response.status,
       error,
     });
@@ -173,7 +175,7 @@ export async function uploadToR2S3(
 
   const etag = response.headers.get('etag') || '';
 
-  console.log('[DEBUG] R2 S3 upload successful:', {
+  logger.debug('R2 S3 upload successful:', {
     key,
     etag,
     status: response.status,
@@ -204,6 +206,7 @@ export async function uploadToR2S3(
  * Delete image from R2 using S3-compatible API
  */
 export async function deleteFromR2S3(key: string, env: Bindings): Promise<void> {
+  const logger = createLogger({ prefix: 'R2S3Upload', env });
   // Create R2 client with validated credentials and parsed endpoint
   const { client, baseUrl, bucketName } = createR2Client(env);
 
@@ -214,7 +217,7 @@ export async function deleteFromR2S3(key: string, env: Bindings): Promise<void> 
 
   if (!response.ok && response.status !== 404) {
     const error = await response.text();
-    console.error('[ERROR] R2 S3 delete failed:', {
+    logger.error('R2 S3 delete failed:', {
       status: response.status,
       error,
     });
