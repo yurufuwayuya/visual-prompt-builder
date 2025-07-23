@@ -23,7 +23,13 @@ interface S3UploadOptions {
  * Convert data URL to Uint8Array
  */
 function dataURLToUint8Array(dataURL: string): Uint8Array {
+  if (!dataURL.includes(',')) {
+    throw new Error('Invalid data URL format');
+  }
   const base64 = dataURL.split(',')[1];
+  if (!base64) {
+    throw new Error('No base64 data found in data URL');
+  }
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -67,14 +73,55 @@ function generateObjectKey(prefix: string = 'temp', mimeType?: string): string {
  * Get S3 endpoint based on environment
  */
 function getS3Endpoint(env: Bindings): string {
-  const isProduction = env.ENVIRONMENT === 'production' || env.NODE_ENV === 'production';
+  const isProduction = env.ENVIRONMENT === 'production';
   const endpoint = isProduction ? env.R2_S3_API_PROD : env.R2_S3_API_DEV;
-  
+
   if (!endpoint) {
     throw new Error('R2 S3 API endpoint is not configured');
   }
-  
+
   return endpoint;
+}
+
+/**
+ * Create R2 client with validated credentials and parsed endpoint
+ */
+function createR2Client(env: Bindings): {
+  client: AwsClient;
+  baseUrl: string;
+  bucketName: string;
+} {
+  // Validate credentials
+  if (!env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY) {
+    throw new Error('R2 credentials are not configured');
+  }
+
+  // Get and parse endpoint
+  const endpoint = getS3Endpoint(env);
+  const urlParts = endpoint.split('/');
+
+  if (urlParts.length < 4) {
+    throw new Error(
+      'Invalid R2 S3 API endpoint format. Expected: https://<account-id>.r2.cloudflarestorage.com/<bucket-name>'
+    );
+  }
+
+  const bucketName = urlParts[urlParts.length - 1];
+  if (!bucketName) {
+    throw new Error('Bucket name not found in endpoint URL');
+  }
+
+  const baseUrl = urlParts.slice(0, -1).join('/');
+
+  // Create AWS client
+  const client = new AwsClient({
+    accessKeyId: env.R2_ACCESS_KEY_ID,
+    secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+    region: 'auto',
+    service: 's3',
+  });
+
+  return { client, baseUrl, bucketName };
 }
 
 /**
@@ -87,19 +134,8 @@ export async function uploadToR2S3(
 ): Promise<R2S3UploadResult> {
   const { keyPrefix = 'temp', expiresIn = 86400 } = options; // 24 hours default
 
-  // Check required credentials
-  if (!env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY) {
-    throw new Error('R2 credentials are not configured');
-  }
-
-  // Get S3 endpoint
-  const endpoint = getS3Endpoint(env);
-  
-  // Extract bucket name from endpoint URL
-  // Format: https://<account-id>.r2.cloudflarestorage.com/<bucket-name>
-  const urlParts = endpoint.split('/');
-  const bucketName = urlParts[urlParts.length - 1];
-  const baseUrl = urlParts.slice(0, -1).join('/');
+  // Create R2 client with validated credentials and parsed endpoint
+  const { client, baseUrl, bucketName } = createR2Client(env);
 
   // Convert data URL and get metadata
   const data = dataURLToUint8Array(dataURL);
@@ -107,19 +143,11 @@ export async function uploadToR2S3(
   const key = generateObjectKey(keyPrefix, contentType);
 
   console.log('[DEBUG] R2 S3 Upload attempt:', {
-    endpoint,
+    endpoint: getS3Endpoint(env),
     bucketName,
     key,
     contentType,
     dataSize: data.length,
-  });
-
-  // Create AWS client
-  const client = new AwsClient({
-    accessKeyId: env.R2_ACCESS_KEY_ID,
-    secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-    region: 'auto', // R2 uses 'auto' region
-    service: 's3',
   });
 
   // Upload to R2
@@ -155,13 +183,13 @@ export async function uploadToR2S3(
   // Use custom domain if available
   let publicUrl: string;
   if (env.R2_CUSTOM_DOMAIN) {
-    const domain = env.R2_CUSTOM_DOMAIN.endsWith('/') 
-      ? env.R2_CUSTOM_DOMAIN.slice(0, -1) 
+    const domain = env.R2_CUSTOM_DOMAIN.endsWith('/')
+      ? env.R2_CUSTOM_DOMAIN.slice(0, -1)
       : env.R2_CUSTOM_DOMAIN;
     publicUrl = `${domain}/${key}`;
   } else {
     // Use S3 API endpoint as fallback
-    publicUrl = url;
+    publicUrl = `${baseUrl}/${bucketName}/${key}`;
   }
 
   return {
@@ -176,21 +204,8 @@ export async function uploadToR2S3(
  * Delete image from R2 using S3-compatible API
  */
 export async function deleteFromR2S3(key: string, env: Bindings): Promise<void> {
-  if (!env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY) {
-    throw new Error('R2 credentials are not configured');
-  }
-
-  const endpoint = getS3Endpoint(env);
-  const urlParts = endpoint.split('/');
-  const bucketName = urlParts[urlParts.length - 1];
-  const baseUrl = urlParts.slice(0, -1).join('/');
-
-  const client = new AwsClient({
-    accessKeyId: env.R2_ACCESS_KEY_ID,
-    secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-    region: 'auto',
-    service: 's3',
-  });
+  // Create R2 client with validated credentials and parsed endpoint
+  const { client, baseUrl, bucketName } = createR2Client(env);
 
   const url = `${baseUrl}/${bucketName}/${key}`;
   const response = await client.fetch(url, {
@@ -215,30 +230,22 @@ export async function getPresignedUrl(
   env: Bindings,
   expiresIn: number = 3600
 ): Promise<string> {
-  if (!env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY) {
-    throw new Error('R2 credentials are not configured');
-  }
+  // Create R2 client with validated credentials and parsed endpoint
+  const { client, baseUrl, bucketName } = createR2Client(env);
 
-  const endpoint = getS3Endpoint(env);
-  const urlParts = endpoint.split('/');
-  const bucketName = urlParts[urlParts.length - 1];
-  const baseUrl = urlParts.slice(0, -1).join('/');
+  const url = new URL(`${baseUrl}/${bucketName}/${key}`);
+  url.searchParams.set('X-Amz-Expires', expiresIn.toString());
 
-  const client = new AwsClient({
-    accessKeyId: env.R2_ACCESS_KEY_ID,
-    secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-    region: 'auto',
-    service: 's3',
-  });
-
-  const url = `${baseUrl}/${bucketName}/${key}`;
-  const presignedUrl = await client.sign(url, {
-    method: 'GET',
-    aws: {
-      signQuery: true,
-      expiresIn,
-    },
-  });
+  const presignedUrl = await client.sign(
+    new Request(url.toString(), {
+      method: 'GET',
+    }),
+    {
+      aws: {
+        signQuery: true,
+      },
+    }
+  );
 
   return presignedUrl.url;
 }

@@ -5,7 +5,6 @@
 export interface Bindings {
   // 環境変数
   ENVIRONMENT: 'development' | 'staging' | 'production';
-  NODE_ENV?: 'development' | 'production';
   TRANSLATION_API_KEY?: string;
   LOGFLARE_API_KEY?: string;
   ALLOWED_ORIGINS?: string;

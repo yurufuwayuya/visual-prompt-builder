@@ -2,7 +2,8 @@
 
 ## 概要
 
-Visual Prompt Builder API仕様書です。すべてのAPIはJSON形式でリクエスト/レスポンスを行います。
+Visual Prompt Builder
+API仕様書です。すべてのAPIはJSON形式でリクエスト/レスポンスを行います。
 
 ## ベースURL
 
@@ -22,15 +23,13 @@ Content-Type: application/json
 Accept: application/json
 ```
 
-### レスポンス形式
-
 #### 成功時
 
 ```json
 {
   "success": true,
   "data": {
-    // エンドポイント固有のデータ
+    // レスポンスデータ
   },
   "timestamp": "2025-01-25T10:30:00.000Z"
 }
@@ -78,7 +77,7 @@ Accept: application/json
 
 ### 2. プロンプト生成
 
-#### `POST /api/prompt/generate`
+#### `POST /api/v1/prompt/generate`
 
 選択された要素からプロンプトを生成します。
 
@@ -136,24 +135,24 @@ Accept: application/json
 
 **パラメータ説明:**
 
-| パラメータ | 型 | 必須 | 説明 |
-|-----------|---|------|------|
-| category | object | ✓ | カテゴリ情報 |
-| category.predefinedId | string | ✓ | 事前定義されたカテゴリID |
-| category.displayName | string | ✓ | 表示名 |
-| details | array | ✓ | 詳細情報の配列（最大5個） |
-| details[].predefinedId | string | ✓ | 詳細ID（カスタムの場合は"custom-"プレフィックス） |
-| details[].displayName | string | ✓ | 表示名 |
-| details[].order | number | ✓ | 並び順（0から） |
-| colors | array | × | 色情報の配列 |
-| style | object | × | スタイル情報 |
-| mood | object | × | 雰囲気情報 |
-| lighting | object | × | 照明情報 |
-| size | object | × | サイズ情報 |
-| options | object | × | 生成オプション |
-| options.language | string | × | 言語（"ja" または "en"、デフォルト: "ja"） |
-| options.quality | string | × | 品質（"low", "medium", "high"、デフォルト: "high"） |
-| options.includeNegativePrompt | boolean | × | ネガティブプロンプトを含むか（デフォルト: true） |
+| パラメータ                    | 型      | 必須 | 説明                                                |
+| ----------------------------- | ------- | ---- | --------------------------------------------------- |
+| category                      | object  | ✓    | カテゴリ情報                                        |
+| category.predefinedId         | string  | ✓    | 事前定義されたカテゴリID                            |
+| category.displayName          | string  | ✓    | 表示名                                              |
+| details                       | array   | ✓    | 詳細情報の配列（最大5個）                           |
+| details[].predefinedId        | string  | ✓    | 詳細ID（カスタムの場合は"custom-"プレフィックス）   |
+| details[].displayName         | string  | ✓    | 表示名                                              |
+| details[].order               | number  | ✓    | 並び順（0から）                                     |
+| colors                        | array   | ×    | 色情報の配列                                        |
+| style                         | object  | ×    | スタイル情報                                        |
+| mood                          | object  | ×    | 雰囲気情報                                          |
+| lighting                      | object  | ×    | 照明情報                                            |
+| size                          | object  | ×    | サイズ情報                                          |
+| options                       | object  | ×    | 生成オプション                                      |
+| options.language              | string  | ×    | 言語（"ja" または "en"、デフォルト: "ja"）          |
+| options.quality               | string  | ×    | 品質（"low", "medium", "high"、デフォルト: "high"） |
+| options.includeNegativePrompt | boolean | ×    | ネガティブプロンプトを含むか（デフォルト: true）    |
 
 **レスポンス例:**
 
@@ -181,11 +180,12 @@ Accept: application/json
 ```
 
 **レート制限:**
+
 - 20リクエスト/分
 
 ### 3. プロンプトテンプレート一覧
 
-#### `GET /api/prompt/templates`
+#### `GET /api/v1/prompt/templates`
 
 事前定義されたプロンプトテンプレートの一覧を取得します。
 
@@ -201,11 +201,11 @@ Accept: application/json
 }
 ```
 
-*注: 現在未実装のため空配列を返します*
+_注: 現在未実装のため空配列を返します_
 
 ### 4. 翻訳
 
-#### `POST /api/translate`
+#### `POST /api/v1/translation/trans`
 
 テキストを翻訳します。
 
@@ -257,18 +257,19 @@ Accept: application/json
 
 **パラメータ説明:**
 
-| パラメータ | 型 | 必須 | 説明 |
-|-----------|---|------|------|
-| prompt | string | ✓ | 生成用プロンプト（英語） |
-| baseImage | string | ✓ | ベース画像（data URL形式） |
-| model | string | × | 使用するモデル（デフォルト: "flux-fill"） |
-| options | object | × | 生成オプション |
-| options.steps | number | × | 推論ステップ数（20-50、デフォルト: 20） |
-| options.guidanceScale | number | × | ガイダンススケール（1-20、デフォルト: 7.5） |
-| options.strength | number | × | 変換強度（0-1、デフォルト: 0.8） |
-| options.outputFormat | string | × | 出力形式（"png" または "jpg"、デフォルト: "png"） |
+| パラメータ            | 型     | 必須 | 説明                                              |
+| --------------------- | ------ | ---- | ------------------------------------------------- |
+| prompt                | string | ✓    | 生成用プロンプト（英語）                          |
+| baseImage             | string | ✓    | ベース画像（data URL形式）                        |
+| model                 | string | ×    | 使用するモデル（デフォルト: "flux-fill"）         |
+| options               | object | ×    | 生成オプション                                    |
+| options.steps         | number | ×    | 推論ステップ数（20-50、デフォルト: 20）           |
+| options.guidanceScale | number | ×    | ガイダンススケール（1-20、デフォルト: 7.5）       |
+| options.strength      | number | ×    | 変換強度（0-1、デフォルト: 0.8）                  |
+| options.outputFormat  | string | ×    | 出力形式（"png" または "jpg"、デフォルト: "png"） |
 
 **対応モデル:**
+
 - `flux-fill`: FLUX Fill（インペインティング）
 - `flux-variations`: FLUX Variations（バリエーション生成）
 - `flux-canny`: FLUX Canny（エッジ検出ベース）
@@ -297,17 +298,18 @@ Accept: application/json
 ```json
 {
   "success": false,
-  "error": "画像生成に失敗しました",
-  "details": "Image storage is not properly configured",
+  "error": "画像生成に失敗しました: Image storage is not properly configured",
   "timestamp": "2025-01-25T10:30:00.000Z"
 }
 ```
 
 **レート制限:**
+
 - 10リクエスト/分
 - 最大画像サイズ: 10MB
 
 **注意事項:**
+
 - APIキーが設定されている必要があります
 - Cloudflare R2が正しく設定されている必要があります
 - 生成には数秒から数十秒かかることがあります
@@ -319,11 +321,7 @@ Accept: application/json
 ```json
 {
   "success": false,
-  "error": "Invalid request parameters",
-  "details": {
-    "category": "Required field",
-    "details": "Must have at least 1 item"
-  },
+  "error": "Invalid request parameters: category is required, details must have at least 1 item",
   "timestamp": "2025-01-25T10:30:00.000Z"
 }
 ```
@@ -340,6 +338,7 @@ Accept: application/json
 ```
 
 **レスポンスヘッダー:**
+
 ```
 X-RateLimit-Limit: 60
 X-RateLimit-Remaining: 0

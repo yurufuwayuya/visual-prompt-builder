@@ -10,7 +10,8 @@
 
 - 🎨
   **ビジュアルプロンプト生成**: カテゴリ、詳細、スタイルを選択して画像生成用プロンプトを作成
-- 🤖 **AI画像生成**: プロンプトとベース画像からAIで新しい画像を生成（Image-to-Image）
+- 🤖
+  **AI画像生成**: プロンプトとベース画像からAIで新しい画像を生成（Image-to-Image）
 - 📱 **レスポンシブデザイン**: モバイル、タブレット、デスクトップに完全対応
 - ♿ **アクセシビリティ**: WCAG 2.1 Level AA準拠、スクリーンリーダー対応
 - 🔒 **セキュリティ**: XSS対策、レート制限、CSP設定
@@ -98,19 +99,31 @@ npm install
 3. **環境変数の設定**
 
 ```bash
-# .env.exampleをコピー
+# 開発環境用
 cp .env.example .env
+
+# 本番環境用
+cp .env.production.example .env.production
 
 # 必要に応じて編集
 vi .env
+vi .env.production
 ```
 
+**重要**:
+
+- `.env.production`ファイルには実際の機密情報（APIキー、トークンなど）が含まれるため、絶対にGitにコミットしないでください
+- 本番環境では、CI/CDパイプラインの環境変数または専用のシークレット管理ツールを使用してください
+- `.env.production`は`.gitignore`に追加されており、誤ってコミットされることを防いでいます
+
 **画像生成機能を使用する場合**：
+
 - Replicate APIキーの設定が必要です
 - Cloudflare R2の設定が必要です
 - 詳細は[画像生成セットアップガイド](./docs/image-generation-setup.md)を参照
 
 **R2 S3 APIを使用する場合**（推奨）：
+
 - R2 APIトークンの作成が必要です
 - 詳細は[R2セットアップガイド](./docs/R2_SETUP_GUIDE.md)を参照
 
@@ -152,9 +165,10 @@ npm run build:shared
 ### R2 S3 APIのテスト
 
 ```bash
-# R2認証情報を設定
-export R2_ACCESS_KEY_ID="your-access-key"
-export R2_SECRET_ACCESS_KEY="your-secret-key"
+# ↓ 一時セッションで実行してください（シェル履歴に残さないため）
+# R2認証情報を設定（実際の値を環境変数から読み込む）
+export R2_ACCESS_KEY_ID="${R2_ACCESS_KEY_ID:?Error: R2_ACCESS_KEY_ID is not set}"
+export R2_SECRET_ACCESS_KEY="${R2_SECRET_ACCESS_KEY:?Error: R2_SECRET_ACCESS_KEY is not set}"
 
 # 開発環境でテスト
 npm run test:r2
@@ -213,8 +227,8 @@ npm run format
 ```
 Workers
 ├── Routes（APIエンドポイント）
-│   ├── /api/prompt/generate
-│   ├── /api/translate
+│   ├── /api/v1/prompt/generate
+│   ├── /api/v1/translation/trans
 │   ├── /api/v1/image/generate
 │   └── /health
 ├── Services（ビジネスロジック）

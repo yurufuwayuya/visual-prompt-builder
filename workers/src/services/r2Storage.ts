@@ -174,8 +174,8 @@ export async function cleanupExpiredImages(bucket: R2Bucket): Promise<number> {
  * Note: This requires Cloudflare Workers to have the appropriate permissions
  */
 export async function getSignedUrl(
-  bucket: R2Bucket,
-  key: string,
+  _bucket: R2Bucket,
+  _key: string,
   _expiresIn: number = 3600 // 1 hour default
 ): Promise<string> {
   // R2 doesn't support signed URLs in the same way as S3

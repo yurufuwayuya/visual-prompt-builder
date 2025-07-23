@@ -2,7 +2,7 @@
  * 共通のテストセットアップ
  */
 
-import { vi } from 'vitest';
+import { vi, beforeAll, afterAll } from 'vitest';
 
 /**
  * Cloudflare KV Namespaceのモック
@@ -28,7 +28,7 @@ export function mockFetch(response: any = {}) {
     text: vi.fn().mockResolvedValue(JSON.stringify(response)),
     ...response,
   };
-  
+
   return vi.fn().mockResolvedValue(mockResponse);
 }
 
@@ -37,15 +37,15 @@ export function mockFetch(response: any = {}) {
  */
 export function suppressConsoleError() {
   const originalError = console.error;
-  
+
   beforeAll(() => {
     console.error = vi.fn();
   });
-  
+
   afterAll(() => {
     console.error = originalError;
   });
-  
+
   return {
     getConsoleErrorMock: () => console.error as any,
   };

@@ -10,7 +10,7 @@ export type Env = Bindings;
 
 export default {
   async scheduled(
-    controller: ScheduledController,
+    _controller: ScheduledController,
     env: Env,
     _ctx: ExecutionContext
   ): Promise<void> {
