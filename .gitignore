@@ -38,6 +38,8 @@ Thumbs.db
 # Logs
 logs
 *.log
+worker.log
+workers/wrangler.log
 
 # Runtime data
 pids
