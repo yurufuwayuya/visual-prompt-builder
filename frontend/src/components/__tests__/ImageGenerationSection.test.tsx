@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ImageGenerationSection } from './ImageGenerationSection';
-import * as imageGeneration from '../services/commercialImageGeneration';
+import { ImageGenerationSection } from '../ImageGenerationSection';
+import * as imageGeneration from '../../services/commercialImageGeneration';
 
 // モックの設定
 vi.mock('@/stores/languageStore', () => ({
   useLanguageStore: () => ({ language: 'ja' }),
 }));
 
-vi.mock('../services/commercialImageGeneration', () => ({
+vi.mock('../../services/commercialImageGeneration', () => ({
   copyPromptToClipboard: vi.fn(),
   openImageService: vi.fn(),
   saveLastUsedService: vi.fn(),
