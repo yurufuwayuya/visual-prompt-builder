@@ -201,7 +201,7 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
     return c.json(createSuccessResponse(response));
   } catch (error) {
     console.error('Image generation error:', error);
-    return c.json(createErrorResponse(error, '画像生成に失敗しました'), 500);
+    return c.json(createErrorResponse(error, '画像生成に失敗しました', c.env), 500);
   }
 });
 

@@ -113,7 +113,7 @@ translationRoute.post('/trans', zValidator('json', translationSchema), async (c)
       });
     }
 
-    return c.json(createErrorResponse(error, '翻訳に失敗しました'), 500);
+    return c.json(createErrorResponse(error, '翻訳に失敗しました', c.env), 500);
   }
 });
 
@@ -188,7 +188,7 @@ translationRoute.post('/translate', zValidator('json', translationSchema), async
       console.error('[Translation API] Non-Error object thrown:', error);
     }
 
-    const errorResponse = createErrorResponse(error, '翻訳に失敗しました');
+    const errorResponse = createErrorResponse(error, '翻訳に失敗しました', c.env);
     // デバッグ用にスタックトレースを追加
     if (error instanceof Error) {
       const debugResponse = errorResponse as { stack?: string; name?: string };
@@ -306,7 +306,7 @@ translationRoute.post(
       return c.json(createSuccessResponse({ translations: results }));
     } catch (error) {
       console.error('Batch translation error:', error);
-      return c.json(createErrorResponse(error, 'バッチ翻訳に失敗しました'), 500);
+      return c.json(createErrorResponse(error, 'バッチ翻訳に失敗しました', c.env), 500);
     }
   }
 );

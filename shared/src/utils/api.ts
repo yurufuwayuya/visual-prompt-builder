@@ -3,6 +3,7 @@
  */
 
 import type { ApiResponse, ApiError } from '../types/api';
+import { isProduction, type EnvironmentContext } from './env';
 
 /**
  * 成功レスポンスを生成する
@@ -20,12 +21,12 @@ export function createSuccessResponse<T>(data: T): ApiResponse<T> {
  */
 export function createErrorResponse(
   error: unknown,
-  defaultMessage = 'An error occurred'
+  defaultMessage = 'An error occurred',
+  context?: EnvironmentContext
 ): ApiError {
   // 本番環境では詳細なエラーメッセージを露出させない
-  const isProd = process.env.NODE_ENV === 'production';
   const errorMessage =
-    !isProd && error instanceof Error
+    !isProduction(context) && error instanceof Error
       ? error.message
       : defaultMessage;
   
