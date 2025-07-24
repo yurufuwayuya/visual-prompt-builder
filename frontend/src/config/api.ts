@@ -1,8 +1,6 @@
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.PROD
-    ? 'https://visual-prompt-builder-api.yuya-kitamori.workers.dev'
-    : 'http://localhost:8787');
+  (import.meta.env.PROD ? 'https://api.kantanprompt.com' : 'http://localhost:8787');
 
 export const API_ENDPOINTS = {
   generatePrompt: `${API_BASE_URL}/api/v1/prompt/generate`,
