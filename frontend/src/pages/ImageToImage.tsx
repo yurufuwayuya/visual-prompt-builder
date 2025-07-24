@@ -4,7 +4,7 @@ import { Button } from '@/components/common/Button';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useToastStore } from '@/stores/toastStore';
-import { generateImage } from '@/services/imageGeneration';
+import { generateImage, validateImageSize, resizeImage } from '@/services/imageGeneration';
 
 export const ImageToImage: React.FC = () => {
   const { addToast } = useToastStore();
@@ -51,10 +51,38 @@ export const ImageToImage: React.FC = () => {
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setReferenceImage(e.target?.result as string);
-      setGeneratedImage(null);
-      setError(null);
+    reader.onload = async (e) => {
+      try {
+        let base64 = e.target?.result as string;
+        if (!base64) {
+          throw new Error('画像データの読み込みに失敗しました');
+        }
+
+        // 画像サイズをチェックし、必要に応じてリサイズ
+        // Replicateのメモリ制限を考慮して、より小さいサイズにリサイズ
+        if (!validateImageSize(base64, 3)) {
+          addToast({
+            type: 'info',
+            message: '画像をリサイズしています...',
+          });
+          // 最大2048x2048、品質0.8でリサイズ（メモリ使用量を削減）
+          base64 = await resizeImage(base64, 2048, 2048, 0.8);
+        }
+
+        setReferenceImage(base64);
+        setGeneratedImage(null);
+        setError(null);
+        addToast({
+          type: 'success',
+          message: '画像をアップロードしました',
+        });
+      } catch (error) {
+        console.error('画像処理エラー:', error);
+        addToast({
+          type: 'error',
+          message: '画像の処理に失敗しました',
+        });
+      }
     };
     reader.onerror = () => {
       addToast({
