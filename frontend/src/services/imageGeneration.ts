@@ -64,7 +64,9 @@ export async function generateImage(
       };
     }
 
-    const data = await response.json();
+    const responseData = await response.json();
+    // APIはcreateSuccessResponseでラップされたレスポンスを返す
+    const data = responseData.data || responseData;
     return {
       success: true,
       image: data.image,
