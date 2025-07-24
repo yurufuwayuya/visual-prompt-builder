@@ -8,9 +8,9 @@ vi.mock('../../services/imageProviders/replicate', () => ({
   generateWithReplicate: vi.fn(),
   getAvailableReplicateModels: vi.fn(() => [
     {
-      id: 'flux-fill',
-      name: 'FLUX Fill',
-      description: 'Professional inpainting and outpainting model',
+      id: 'sdxl-img2img',
+      name: 'Stable Diffusion XL',
+      description: 'SDXL image-to-image model',
       version: 'test-version',
     },
   ]),
@@ -286,7 +286,7 @@ describe('Image API Routes', () => {
           outputFormat: 'jpeg',
         },
         'test-api-key',
-        'flux-fill',
+        'sdxl-img2img',
         mockEnv
       );
     });
