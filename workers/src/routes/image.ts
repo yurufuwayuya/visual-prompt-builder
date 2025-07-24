@@ -278,7 +278,7 @@ async function generateWithReplicate(
         outputFormat: options.outputFormat,
       },
       apiKey,
-      'flux-fill', // デフォルトモデル
+      'sdxl-img2img', // SDXLを使用（img2img対応）
       env
     );
 
