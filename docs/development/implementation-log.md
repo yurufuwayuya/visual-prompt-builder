@@ -4,6 +4,42 @@ Claude Codeによる実装記録。問題解決の経緯、実装内容、学習
 
 ---
 
+## 2025-01-24 TypeScript型チェックエラーの修正
+
+### 作業内容
+
+1. **shared/src/utils/env.tsのprocess未定義エラー修正**
+   - ブラウザ環境でprocessオブジェクトが存在しないため、@ts-expect-errorを使用
+   - Node.js環境でのみprocess.env.NODE_ENVをチェックするよう条件分岐
+   - import.meta.envの参照は構文エラーになるため削除
+
+2. **workers/src/types.tsの型互換性修正**
+   - Bindings型にインデックスシグネチャ`[key: string]: unknown`を追加
+   - EnvironmentContext型との互換性を確保
+   - createErrorResponse関数がBindings型を受け入れるように対応
+
+3. **ESLint対応**
+   - @ts-ignoreを@ts-expect-errorに変更（ESLintルールに準拠）
+   - より厳密なエラー処理アノテーションを使用
+
+### 解決された問題
+
+- GitHub ActionsでのTypeScript型チェックエラー
+- フロントエンドビルドでのprocess未定義エラー
+- Workers APIの型不整合エラー
+
+### 学習事項
+
+- ブラウザ環境とNode.js環境の違いを考慮した型定義の重要性
+- TypeScriptのインデックスシグネチャの活用方法
+- ESLintの@typescript-eslint/ban-ts-commentルールへの対応
+
+### PR
+
+- https://github.com/yurufuwayuya/visual-prompt-builder/pull/86
+
+---
+
 ## 2025-01-23 コードリファクタリング作業
 
 ### 作業内容
