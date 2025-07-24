@@ -28,6 +28,9 @@ export interface Bindings {
 
   // R2 Bucket
   IMAGE_BUCKET: R2Bucket;
+
+  // インデックスシグネチャ（EnvironmentContext型との互換性のため）
+  [key: string]: unknown;
 }
 
 export interface Variables {
