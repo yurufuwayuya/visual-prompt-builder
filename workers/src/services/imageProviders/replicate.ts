@@ -12,12 +12,28 @@ import { createLogger } from '../../utils/logger';
 const logger = createLogger({ prefix: 'Replicate' });
 
 // Replicateの画像生成モデル
-// Using official model names (versions are handled automatically by Replicate)
+// モデル名とバージョンIDのマッピング
 const REPLICATE_MODELS = {
-  'flux-fill': 'black-forest-labs/flux-fill-dev', // Professional inpainting and outpainting model
-  'flux-variations': 'black-forest-labs/flux-redux-schnell', // Fast image variations
-  'flux-canny': 'black-forest-labs/flux-dev', // Standard FLUX model
-  'sdxl-img2img': 'stability-ai/sdxl', // Stable Diffusion XL img2img
+  'flux-fill': {
+    name: 'black-forest-labs/flux-fill-dev',
+    version: null, // Official model - no version needed
+    isOfficial: true,
+  },
+  'flux-variations': {
+    name: 'black-forest-labs/flux-redux-schnell',
+    version: null, // Official model - no version needed
+    isOfficial: true,
+  },
+  'flux-canny': {
+    name: 'black-forest-labs/flux-dev',
+    version: null, // Official model - no version needed
+    isOfficial: true,
+  },
+  'sdxl-img2img': {
+    name: 'stability-ai/sdxl',
+    version: '39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b',
+    isOfficial: false,
+  },
 } as const;
 
 type ModelId = keyof typeof REPLICATE_MODELS;
@@ -104,12 +120,15 @@ function getModelSpecificInput(
       return {
         prompt: prompt,
         image: image,
+        width: options.width,
+        height: options.height,
         refine: 'no_refiner',
         num_inference_steps: Math.min(options.steps, 50),
         guidance_scale: options.guidanceScale,
         prompt_strength: options.strength,
         num_outputs: 1,
         scheduler: 'DPMSolverMultistep',
+        negative_prompt: options.negativePrompt || '',
       };
 
     default:
@@ -217,12 +236,38 @@ export async function generateWithReplicate(
   }
 
   // Replicate APIに予測リクエストを送信
-  // Official models use the model endpoint directly without version
-  const modelName = REPLICATE_MODELS[modelId];
-  const apiUrl = `https://api.replicate.com/v1/models/${modelName}/predictions`;
+  const modelConfig = REPLICATE_MODELS[modelId];
+  let apiUrl: string;
+  let requestBody: Record<string, unknown>;
+
+  if (modelConfig.isOfficial) {
+    // Official models use the model endpoint directly without version
+    apiUrl = `https://api.replicate.com/v1/models/${modelConfig.name}/predictions`;
+    requestBody = {
+      input: getModelSpecificInput(modelId, {
+        image: imageUrl,
+        prompt: prompt,
+        options: options,
+      }),
+    };
+  } else {
+    // Standard models use the general predictions endpoint with version
+    apiUrl = `https://api.replicate.com/v1/predictions`;
+    requestBody = {
+      version: modelConfig.version,
+      input: getModelSpecificInput(modelId, {
+        image: imageUrl,
+        prompt: prompt,
+        options: options,
+      }),
+    };
+  }
 
   logger.info('Creating Replicate prediction:', {
-    model: modelName,
+    model: modelConfig.name,
+    version: modelConfig.version,
+    isOfficial: modelConfig.isOfficial,
+    apiUrl: apiUrl,
     imageUrl: imageUrl,
     promptLength: prompt.length,
     options: options,
@@ -234,13 +279,7 @@ export async function generateWithReplicate(
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      input: getModelSpecificInput(modelId, {
-        image: imageUrl, // Use HTTP URL instead of data URL
-        prompt: prompt,
-        options: options,
-      }),
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!createResponse.ok) {
@@ -248,7 +287,7 @@ export async function generateWithReplicate(
     logger.error('Replicate API error:', {
       status: createResponse.status,
       error: error,
-      model: modelName,
+      model: modelConfig.name,
       url: apiUrl,
     });
     throw new Error(`Replicate API error: ${createResponse.status} - ${error}`);
@@ -397,19 +436,25 @@ export function getAvailableReplicateModels() {
       id: 'flux-fill',
       name: 'FLUX Fill',
       description: 'Professional inpainting and outpainting model',
-      version: REPLICATE_MODELS['flux-fill'],
+      version: REPLICATE_MODELS['flux-fill'].name,
     },
     {
       id: 'flux-variations',
       name: 'FLUX Variations',
       description: 'Create variations of existing images',
-      version: REPLICATE_MODELS['flux-variations'],
+      version: REPLICATE_MODELS['flux-variations'].name,
     },
     {
       id: 'flux-canny',
       name: 'FLUX Canny',
       description: 'Edge-guided image generation',
-      version: REPLICATE_MODELS['flux-canny'],
+      version: REPLICATE_MODELS['flux-canny'].name,
+    },
+    {
+      id: 'sdxl-img2img',
+      name: 'SDXL img2img',
+      description: 'Stable Diffusion XL for image-to-image generation',
+      version: REPLICATE_MODELS['sdxl-img2img'].name,
     },
   ];
 }

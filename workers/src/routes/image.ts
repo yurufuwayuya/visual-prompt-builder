@@ -6,11 +6,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import type { Bindings } from '../types';
-import {
-  createSuccessResponse,
-  createErrorResponse,
-  generateCacheKey,
-} from '@visual-prompt-builder/shared';
+import { createSuccessResponse, generateCacheKey } from '@visual-prompt-builder/shared';
 import { createLogger } from '../utils/logger';
 
 // リクエストスキーマ
@@ -201,7 +197,28 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
     return c.json(createSuccessResponse(response));
   } catch (error) {
     console.error('Image generation error:', error);
-    return c.json(createErrorResponse(error, '画像生成に失敗しました', c.env), 500);
+
+    // デバッグ用の詳細エラー情報を含める（一時的）
+    if (c.env.ENVIRONMENT === 'development' || c.env.DEBUG_MODE === 'true') {
+      const debugInfo = {
+        success: false,
+        error: error instanceof Error ? error.message : '画像生成に失敗しました',
+        details: error instanceof Error ? error.stack : undefined,
+        provider: c.env.IMAGE_PROVIDER || 'replicate',
+        hasApiKey: !!c.env.IMAGE_API_KEY,
+        hasR2AccessKey: !!c.env.R2_ACCESS_KEY_ID,
+        hasR2SecretKey: !!c.env.R2_SECRET_ACCESS_KEY,
+        r2CustomDomain: c.env.R2_CUSTOM_DOMAIN,
+        timestamp: new Date().toISOString(),
+      };
+      return c.json(debugInfo, 500);
+    }
+
+    // Production error response
+    return c.json({
+      success: false,
+      error: '画像生成に失敗しました',
+    }, 500);
   }
 });
 
