@@ -95,7 +95,10 @@ export const ImageToImage: React.FC = () => {
       });
 
       if (result.success && result.image) {
-        setGeneratedImage(result.image);
+        const imageDataUrl = result.image.startsWith('data:')
+          ? result.image
+          : `data:image/png;base64,${result.image}`;
+        setGeneratedImage(imageDataUrl);
         addToast({
           type: 'success',
           message: result.cached ? 'キャッシュから画像を取得しました' : '画像を生成しました',
@@ -169,7 +172,7 @@ export const ImageToImage: React.FC = () => {
                       className="hidden"
                       aria-describedby="upload-help"
                     />
-                    <div 
+                    <div
                       className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200"
                       role="button"
                       tabIndex={0}
@@ -183,7 +186,9 @@ export const ImageToImage: React.FC = () => {
                     >
                       <Upload className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                       <p className="text-sm text-gray-600">クリックして画像をアップロード</p>
-                      <p id="upload-help" className="text-xs text-gray-500 mt-2">対応形式: JPG, PNG, GIF, WebP（最大5MB）</p>
+                      <p id="upload-help" className="text-xs text-gray-500 mt-2">
+                        対応形式: JPG, PNG, GIF, WebP（最大5MB）
+                      </p>
                     </div>
                   </label>
                 ) : (
