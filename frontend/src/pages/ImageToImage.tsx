@@ -4,7 +4,7 @@ import { Button } from '@/components/common/Button';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useToastStore } from '@/stores/toastStore';
-import { generateImage } from '@/services/imageGeneration';
+import { generateImage, validateImageSize, resizeImage } from '@/services/imageGeneration';
 
 export const ImageToImage: React.FC = () => {
   const { addToast } = useToastStore();
@@ -23,11 +23,11 @@ export const ImageToImage: React.FC = () => {
     if (!file) return;
 
     // Enhanced file validation
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 10 * 1024 * 1024; // 10MB - match backend limit
     if (file.size > maxSize) {
       addToast({
         type: 'error',
-        message: 'ファイルサイズは5MB以下にしてください',
+        message: 'ファイルサイズは10MB以下にしてください',
       });
       return;
     }
@@ -51,10 +51,38 @@ export const ImageToImage: React.FC = () => {
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setReferenceImage(e.target?.result as string);
-      setGeneratedImage(null);
-      setError(null);
+    reader.onload = async (e) => {
+      try {
+        let base64 = e.target?.result as string;
+        if (!base64) {
+          throw new Error('画像データの読み込みに失敗しました');
+        }
+
+        // 画像サイズをチェックし、必要に応じてリサイズ
+        // Replicateのメモリ制限を考慮して、より小さいサイズにリサイズ
+        if (!validateImageSize(base64, 3)) {
+          addToast({
+            type: 'info',
+            message: '大きな画像を最適なサイズにリサイズしています...',
+          });
+          // 最大2048x2048、品質0.8でリサイズ（メモリ使用量を削減）
+          base64 = await resizeImage(base64, 2048, 2048, 0.8);
+        }
+
+        setReferenceImage(base64);
+        setGeneratedImage(null);
+        setError(null);
+        addToast({
+          type: 'success',
+          message: '画像をアップロードしました',
+        });
+      } catch (error) {
+        console.error('画像処理エラー:', error);
+        addToast({
+          type: 'error',
+          message: '画像の処理に失敗しました',
+        });
+      }
     };
     reader.onerror = () => {
       addToast({
@@ -187,7 +215,7 @@ export const ImageToImage: React.FC = () => {
                       <Upload className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                       <p className="text-sm text-gray-600">クリックして画像をアップロード</p>
                       <p id="upload-help" className="text-xs text-gray-500 mt-2">
-                        対応形式: JPG, PNG, GIF, WebP（最大5MB）
+                        対応形式: JPG, PNG, GIF, WebP（最大10MB）
                       </p>
                     </div>
                   </label>

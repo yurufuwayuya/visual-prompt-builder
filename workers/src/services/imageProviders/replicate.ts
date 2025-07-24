@@ -86,11 +86,11 @@ function getModelSpecificInput(
       return {
         image: image,
         prompt: prompt,
-        steps: options.steps,
-        guidance: options.guidanceScale,
+        steps: Math.min(options.steps, 20), // Limit steps to reduce memory usage
+        guidance: Math.min(options.guidanceScale, 5), // Limit guidance scale
         strength: options.strength,
         output_format: options.outputFormat,
-        output_quality: 90,
+        output_quality: 80, // Reduced from 90 to save memory
         negative_prompt: options.negativePrompt,
       };
 
@@ -99,7 +99,7 @@ function getModelSpecificInput(
       return {
         redux_image: image, // Note: flux-redux uses redux_image, not image
         num_outputs: 1,
-        megapixels: '1', // Use 1MP for 1024x1024
+        megapixels: '0.25', // Reduced from 1MP to 0.25MP (512x512) for memory efficiency
         aspect_ratio: '1:1',
         output_format: options.outputFormat,
         // Note: flux-redux doesn't use prompt or guidance
@@ -112,7 +112,7 @@ function getModelSpecificInput(
         num_outputs: 1,
         aspect_ratio: '1:1',
         output_format: options.outputFormat,
-        output_quality: 90,
+        output_quality: 80, // Reduced from 90 to save memory
       };
 
     case 'sdxl-img2img':
@@ -120,8 +120,8 @@ function getModelSpecificInput(
       return {
         prompt: prompt,
         image: image,
-        width: options.width,
-        height: options.height,
+        width: Math.max(options.width || 512, 256), // 最小256px
+        height: Math.max(options.height || 512, 256), // 最小256px
         refine: 'no_refiner',
         num_inference_steps: Math.min(options.steps, 50),
         guidance_scale: options.guidanceScale,
@@ -161,6 +161,67 @@ export async function generateWithReplicate(
   const imageDataUrl = baseImage.startsWith('data:')
     ? baseImage
     : createDataUrl(baseImage, 'image/png');
+
+  // 入力画像のサイズチェック（全モデル共通）
+  try {
+    // Base64から画像のサイズを検証
+    const base64Data = imageDataUrl.includes(',') ? imageDataUrl.split(',')[1] : imageDataUrl;
+
+    // Base64のサイズから実際のバイト数を計算（約3/4）
+    const sizeInBytes = (base64Data.length * 3) / 4;
+    const sizeInMB = sizeInBytes / (1024 * 1024);
+
+    // 画像サイズが大きすぎる場合の警告とエラー
+    if (sizeInMB > 10) {
+      logger.error('Input image is too large, may cause CUDA OOM', {
+        sizeInMB: sizeInMB.toFixed(2),
+        modelId: modelId,
+      });
+      throw new Error(
+        `画像が大きすぎます（${sizeInMB.toFixed(1)}MB）。10MB以下の画像を使用してください。`
+      );
+    } else if (sizeInMB > 5) {
+      logger.warn('Input image is large, may cause memory issues', {
+        sizeInMB: sizeInMB.toFixed(2),
+        modelId: modelId,
+      });
+    }
+
+    // SDXLモデル固有の最小サイズチェック
+    if (modelId === 'sdxl-img2img') {
+      // 最小サイズのBase64画像（1x1ピクセル）は約100文字程度
+      // SDXLには最低でも256x256以上の画像が必要
+      // Note: This is an approximation - actual image dimensions depend on compression
+      if (base64Data.length < 10000) {
+        logger.warn('Input image might be too small for SDXL model', {
+          base64Length: base64Data.length,
+          modelId: modelId,
+        });
+
+        // オプションでwidth/heightが指定されていない場合はデフォルト値を設定
+        if (!options.width || options.width < 256) {
+          options.width = 512;
+        }
+        if (!options.height || options.height < 256) {
+          options.height = 512;
+        }
+      }
+    }
+
+    // FLUXモデルの場合の推奨サイズログ
+    if (modelId.startsWith('flux-')) {
+      logger.info('Processing image for FLUX model', {
+        sizeInMB: sizeInMB.toFixed(2),
+        modelId: modelId,
+        aspectRatio: '1:1 (fixed)',
+      });
+    }
+  } catch (error) {
+    logger.error('Failed to validate input image size:', error);
+    if (error instanceof Error && error.message.includes('画像が大きすぎます')) {
+      throw error; // Re-throw size limit errors
+    }
+  }
 
   // Upload image to R2 and get HTTP URL
   let imageUrl: string;
