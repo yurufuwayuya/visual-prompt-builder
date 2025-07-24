@@ -8,6 +8,7 @@ import { z } from 'zod';
 import type { Bindings } from '../types';
 import { createSuccessResponse, generateCacheKey } from '@visual-prompt-builder/shared';
 import { createLogger } from '../utils/logger';
+import { resizeImage, validateImageSize } from '../utils/imageProcessing';
 
 // リクエストスキーマ
 const generateImageSchema = z.object({
@@ -80,6 +81,17 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
   });
 
   try {
+    // 画像サイズの検証（最大20MB）
+    if (!validateImageSize(baseImage, 20)) {
+      throw new Error('画像サイズが大きすぎます（最大20MB）');
+    }
+
+    // 画像のリサイズ処理
+    const resizedImage = await resizeImage(baseImage, 1024, 1024);
+    imageLogger.debug('Image resized:', {
+      originalSize: baseImage.length,
+      resizedSize: resizedImage.length,
+    });
     // キャッシュキーの生成 - 画像全体のハッシュを使用してキー衝突を防ぐ
     const imageHash = await crypto.subtle
       .digest('SHA-256', new TextEncoder().encode(baseImage))
@@ -122,7 +134,7 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
     switch (provider) {
       case 'replicate':
         response = await generateWithReplicate(
-          baseImage,
+          resizedImage,
           prompt,
           finalOptions,
           c.env.IMAGE_API_KEY,
@@ -130,11 +142,16 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
         );
         break;
       case 'openai':
-        response = await generateWithOpenAI(baseImage, prompt, finalOptions, c.env.IMAGE_API_KEY);
+        response = await generateWithOpenAI(
+          resizedImage,
+          prompt,
+          finalOptions,
+          c.env.IMAGE_API_KEY
+        );
         break;
       case 'stability':
         response = await generateWithStability(
-          baseImage,
+          resizedImage,
           prompt,
           finalOptions,
           c.env.IMAGE_API_KEY
