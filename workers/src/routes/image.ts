@@ -199,19 +199,26 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
     console.error('Image generation error:', error);
 
     // デバッグ用の詳細エラー情報を含める（一時的）
-    const debugInfo = {
-      success: false,
-      error: error instanceof Error ? error.message : '画像生成に失敗しました',
-      details: error instanceof Error ? error.stack : undefined,
-      provider: c.env.IMAGE_PROVIDER || 'replicate',
-      hasApiKey: !!c.env.IMAGE_API_KEY,
-      hasR2AccessKey: !!c.env.R2_ACCESS_KEY_ID,
-      hasR2SecretKey: !!c.env.R2_SECRET_ACCESS_KEY,
-      r2CustomDomain: c.env.R2_CUSTOM_DOMAIN,
-      timestamp: new Date().toISOString(),
-    };
+    if (c.env.ENVIRONMENT === 'development' || c.env.DEBUG_MODE === 'true') {
+      const debugInfo = {
+        success: false,
+        error: error instanceof Error ? error.message : '画像生成に失敗しました',
+        details: error instanceof Error ? error.stack : undefined,
+        provider: c.env.IMAGE_PROVIDER || 'replicate',
+        hasApiKey: !!c.env.IMAGE_API_KEY,
+        hasR2AccessKey: !!c.env.R2_ACCESS_KEY_ID,
+        hasR2SecretKey: !!c.env.R2_SECRET_ACCESS_KEY,
+        r2CustomDomain: c.env.R2_CUSTOM_DOMAIN,
+        timestamp: new Date().toISOString(),
+      };
+      return c.json(debugInfo, 500);
+    }
 
-    return c.json(debugInfo, 500);
+    // Production error response
+    return c.json({
+      success: false,
+      error: '画像生成に失敗しました',
+    }, 500);
   }
 });
 

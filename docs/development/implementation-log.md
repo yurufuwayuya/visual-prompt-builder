@@ -590,7 +590,7 @@ Claude Codeによる実装記録。問題解決の経緯、実装内容、学習
 
 #### 環境
 
-- API URL: https://visual-prompt-builder-api.yuya-kitamori.workers.dev
+- API URL: <https://visual-prompt-builder-api.yuya-kitamori.workers.dev>
 - エンドポイント: /api/v1/image/generate
 - HTTPメソッド: POST
 
@@ -634,7 +634,7 @@ Claude Codeによる実装記録。問題解決の経緯、実装内容、学習
 #### デプロイ完了
 
 - Version ID: 6f885a0b-2600-41d8-96b0-17f11f6d3f5b
-- 本番環境URL: https://api.kantanprompt.com
+- 本番環境URL: <https://api.kantanprompt.com>
 - デプロイコマンド: `npx wrangler deploy --env production`
 
 #### 新しいエラー
