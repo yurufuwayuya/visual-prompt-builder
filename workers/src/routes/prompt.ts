@@ -97,7 +97,7 @@ promptRoute.post(
     } catch (error) {
       // Logger is not available here, using console.error for critical errors
       console.error('Prompt generation error:', error);
-      return c.json(createErrorResponse(error, 'プロンプト生成に失敗しました'), 500);
+      return c.json(createErrorResponse(error, 'プロンプト生成に失敗しました', c.env), 500);
     }
   }
 );

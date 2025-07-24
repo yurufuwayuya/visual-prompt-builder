@@ -14,9 +14,9 @@ const logger = createLogger({ prefix: 'Replicate' });
 // Replicateの画像生成モデル
 // Using official model names (versions are handled automatically by Replicate)
 const REPLICATE_MODELS = {
-  'flux-fill': 'black-forest-labs/flux-fill-dev', // Inpainting model
+  'flux-fill': 'black-forest-labs/flux-fill-dev', // Professional inpainting and outpainting model
   'flux-variations': 'black-forest-labs/flux-redux-schnell', // Fast image variations
-  'flux-canny': 'black-forest-labs/flux-canny-dev', // Edge-guided generation
+  'flux-canny': 'black-forest-labs/flux-dev', // Standard FLUX model
   'sdxl-img2img': 'stability-ai/sdxl', // Stable Diffusion XL img2img
 } as const;
 
@@ -66,13 +66,16 @@ function getModelSpecificInput(
 
   switch (modelId) {
     case 'flux-fill':
-      // flux-fill-pro parameters
+      // flux-fill-dev parameters (inpainting/outpainting)
       return {
-        prompt: prompt,
         image: image,
+        prompt: prompt,
         steps: options.steps,
         guidance: options.guidanceScale,
+        strength: options.strength,
         output_format: options.outputFormat,
+        output_quality: 90,
+        negative_prompt: options.negativePrompt,
       };
 
     case 'flux-variations':
@@ -216,26 +219,38 @@ export async function generateWithReplicate(
   // Replicate APIに予測リクエストを送信
   // Official models use the model endpoint directly without version
   const modelName = REPLICATE_MODELS[modelId];
-  const createResponse = await fetch(
-    `https://api.replicate.com/v1/models/${modelName}/predictions`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        input: getModelSpecificInput(modelId, {
-          image: imageUrl, // Use HTTP URL instead of data URL
-          prompt: prompt,
-          options: options,
-        }),
+  const apiUrl = `https://api.replicate.com/v1/models/${modelName}/predictions`;
+
+  logger.info('Creating Replicate prediction:', {
+    model: modelName,
+    imageUrl: imageUrl,
+    promptLength: prompt.length,
+    options: options,
+  });
+
+  const createResponse = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      input: getModelSpecificInput(modelId, {
+        image: imageUrl, // Use HTTP URL instead of data URL
+        prompt: prompt,
+        options: options,
       }),
-    }
-  );
+    }),
+  });
 
   if (!createResponse.ok) {
     const error = await createResponse.text();
+    logger.error('Replicate API error:', {
+      status: createResponse.status,
+      error: error,
+      model: modelName,
+      url: apiUrl,
+    });
     throw new Error(`Replicate API error: ${createResponse.status} - ${error}`);
   }
 

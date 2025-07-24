@@ -201,7 +201,7 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
     return c.json(createSuccessResponse(response));
   } catch (error) {
     console.error('Image generation error:', error);
-    return c.json(createErrorResponse(error, '画像生成に失敗しました'), 500);
+    return c.json(createErrorResponse(error, '画像生成に失敗しました', c.env), 500);
   }
 });
 
@@ -278,7 +278,7 @@ async function generateWithReplicate(
         outputFormat: options.outputFormat,
       },
       apiKey,
-      'flux-fill', // デフォルトモデル
+      'sdxl-img2img', // SDXLを使用（img2img対応）
       env
     );
 
@@ -300,7 +300,7 @@ async function generateWithOpenAI(
   _options: ImageGenerationOptions,
   _apiKey: string
 ): Promise<GenerateImageResponse> {
-  // TODO: OpenAI API実装
+  // OpenAI API実装は今後追加予定（Issue #86で追跡）
   throw new Error('OpenAI API実装は準備中です');
 }
 
@@ -310,6 +310,6 @@ async function generateWithStability(
   _options: ImageGenerationOptions,
   _apiKey: string
 ): Promise<GenerateImageResponse> {
-  // TODO: Stability AI API実装
+  // Stability AI API実装は今後追加予定（Issue #87で追跡）
   throw new Error('Stability AI API実装は準備中です');
 }
