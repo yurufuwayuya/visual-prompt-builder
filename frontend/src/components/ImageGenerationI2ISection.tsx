@@ -42,7 +42,11 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
       });
 
       if (result.success && result.image) {
-        setGeneratedImage(result.image);
+        // Base64画像にdata URLプレフィックスを追加
+        const imageDataUrl = result.image.startsWith('data:')
+          ? result.image
+          : `data:image/png;base64,${result.image}`;
+        setGeneratedImage(imageDataUrl);
         addToast({
           type: 'success',
           message: result.cached ? 'キャッシュから画像を取得しました' : '画像を生成しました',
