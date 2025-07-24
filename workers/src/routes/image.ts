@@ -300,7 +300,7 @@ async function generateWithOpenAI(
   _options: ImageGenerationOptions,
   _apiKey: string
 ): Promise<GenerateImageResponse> {
-  // TODO: OpenAI API実装
+  // OpenAI API実装は今後追加予定（Issue #86で追跡）
   throw new Error('OpenAI API実装は準備中です');
 }
 
@@ -310,6 +310,6 @@ async function generateWithStability(
   _options: ImageGenerationOptions,
   _apiKey: string
 ): Promise<GenerateImageResponse> {
-  // TODO: Stability AI API実装
+  // Stability AI API実装は今後追加予定（Issue #87で追跡）
   throw new Error('Stability AI API実装は準備中です');
 }

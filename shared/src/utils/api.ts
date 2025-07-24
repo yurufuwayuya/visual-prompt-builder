@@ -22,7 +22,12 @@ export function createErrorResponse(
   error: unknown,
   defaultMessage = 'An error occurred'
 ): ApiError {
-  const errorMessage = error instanceof Error ? error.message : defaultMessage;
+  // 本番環境では詳細なエラーメッセージを露出させない
+  const isProd = process.env.NODE_ENV === 'production';
+  const errorMessage =
+    !isProd && error instanceof Error
+      ? error.message
+      : defaultMessage;
   
   return {
     success: false,

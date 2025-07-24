@@ -14,7 +14,7 @@ const logger = createLogger({ prefix: 'Replicate' });
 // Replicateの画像生成モデル
 // Using official model names (versions are handled automatically by Replicate)
 const REPLICATE_MODELS = {
-  'flux-fill': 'black-forest-labs/flux-schnell', // Fast text-to-image model
+  'flux-fill': 'black-forest-labs/flux-fill-dev', // Professional inpainting and outpainting model
   'flux-variations': 'black-forest-labs/flux-redux-schnell', // Fast image variations
   'flux-canny': 'black-forest-labs/flux-dev', // Standard FLUX model
   'sdxl-img2img': 'stability-ai/sdxl', // Stable Diffusion XL img2img
@@ -66,14 +66,16 @@ function getModelSpecificInput(
 
   switch (modelId) {
     case 'flux-fill':
-      // flux-schnell parameters (text-to-image, uses input image as reference)
+      // flux-fill-dev parameters (inpainting/outpainting)
       return {
-        prompt: `${prompt}, based on the provided image`,
-        num_outputs: 1,
-        aspect_ratio: '1:1',
+        image: image,
+        prompt: prompt,
+        steps: options.steps,
+        guidance: options.guidanceScale,
+        strength: options.strength,
         output_format: options.outputFormat,
         output_quality: 90,
-        disable_safety_checker: false,
+        negative_prompt: options.negativePrompt,
       };
 
     case 'flux-variations':
@@ -222,7 +224,7 @@ export async function generateWithReplicate(
   logger.info('Creating Replicate prediction:', {
     model: modelName,
     imageUrl: imageUrl,
-    prompt: prompt.substring(0, 100) + '...',
+    promptLength: prompt.length,
     options: options,
   });
 
