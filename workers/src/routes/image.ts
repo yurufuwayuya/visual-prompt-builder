@@ -8,7 +8,7 @@ import { z } from 'zod';
 import type { Bindings } from '../types';
 import { createSuccessResponse, generateCacheKey } from '@visual-prompt-builder/shared';
 import { createLogger } from '../utils/logger';
-import { resizeImage, validateImageSize } from '../utils/imageProcessing';
+import { validateAndLogImageSize, validateImageSize } from '../utils/imageProcessing';
 
 // リクエストスキーマ
 const generateImageSchema = z.object({
@@ -86,11 +86,11 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
       throw new Error('画像サイズが大きすぎます（最大20MB）');
     }
 
-    // 画像のリサイズ処理
-    const resizedImage = await resizeImage(baseImage, 1024, 1024);
-    imageLogger.debug('Image resized:', {
+    // 画像サイズの検証とログ出力（実際のリサイズはクライアント側で事前実行済み）
+    const validatedImage = await validateAndLogImageSize(baseImage, 20);
+    imageLogger.debug('Image validated:', {
       originalSize: baseImage.length,
-      resizedSize: resizedImage.length,
+      validatedSize: validatedImage.length,
     });
     // キャッシュキーの生成 - 画像全体のハッシュを使用してキー衝突を防ぐ
     const imageHash = await crypto.subtle
@@ -134,7 +134,7 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
     switch (provider) {
       case 'replicate':
         response = await generateWithReplicate(
-          resizedImage,
+          validatedImage,
           prompt,
           finalOptions,
           c.env.IMAGE_API_KEY,
@@ -143,7 +143,7 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
         break;
       case 'openai':
         response = await generateWithOpenAI(
-          resizedImage,
+          validatedImage,
           prompt,
           finalOptions,
           c.env.IMAGE_API_KEY
@@ -151,7 +151,7 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
         break;
       case 'stability':
         response = await generateWithStability(
-          resizedImage,
+          validatedImage,
           prompt,
           finalOptions,
           c.env.IMAGE_API_KEY

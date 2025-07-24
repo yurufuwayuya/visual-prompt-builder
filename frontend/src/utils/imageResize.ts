@@ -68,7 +68,7 @@ export async function resizeImage(
         const ctx = canvas.getContext('2d');
 
         if (!ctx) {
-          throw new Error('Canvas context is not available');
+          throw new Error('Canvas context が取得できませんでした');
         }
 
         // Canvasのサイズを設定
@@ -82,7 +82,7 @@ export async function resizeImage(
         canvas.toBlob(
           (blob) => {
             if (!blob) {
-              reject(new Error('Failed to create blob'));
+              reject(new Error('Blob の作成に失敗しました'));
               return;
             }
 
@@ -91,10 +91,10 @@ export async function resizeImage(
               if (typeof reader.result === 'string') {
                 resolve(reader.result);
               } else {
-                reject(new Error('Failed to convert to base64'));
+                reject(new Error('Base64への変換に失敗しました'));
               }
             };
-            reader.onerror = () => reject(new Error('Failed to read blob'));
+            reader.onerror = () => reject(new Error('Blob の読み込みに失敗しました'));
             reader.readAsDataURL(blob);
           },
           'image/jpeg',
@@ -106,7 +106,7 @@ export async function resizeImage(
     };
 
     img.onerror = () => {
-      reject(new Error('Failed to load image'));
+      reject(new Error('画像の読み込みに失敗しました'));
     };
 
     // 画像を読み込む

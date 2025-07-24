@@ -446,7 +446,7 @@ defaultModel: 'flux-variations';
 ### 作業開始時の状況
 
 - 画像生成は成功するが、生成された画像が表示されない
-- コンソールに "GET blob:http://localhost:5173/... 404" エラー
+- コンソールに `GET blob:http://localhost:5173/... 404` エラー
 
 ### 問題の調査
 
