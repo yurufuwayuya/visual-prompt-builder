@@ -4,6 +4,87 @@ Claude Codeによる実装記録。問題解決の経緯、実装内容、学習
 
 ---
 
+## 2025-07-24
+
+### R2画像表示修正
+
+#### 作業内容
+
+- Cloudflare R2から取得した画像がフロントエンドで表示されない問題を修正
+- `ImageToImage.tsx`のBase64画像表示処理を修正
+
+#### 実施内容
+
+1. 問題の調査
+   - ReplicateAPIから返されるBase64画像データにdata
+     URLプレフィックスが含まれていないことが原因と判明
+   - ブラウザはBase64文字列を画像として認識するために`data:image/png;base64,`プレフィックスが必要
+
+2. 修正内容
+   - `frontend/src/pages/ImageToImage.tsx`の98-101行目を修正
+   - Base64文字列にdata URLプレフィックスを追加する処理を実装
+   ```typescript
+   const imageDataUrl = result.image.startsWith('data:')
+     ? result.image
+     : `data:image/png;base64,${result.image}`;
+   setGeneratedImage(imageDataUrl);
+   ```
+
+#### 完成物
+
+- R2から取得した画像が正しくフロントエンドに表示されるようになった
+- `ImageGenerationI2ISection.tsx`と同様の修正を`ImageToImage.tsx`にも適用
+
+#### 課題・次回予定
+
+- 他の画像表示箇所も同様の問題がないか確認が必要
+- 画像表示ロジックの共通化を検討
+
+### 作業内容
+
+#### 画像生成API 500エラーのデバッグ分析
+
+**問題**: 画像生成API (`/api/v1/image/generate`) が500エラーを返す
+
+**分析結果**:
+
+1. エラーレスポンスにデバッグ情報が含まれている
+2. 主な原因候補:
+   - 環境変数の未設定（IMAGE_API_KEY, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY）
+   - R2への画像アップロード失敗
+   - 画像サイズ制限（10MB）超過
+
+**デバッグ手順**:
+
+1. ブラウザの開発者ツールでレスポンスを確認
+2. debugInfo内の各フラグを確認:
+   - hasApiKey: Replicate APIキーの有無
+   - hasR2AccessKey/hasR2SecretKey: R2認証情報の有無
+   - error: 具体的なエラーメッセージ
+
+**推奨される対処法**:
+
+```bash
+# 1. 環境変数の設定確認
+cat workers/.dev.vars
+
+# 2. 必要な環境変数の設定
+echo 'IMAGE_API_KEY="your-replicate-api-key"' >> workers/.dev.vars
+echo 'R2_ACCESS_KEY_ID="your-r2-access-key"' >> workers/.dev.vars
+echo 'R2_SECRET_ACCESS_KEY="your-r2-secret-key"' >> workers/.dev.vars
+
+# 3. ワーカーの再起動
+npm run dev:worker
+```
+
+**実装の詳細**:
+
+- Replicateは画像URLを必要とするため、まずR2に一時的にアップロード
+- アップロードにはS3互換APIまたはR2バインディングを使用
+- 画像生成後、一時ファイルは削除される
+
+---
+
 ## 2025-01-24 画像生成表示エラーの修正
 
 ### 作業内容
@@ -769,5 +850,69 @@ Claude Codeによる実装記録。問題解決の経緯、実装内容、学習
 
 - 画像形式の動的判定機能の実装を検討
 - エラーハンドリングの強化（不正なBase64データへの対処など）
+
+---
+
+## 2025/07/24 - 画像表示エラーの追加調査
+
+### 作業内容
+
+1. **画像表示エラーの調査**
+   - ImageGenerationI2ISection.tsxの修正を確認
+   - 同様の問題がImageToImage.tsxにも存在することを発見
+
+### 発見した問題
+
+- APIは生のBase64文字列を返す（`image: base64Image`）
+- フロントエンドで表示する際にdata URLプレフィックスが必要
+- ImageToImage.tsx（line
+  98）で`setGeneratedImage(result.image)`となっており、プレフィックスが欠けている
+
+### 解決方法
+
+- ImageGenerationI2ISection.tsxと同様に、data
+  URLプレフィックスを追加する処理が必要
+
+```typescript
+const imageDataUrl = result.image.startsWith('data:')
+  ? result.image
+  : `data:image/png;base64,${result.image}`;
+setGeneratedImage(imageDataUrl);
+```
+
+### 今後の作業予定
+
+#### 最優先事項
+
+1. **画像表示エラーの追加修正**
+   - ImageToImage.tsxでも同様の画像表示エラーが存在
+   - Base64プレフィックスの追加が必要
+
+#### 次の優先事項
+
+1. **型チェックエラーの修正**
+   - Visual Prompt Builder（メインアプリ）の型エラー修正
+   - 本番ビルドの正常化
+
+2. **i2i機能のテスト環境整備**
+   - エンドツーエンドテストの作成
+   - 画像生成機能の動作確認
+
+3. **UI/UXの改善**
+   - 画像アップロード時のプレビュー改善
+   - エラーメッセージの詳細化
+
+4. **ドキュメント整備**
+   - API仕様書の更新
+   - デプロイ手順の文書化
+
+## 備考・メモ
+
+- TypeScript
+  5.7の新しい型チェック機能により、以前は検出されなかった型エラーが表出している
+- i2i機能は本番環境でも正常に動作することを確認済み
+- Cloudflare環境でのデバッグは`wrangler tail`が有効
+- Replicate APIは生のBase64文字列を返すため、フロントエンドでdata
+  URLプレフィックスの追加が必要
 
 ---
