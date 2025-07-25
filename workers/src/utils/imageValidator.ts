@@ -233,7 +233,7 @@ export function applyRiskMitigation<T extends Record<string, unknown>>(
 
   // ステップ数の調整
   if ('steps' in adjusted && typeof adjusted.steps === 'number') {
-    (adjusted as any).steps = Math.min(adjusted.steps, assessment.recommendations.suggestedSteps);
+    adjusted.steps = Math.min(adjusted.steps, assessment.recommendations.suggestedSteps);
   }
 
   // ガイダンススケールの調整
