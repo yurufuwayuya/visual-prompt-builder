@@ -257,10 +257,10 @@ describe('Image API Routes', () => {
             baseImage: TEST_IMAGE,
             prompt: 'test prompt',
             options: {
-              width: 1024,
-              height: 1024,
+              width: 768,
+              height: 768,
               strength: 0.8,
-              steps: 40,
+              steps: 20,
               guidanceScale: 8.0,
               negativePrompt: 'ugly, blurry',
               outputFormat: 'jpeg',
@@ -277,10 +277,10 @@ describe('Image API Routes', () => {
         TEST_IMAGE,
         'test prompt',
         {
-          width: 1024,
-          height: 1024,
+          width: 768,
+          height: 768,
           strength: 0.8,
-          steps: 40,
+          steps: 20,
           guidanceScale: 8.0,
           negativePrompt: 'ugly, blurry',
           outputFormat: 'jpeg',
@@ -337,7 +337,7 @@ describe('Image API Routes', () => {
 
       expect(response.status).toBe(500);
       const result = (await response.json()) as any;
-      expect(result.error).toContain('Image generation timed out');
+      expect(result.error).toBe('Image generation timed out');
     });
 
     it('should handle malformed API response', async () => {
@@ -363,7 +363,7 @@ describe('Image API Routes', () => {
 
       expect(response.status).toBe(500);
       const result = (await response.json()) as any;
-      expect(result.error).toContain('Failed to download generated image: 404');
+      expect(result.error).toBe('Failed to download generated image: 404');
     });
 
     it('should handle invalid image format gracefully', async () => {
@@ -388,7 +388,7 @@ describe('Image API Routes', () => {
 
       expect(response.status).toBe(500);
       const result = (await response.json()) as any;
-      expect(result.error).toContain('Invalid image format');
+      expect(result.error).toBe('Invalid image format');
     });
   });
 
