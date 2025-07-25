@@ -91,12 +91,13 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
     }
 
     // スマートフォン画像の検出
-    const smartphoneDetection = detectSmartphoneImageCharacteristics(baseImage.length);
-    if (smartphoneDetection.likelySmartphone) {
-      imageLogger.info('Smartphone image detected', {
-        characteristics: smartphoneDetection.characteristics,
-      });
-    }
+    // TODO: implement detectSmartphoneImageCharacteristics
+    // const smartphoneDetection = detectSmartphoneImageCharacteristics(baseImage.length);
+    // if (smartphoneDetection.likelySmartphone) {
+    //   imageLogger.info('Smartphone image detected', {
+    //     characteristics: smartphoneDetection.characteristics,
+    //   });
+    // }
 
     // CUDA OOMリスク評価
     const riskAssessment = assessCudaOomRisk({
@@ -109,12 +110,21 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
     if (riskAssessment.riskLevel === 'very-high' || riskAssessment.riskLevel === 'high') {
       imageLogger.warn('High CUDA OOM risk detected, adjusting parameters', {
         riskLevel: riskAssessment.riskLevel,
-        recommendation: riskAssessment.recommendation,
+        recommendations: riskAssessment.recommendations,
       });
 
-      if (riskAssessment.suggestedParams) {
+      if (riskAssessment.recommendations.shouldOptimize) {
         // 提案されたパラメータを適用
-        Object.assign(finalOptions, riskAssessment.suggestedParams);
+        finalOptions.width = Math.min(
+          finalOptions.width,
+          riskAssessment.recommendations.suggestedMaxSize
+        );
+        finalOptions.height = Math.min(
+          finalOptions.height,
+          riskAssessment.recommendations.suggestedMaxSize
+        );
+        finalOptions.steps = riskAssessment.recommendations.suggestedSteps;
+        finalOptions.guidanceScale = riskAssessment.recommendations.suggestedGuidance;
 
         // ユーザーに通知するための情報を追加
         imageLogger.info('Parameters auto-adjusted for memory efficiency', finalOptions);
