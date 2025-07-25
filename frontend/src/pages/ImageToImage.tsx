@@ -67,7 +67,8 @@ export const ImageToImage: React.FC = () => {
             message: '大きな画像を最適なサイズにリサイズしています...',
           });
           // 最大2048x2048、品質0.8でリサイズ（メモリ使用量を削減）
-          base64 = await resizeImage(base64, 2048, 2048, 0.8);
+          // CUDA OOMエラー対策: 画像サイズを制限
+          base64 = await resizeImage(base64, 1024, 1024, 0.7);
         }
 
         setReferenceImage(base64);
