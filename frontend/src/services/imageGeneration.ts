@@ -17,6 +17,7 @@ export interface ImageGenerationResponse {
   cached?: boolean;
   imageUrl?: string; // R2に保存された画像のURL
   imageKey?: string; // R2に保存された画像のキー
+  suggestions?: string[]; // エラー時の提案
 }
 
 /**
@@ -44,7 +45,7 @@ export async function generateImage(
         baseImage: options.referenceImage, // Backend expects 'baseImage', not 'referenceImage'
         options: {
           model: options.model || 'flux-variations',
-          strength: options.strength || 0.8,
+          strength: options.strength || 0.7, // CUDA OOM対策でデフォルト値を下げる
         },
       }),
     });
@@ -53,6 +54,8 @@ export async function generateImage(
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
       // Handle both simple error strings and complex error objects
       let errorMessage = '画像生成に失敗しました';
+      let suggestions: string[] | undefined;
+
       if (typeof errorData.error === 'string') {
         errorMessage = errorData.error;
       } else if (errorData.error && typeof errorData.error === 'object') {
@@ -61,9 +64,29 @@ export async function generateImage(
       } else if (errorData.message) {
         errorMessage = errorData.message;
       }
+
+      // 提案が含まれている場合
+      if (errorData.suggestions) {
+        suggestions = errorData.suggestions;
+      }
+
+      // CUDA OOMエラーの特別処理
+      if (response.status === 507 || errorMessage.includes('メモリ')) {
+        return {
+          success: false,
+          error: errorMessage,
+          suggestions: suggestions || [
+            '画像サイズを小さくしてください',
+            'パラメータを調整してください',
+            '他のモデルを試してください',
+          ],
+        };
+      }
+
       return {
         success: false,
         error: `${errorMessage} (${response.status})`,
+        suggestions,
       };
     }
 
@@ -116,7 +139,8 @@ export function imageToBase64(file: File): Promise<string> {
 /**
  * Base64画像のサイズを検証
  */
-export function validateImageSize(base64: string, maxSizeMB: number = 5): boolean {
+export function validateImageSize(base64: string, maxSizeMB: number = 3): boolean {
+  // CUDA OOM対策でデフォルトを3MBに
   // Base64のヘッダー部分を除去
   const base64Data = base64.split(',')[1] || base64;
   // Base64のサイズから実際のバイト数を計算（約3/4）
@@ -134,9 +158,9 @@ export function validateImageSize(base64: string, maxSizeMB: number = 5): boolea
  */
 export async function resizeImage(
   base64: string,
-  maxWidth: number = 1024,
-  maxHeight: number = 1024,
-  quality: number = 0.9
+  maxWidth: number = 768, // CUDA OOM対策でデフォルト値を下げる
+  maxHeight: number = 768, // CUDA OOM対策でデフォルト値を下げる
+  quality: number = 0.7 // CUDA OOM対策で品質を下げる
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();

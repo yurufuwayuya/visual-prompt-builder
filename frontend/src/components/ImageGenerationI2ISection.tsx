@@ -18,7 +18,7 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
   const [selectedModel, setSelectedModel] = useState<
     'flux-fill' | 'flux-variations' | 'flux-canny'
   >('flux-variations');
-  const [strength, setStrength] = useState(0.8);
+  const [strength, setStrength] = useState(0.7); // CUDA OOM対策でデフォルト値を下げる
   const [error, setError] = useState<string | null>(null);
 
   const handleGenerateImage = async () => {
@@ -39,8 +39,8 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
       let processedImage = referenceImage;
       const fileSize = estimateFileSize(referenceImage);
 
-      // 2MBを超える場合はリサイズ
-      if (fileSize > 2 * 1024 * 1024) {
+      // CUDA OOM対策: 1MBを超える場合は必ずリサイズ
+      if (fileSize > 1 * 1024 * 1024) {
         const formattedSize = formatFileSize(fileSize);
         addToast({
           type: 'info',
@@ -48,14 +48,27 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
         });
 
         try {
-          // CUDA OOMエラー対策: 画像サイズと品質を最適化
-          processedImage = await resizeImage(referenceImage, 1024, 1024, 0.7);
+          // CUDA OOMエラー対策: より厳格なサイズ制限
+          processedImage = await resizeImage(referenceImage, 768, 768, 0.6);
           const newSize = estimateFileSize(processedImage);
           const newFormattedSize = formatFileSize(newSize);
           console.log(`画像リサイズ: ${formattedSize} → ${newFormattedSize}`);
+
+          // それでも大きい場合はさらにリサイズ
+          if (newSize > 1 * 1024 * 1024) {
+            processedImage = await resizeImage(processedImage, 512, 512, 0.5);
+            const finalSize = estimateFileSize(processedImage);
+            const finalFormattedSize = formatFileSize(finalSize);
+            console.log(`追加リサイズ: ${newFormattedSize} → ${finalFormattedSize}`);
+          }
         } catch (resizeError) {
           console.error('リサイズエラー:', resizeError);
-          // リサイズに失敗しても元の画像で続行
+          addToast({
+            type: 'error',
+            message: '画像のリサイズに失敗しました。より小さな画像を使用してください。',
+          });
+          setIsGenerating(false);
+          return;
         }
       }
       const result = await generateImage({
