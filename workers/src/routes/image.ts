@@ -7,7 +7,8 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import type { Bindings } from '../types';
 import { createSuccessResponse, generateCacheKey } from '@visual-prompt-builder/shared';
-import { createLogger } from '../utils/logger';
+import { createSecureLogger, formatImageSize } from '../utils/secureLogger';
+import { generateImageFingerprint } from '../utils/imageHash';
 import { validateAndLogImageSize, validateImageSize } from '../utils/imageProcessing';
 
 // リクエストスキーマ
@@ -72,12 +73,14 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
     ...options,
   };
 
-  // Request logging (開発環境のみ)
-  const imageLogger = createLogger({ prefix: 'Image API', env: c.env });
-  imageLogger.debug('Received request:', {
-    prompt,
+  // Request logging (セキュアロガーを使用)
+  const imageLogger = createSecureLogger({ prefix: 'Image API', env: c.env });
+  const imageHash = await generateImageFingerprint(baseImage);
+  imageLogger.info('Received image generation request', {
+    prompt: prompt.substring(0, 100), // プロンプトの最初の100文字のみ
     options: finalOptions,
-    baseImageSize: baseImage.length,
+    imageSize: formatImageSize(baseImage.length),
+    imageHash,
   });
 
   try {
@@ -92,14 +95,7 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
       originalSize: baseImage.length,
       validatedSize: validatedImage.length,
     });
-    // キャッシュキーの生成 - 画像全体のハッシュを使用してキー衝突を防ぐ
-    const imageHash = await crypto.subtle
-      .digest('SHA-256', new TextEncoder().encode(baseImage))
-      .then((hash) =>
-        Array.from(new Uint8Array(hash))
-          .map((b) => b.toString(16).padStart(2, '0'))
-          .join('')
-      );
+    // キャッシュキーの生成 - 既に計算済みのフィンガープリントを使用
 
     const cacheKey = await generateCacheKey('image', {
       baseImage: imageHash,
@@ -116,7 +112,7 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
           return c.json(createSuccessResponse(cachedData));
         }
       } catch (cacheError) {
-        console.warn('Cache read failed:', cacheError);
+        imageLogger.warn('Cache read failed', cacheError);
       }
     }
 
@@ -187,15 +183,15 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
               expirationTtl: 86400, // 24時間
             });
           } catch (cacheError) {
-            // Logger is not available here, using console.warn for cache errors
-            console.warn('Cache save failed:', cacheError);
+            // Use secure logger for cache errors
+            imageLogger.warn('Cache save failed', cacheError);
           }
         }
 
         return c.json(createSuccessResponse(enhancedResponse));
       } catch (uploadError) {
-        // Logger is not available here, using console.error for critical errors
-        console.error('Failed to upload generated image to R2:', uploadError);
+        // Use secure logger for critical errors
+        imageLogger.error('Failed to upload generated image to R2', uploadError);
         // アップロードに失敗しても、生成された画像は返す
       }
     }
@@ -207,16 +203,16 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
           expirationTtl: 86400, // 24時間
         });
       } catch (cacheError) {
-        console.warn('Cache save failed:', cacheError);
+        imageLogger.warn('Cache save failed', cacheError);
       }
     }
 
     return c.json(createSuccessResponse(response));
   } catch (error) {
-    console.error('Image generation error:', error);
+    imageLogger.error('Image generation failed', error);
 
-    // デバッグ用の詳細エラー情報を含める（一時的）
-    if (c.env.ENVIRONMENT === 'development' || c.env.DEBUG_MODE === 'true') {
+    // 本番環境では詳細なエラー情報を露出しない
+    if (c.env.ENVIRONMENT === 'development') {
       const debugInfo = {
         success: false,
         error: error instanceof Error ? error.message : '画像生成に失敗しました',
@@ -326,7 +322,8 @@ async function generateWithReplicate(
       cost: result.cost,
     };
   } catch (error) {
-    console.error('Replicate generation error:', error);
+    const replicateLogger = createSecureLogger({ prefix: 'Replicate', env: env || {} });
+    replicateLogger.error('Replicate generation failed', error);
     throw error;
   }
 }

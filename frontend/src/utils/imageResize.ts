@@ -50,22 +50,54 @@ export async function resizeImage(
   quality: number = 0.9
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
+    let img: HTMLImageElement | null = new Image();
+    let canvas: HTMLCanvasElement | null = null;
+    let ctx: CanvasRenderingContext2D | null = null;
+    let blobUrl: string | null = null;
+
+    // クリーンアップ関数
+    const cleanup = () => {
+      // 画像要素のクリーンアップ
+      if (img) {
+        img.onload = null;
+        img.onerror = null;
+        img.src = ''; // メモリから画像データを解放
+        img = null;
+      }
+
+      // Canvasのクリーンアップ
+      if (ctx && canvas) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      if (canvas) {
+        canvas.width = 0;
+        canvas.height = 0;
+        canvas = null;
+      }
+      ctx = null;
+
+      // Blob URLのクリーンアップ
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+        blobUrl = null;
+      }
+    };
 
     img.onload = () => {
       try {
         // 新しいサイズを計算
-        const { width, height } = calculateMaxSize(img.width, img.height, maxWidth, maxHeight);
+        const { width, height } = calculateMaxSize(img!.width, img!.height, maxWidth, maxHeight);
 
         // リサイズが不要な場合は元の画像を返す
-        if (width === img.width && height === img.height) {
+        if (width === img!.width && height === img!.height) {
+          cleanup();
           resolve(base64String);
           return;
         }
 
         // Canvas要素を作成
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        canvas = document.createElement('canvas');
+        ctx = canvas.getContext('2d', { alpha: false }); // アルファチャンネルを無効化してメモリ使用量を削減
 
         if (!ctx) {
           throw new Error('Canvas context が取得できませんでした');
@@ -75,37 +107,48 @@ export async function resizeImage(
         canvas.width = width;
         canvas.height = height;
 
+        // 背景を白に設定（JPEG変換時の透明部分対策）
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+
         // 画像を描画（リサイズ）
-        ctx.drawImage(img, 0, 0, width, height);
+        ctx.drawImage(img!, 0, 0, width, height);
 
         // リサイズされた画像をBase64に変換
         canvas.toBlob(
           (blob) => {
             if (!blob) {
+              cleanup();
               reject(new Error('Blob の作成に失敗しました'));
               return;
             }
 
             const reader = new FileReader();
             reader.onloadend = () => {
+              cleanup();
               if (typeof reader.result === 'string') {
                 resolve(reader.result);
               } else {
                 reject(new Error('Base64への変換に失敗しました'));
               }
             };
-            reader.onerror = () => reject(new Error('Blob の読み込みに失敗しました'));
+            reader.onerror = () => {
+              cleanup();
+              reject(new Error('Blob の読み込みに失敗しました'));
+            };
             reader.readAsDataURL(blob);
           },
           'image/jpeg',
           quality
         );
       } catch (error) {
+        cleanup();
         reject(error);
       }
     };
 
     img.onerror = () => {
+      cleanup();
       reject(new Error('画像の読み込みに失敗しました'));
     };
 

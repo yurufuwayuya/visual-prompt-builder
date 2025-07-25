@@ -13,6 +13,7 @@ import {
   generateCacheKey,
 } from '@visual-prompt-builder/shared';
 import { translationSchema } from '../validators/translation';
+import { createSecureLogger } from '../utils/secureLogger';
 
 export const translationRoute = new Hono<{ Bindings: Bindings }>();
 
@@ -74,7 +75,8 @@ translationRoute.post('/trans', zValidator('json', translationSchema), async (c)
           return c.json({ ...cachedResponse, cached: true });
         }
       } catch (cacheError) {
-        console.warn('Cache read error:', cacheError);
+        const logger = createSecureLogger({ prefix: 'Translation', env: c.env });
+        logger.warn('Cache read failed', cacheError);
         // キャッシュエラーは無視して続行
       }
     }
@@ -96,22 +98,18 @@ translationRoute.post('/trans', zValidator('json', translationSchema), async (c)
           expirationTtl: 86400,
         });
       } catch (cacheError) {
-        console.warn('Cache write error:', cacheError);
+        const logger = createSecureLogger({ prefix: 'Translation', env: c.env });
+        logger.warn('Cache write failed', cacheError);
         // キャッシュエラーは無視して続行
       }
     }
 
     return c.json(createSuccessResponse(response));
   } catch (error) {
-    console.error('Translation error:', error);
+    const logger = createSecureLogger({ prefix: 'Translation', env: c.env });
+    logger.error('Translation failed', error);
 
-    // エラーの詳細をログに出力
-    if (error instanceof Error) {
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack,
-      });
-    }
+    // エラーの詳細は SecureLogger が自動的に処理
 
     return c.json(createErrorResponse(error, '翻訳に失敗しました', c.env), 500);
   }
@@ -145,7 +143,8 @@ translationRoute.post('/translate', zValidator('json', translationSchema), async
           return c.json({ ...cachedResponse, cached: true });
         }
       } catch (cacheError) {
-        console.warn('Cache read error:', cacheError);
+        const logger = createSecureLogger({ prefix: 'Translation', env: c.env });
+        logger.warn('Cache read failed', cacheError);
         // キャッシュエラーは無視して続行
       }
     }
@@ -167,26 +166,16 @@ translationRoute.post('/translate', zValidator('json', translationSchema), async
           expirationTtl: 86400,
         });
       } catch (cacheError) {
-        console.warn('Cache write error:', cacheError);
+        const logger = createSecureLogger({ prefix: 'Translation', env: c.env });
+        logger.warn('Cache write failed', cacheError);
         // キャッシュエラーは無視して続行
       }
     }
 
     return c.json(createSuccessResponse(response));
   } catch (error) {
-    console.error('[Translation API] Translation error:', error);
-
-    // エラーの詳細をログに出力
-    if (error instanceof Error) {
-      console.error('[Translation API] Error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-        cause: error.cause,
-      });
-    } else {
-      console.error('[Translation API] Non-Error object thrown:', error);
-    }
+    const logger = createSecureLogger({ prefix: 'Translation API', env: c.env });
+    logger.error('Translation failed', error);
 
     const errorResponse = createErrorResponse(error, '翻訳に失敗しました', c.env);
     // デバッグ用にスタックトレースを追加
@@ -257,7 +246,8 @@ translationRoute.post(
                 };
               }
             } catch (cacheError) {
-              console.warn('Batch cache read error:', cacheError);
+              const logger = createSecureLogger({ prefix: 'Translation Batch', env: c.env });
+              logger.warn('Cache read failed', cacheError);
               // キャッシュエラーは無視して続行
             }
           }
@@ -291,7 +281,8 @@ translationRoute.post(
                 }
               );
             } catch (cacheError) {
-              console.warn('Batch cache write error:', cacheError);
+              const logger = createSecureLogger({ prefix: 'Translation Batch', env: c.env });
+              logger.warn('Cache write failed', cacheError);
               // キャッシュエラーは無視して続行
             }
           }
@@ -305,7 +296,8 @@ translationRoute.post(
 
       return c.json(createSuccessResponse({ translations: results }));
     } catch (error) {
-      console.error('Batch translation error:', error);
+      const logger = createSecureLogger({ prefix: 'Translation Batch', env: c.env });
+      logger.error('Batch translation failed', error);
       return c.json(createErrorResponse(error, 'バッチ翻訳に失敗しました', c.env), 500);
     }
   }
@@ -335,7 +327,7 @@ async function translateWithMyMemory(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('MyMemory API error response:', errorText);
+      // エラーレスポンスは throw されるエラーに含まれる
       throw new Error(`MyMemory API returned ${response.status}: ${errorText}`);
     }
 
@@ -350,12 +342,12 @@ async function translateWithMyMemory(
 
     // レスポンスの検証
     if (!data || !data.responseData) {
-      console.error('Invalid MyMemory API response:', data);
+      // 無効なレスポンスは throw されるエラーに含まれる
       throw new Error('Invalid translation response');
     }
 
     if (data.responseStatus !== 200) {
-      console.error('MyMemory API error:', data);
+      // APIエラーは throw されるエラーに含まれる
       throw new Error(`Translation failed with status: ${data.responseStatus}`);
     }
 
@@ -363,7 +355,9 @@ async function translateWithMyMemory(
     return data.responseData.translatedText || text;
   } catch (error) {
     // エラー時はフォールバック辞書を使用
-    console.error('MyMemory translation error:', error);
+    // MyMemory のエラーは呼び出し元でログに記録される
+    // errorパラメータは使用しないが、catch節では必要
+    void error;
     return fallbackTranslate(text, sourceLang, targetLang);
   }
 }
