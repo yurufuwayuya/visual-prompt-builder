@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ImageStep } from '../ImageStep';
 import { usePromptStore } from '@/stores/promptStore';
@@ -11,6 +11,29 @@ vi.mock('@/stores/toastStore');
 vi.mock('@/services/imageGeneration', () => ({
   validateImageSize: vi.fn((base64: string, _maxSize: number) => base64.length < 1000),
   resizeImage: vi.fn((base64: string) => Promise.resolve(base64 + '_resized')),
+}));
+vi.mock('@/utils/imageResize', () => ({
+  resizeImage: vi.fn((base64: string) => Promise.resolve(base64 + '_resized')),
+  estimateFileSize: vi.fn(() => 1024),
+  formatFileSize: vi.fn(() => '1KB'),
+}));
+vi.mock('@/utils/imageOptimizer', () => ({
+  optimizeImageForGeneration: vi.fn((base64: string) =>
+    Promise.resolve({
+      optimizedImage: base64,
+      originalSize: '1KB',
+      finalSize: '1KB',
+      isSmartphoneImage: false,
+    })
+  ),
+}));
+vi.mock('@/utils/secureLogger', () => ({
+  createSecureLogger: vi.fn(() => ({
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  })),
 }));
 
 describe('ImageStep', () => {
@@ -82,34 +105,40 @@ describe('ImageStep', () => {
     Object.defineProperty(file, 'size', { value: 1024 }); // 1KB
 
     // FileReaderのモック
-    const mockReadAsDataURL = vi.fn();
     const mockFileReader = {
-      readAsDataURL: mockReadAsDataURL,
+      readAsDataURL: vi.fn(),
       onload: null as any,
       onerror: null as any,
+      onabort: null as any,
       result: 'data:image/jpeg;base64,test',
     };
 
     global.FileReader = vi.fn(() => mockFileReader) as any;
 
     const input = screen.getByLabelText('画像を選択').closest('input') as HTMLInputElement;
+
+    // ファイルを選択
     await userEvent.upload(input, file);
 
-    // FileReaderのonloadを手動で呼び出す
-    await waitFor(() => {
+    // FileReaderのonloadを即座に呼び出す
+    expect(mockFileReader.readAsDataURL).toHaveBeenCalledWith(file);
+    await act(async () => {
       if (mockFileReader.onload) {
-        mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } });
+        await mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } });
       }
     });
 
     await waitFor(() => {
       expect(screen.getByAltText('アップロードされた参考画像のプレビュー')).toBeInTheDocument();
-      expect(mockSetReferenceImage).toHaveBeenCalledWith('data:image/jpeg;base64,test');
-      expect(mockAddToast).toHaveBeenCalledWith({
+    });
+
+    expect(mockSetReferenceImage).toHaveBeenCalledWith('data:image/jpeg;base64,test');
+    expect(mockAddToast).toHaveBeenCalledWith(
+      expect.objectContaining({
         type: 'success',
         message: '画像をアップロードしました',
-      });
-    });
+      })
+    );
   });
 
   it('画像を削除できる', async () => {
@@ -123,6 +152,7 @@ describe('ImageStep', () => {
       readAsDataURL: vi.fn(),
       onload: null as any,
       onerror: null as any,
+      onabort: null as any,
       result: 'data:image/jpeg;base64,test',
     };
 
@@ -131,14 +161,21 @@ describe('ImageStep', () => {
     const input = screen.getByLabelText('画像を選択').closest('input') as HTMLInputElement;
     await userEvent.upload(input, file);
 
-    await waitFor(() => {
+    // FileReaderのonloadを即座に呼び出す
+    expect(mockFileReader.readAsDataURL).toHaveBeenCalledWith(file);
+    await act(async () => {
       if (mockFileReader.onload) {
-        mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } });
+        await mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } });
       }
     });
 
+    // 画像が表示されるまで待つ
+    await waitFor(() => {
+      expect(screen.getByAltText('アップロードされた参考画像のプレビュー')).toBeInTheDocument();
+    });
+
     // 削除ボタンをクリック
-    const deleteButton = await screen.findByLabelText('画像を削除');
+    const deleteButton = screen.getByLabelText('画像を削除');
     fireEvent.click(deleteButton);
 
     await waitFor(() => {
@@ -161,6 +198,7 @@ describe('ImageStep', () => {
       readAsDataURL: vi.fn(),
       onload: null as any,
       onerror: null as any,
+      onabort: null as any,
       result: 'data:image/jpeg;base64,test',
     };
 
@@ -169,12 +207,20 @@ describe('ImageStep', () => {
     const input = screen.getByLabelText('画像を選択').closest('input') as HTMLInputElement;
     await userEvent.upload(input, file);
 
-    await waitFor(() => {
+    // FileReaderのonloadを即座に呼び出す
+    expect(mockFileReader.readAsDataURL).toHaveBeenCalledWith(file);
+    await act(async () => {
       if (mockFileReader.onload) {
-        mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } });
+        await mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } });
       }
     });
 
+    // 画像が表示されるまで待つ
+    await waitFor(() => {
+      expect(screen.getByAltText('アップロードされた参考画像のプレビュー')).toBeInTheDocument();
+    });
+
+    // 次へボタンが有効になることを確認
     await waitFor(() => {
       expect(nextButton).not.toBeDisabled();
     });

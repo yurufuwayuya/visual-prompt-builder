@@ -165,8 +165,20 @@ describe('ResultStep', () => {
       });
     });
 
-    it('生成中の状態を表示する', () => {
-      mockFetch.mockImplementation(() => new Promise(() => {})); // 永遠に待機
+    it('生成中の状態を表示する', async () => {
+      // 永遠に待機するPromiseを返すことで、生成中の状態を維持
+      mockFetch.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            // 解決しないPromise
+            setTimeout(() => {
+              resolve({
+                ok: true,
+                json: async () => ({ data: { prompt: 'test' } }),
+              });
+            }, 10000); // 10秒後（テストは終了している）
+          })
+      );
 
       render(<ResultStep onNew={mockOnNew} />);
 
