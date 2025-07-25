@@ -116,19 +116,20 @@ function getModelSpecificInput(
       };
 
     case 'sdxl-img2img':
-      // SDXL img2img parameters
+      // SDXL img2img parameters (optimized for memory efficiency)
       return {
         prompt: prompt,
         image: image,
-        width: Math.max(options.width || 512, 256), // 最小256px
-        height: Math.max(options.height || 512, 256), // 最小256px
-        refine: 'no_refiner',
-        num_inference_steps: Math.min(options.steps, 50),
-        guidance_scale: options.guidanceScale,
+        width: 768, // SDXLの推奨最小値（512は非推奨）
+        height: 768, // SDXLの推奨最小値
+        refine: 'no_refiner', // リファイナーを無効化してメモリ削減
+        num_inference_steps: Math.min(options.steps, 20), // 30から20に削減
+        guidance_scale: Math.min(options.guidanceScale, 5), // 7.5から5に削減
         prompt_strength: options.strength,
         num_outputs: 1,
         scheduler: 'DPMSolverMultistep',
         negative_prompt: options.negativePrompt || '',
+        apply_watermark: false, // 透かし無効化でメモリ削減
       };
 
     default:
@@ -157,6 +158,89 @@ export async function generateWithReplicate(
 }> {
   const startTime = Date.now();
 
+  // リトライ設定
+  const MAX_RETRIES = 3;
+  let retryCount = 0;
+  let lastError: Error | null = null;
+
+  // メモリエラー時にパラメータを段階的に削減
+  const modifiableOptions = { ...options };
+
+  while (retryCount < MAX_RETRIES) {
+    try {
+      // 実際の生成処理を実行
+      return await executeGenerationAttempt(
+        baseImage,
+        prompt,
+        modifiableOptions,
+        apiKey,
+        modelId,
+        env,
+        startTime
+      );
+    } catch (error) {
+      lastError = error as Error;
+
+      // CUDA OOMエラーの場合のみリトライ
+      if (
+        lastError.message.includes('CUDA out of memory') ||
+        lastError.message.includes('メモリが不足')
+      ) {
+        retryCount++;
+
+        if (retryCount < MAX_RETRIES) {
+          logger.warn('CUDA OOM detected, retrying with reduced parameters', {
+            retryCount,
+            modelId,
+            currentSteps: modifiableOptions.steps,
+            currentGuidance: modifiableOptions.guidanceScale,
+          });
+
+          // パラメータを段階的に削減
+          modifiableOptions.steps = Math.max(10, Math.floor(modifiableOptions.steps * 0.7));
+          modifiableOptions.guidanceScale = Math.max(3, modifiableOptions.guidanceScale - 1.5);
+
+          // SDXLの場合は解像度も削減
+          if (modelId === 'sdxl-img2img' && retryCount === 2) {
+            modifiableOptions.width = 512;
+            modifiableOptions.height = 512;
+          }
+
+          // リトライ間隔（指数バックオフ）
+          await new Promise((resolve) => setTimeout(resolve, 2000 * retryCount));
+          continue;
+        }
+      }
+
+      // その他のエラーまたは最後のリトライ後はエラーを再スロー
+      throw lastError;
+    }
+  }
+
+  // ここには到達しないはずだが、念のため
+  throw lastError || new Error('Failed to generate image after retries');
+}
+
+/**
+ * 実際の画像生成処理（リトライ可能な部分を分離）
+ */
+async function executeGenerationAttempt(
+  baseImage: string,
+  prompt: string,
+  options: ReplicateOptions,
+  apiKey: string,
+  modelId: ModelId,
+  env: Bindings | undefined,
+  startTime: number
+): Promise<{
+  image: string;
+  generationTime: number;
+  model: string;
+  cost?: {
+    amount: number;
+    currency: string;
+  };
+}> {
   // 入力画像の準備
   const imageDataUrl = baseImage.startsWith('data:')
     ? baseImage
@@ -388,7 +472,16 @@ export async function generateWithReplicate(
       error: finalPrediction.error,
       logs: finalPrediction.logs,
       status: finalPrediction.status,
+      predictionId: finalPrediction.id,
     });
+
+    // CUDA OOMエラーの特別処理
+    if (finalPrediction.error?.includes('CUDA out of memory')) {
+      throw new Error(
+        '画像生成に必要なメモリが不足しています。' +
+          'より小さい画像サイズを使用するか、FluxモデルやDALL-E 3をお試しください。'
+      );
+    }
     throw new Error(`Image generation failed: ${finalPrediction.error || 'Unknown error'}`);
   }
 

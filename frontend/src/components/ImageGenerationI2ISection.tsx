@@ -48,7 +48,8 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
         });
 
         try {
-          processedImage = await resizeImage(referenceImage, 1024, 1024, 0.9);
+          // CUDA OOMエラー対策: 画像サイズと品質を最適化
+          processedImage = await resizeImage(referenceImage, 1024, 1024, 0.7);
           const newSize = estimateFileSize(processedImage);
           const newFormattedSize = formatFileSize(newSize);
           console.log(`画像リサイズ: ${formattedSize} → ${newFormattedSize}`);
