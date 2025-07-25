@@ -86,12 +86,15 @@ function getModelSpecificInput(
       return {
         image: image,
         prompt: prompt,
-        steps: Math.min(options.steps, 20), // Limit steps to reduce memory usage
-        guidance: Math.min(options.guidanceScale, 5), // Limit guidance scale
-        strength: options.strength,
+        steps: Math.min(options.steps, 15), // Further reduced from 20 to 15
+        guidance: Math.min(options.guidanceScale, 3.5), // Further reduced from 5 to 3.5
+        strength: Math.min(options.strength, 0.8), // Limit strength to 0.8
         output_format: options.outputFormat,
-        output_quality: 80, // Reduced from 90 to save memory
+        output_quality: 70, // Further reduced from 80 to 70
         negative_prompt: options.negativePrompt,
+        // Enable memory-efficient generation
+        enable_attention_slicing: true,
+        enable_vae_slicing: true,
       };
 
     case 'flux-variations':
@@ -99,7 +102,7 @@ function getModelSpecificInput(
       return {
         redux_image: image, // Note: flux-redux uses redux_image, not image
         num_outputs: 1,
-        megapixels: '0.25', // Reduced from 1MP to 0.25MP (512x512) for memory efficiency
+        megapixels: '0.16', // Further reduced to 0.16MP (400x400) for extreme memory efficiency
         aspect_ratio: '1:1',
         output_format: options.outputFormat,
         // Note: flux-redux doesn't use prompt or guidance
@@ -112,7 +115,7 @@ function getModelSpecificInput(
         num_outputs: 1,
         aspect_ratio: '1:1',
         output_format: options.outputFormat,
-        output_quality: 80, // Reduced from 90 to save memory
+        output_quality: 70, // Further reduced from 80 to 70
       };
 
     case 'sdxl-img2img':
@@ -120,16 +123,20 @@ function getModelSpecificInput(
       return {
         prompt: prompt,
         image: image,
-        width: 768, // SDXLの推奨最小値（512は非推奨）
-        height: 768, // SDXLの推奨最小値
+        width: 512, // メモリ効率のため最小値に設定
+        height: 512, // メモリ効率のため最小値に設定
         refine: 'no_refiner', // リファイナーを無効化してメモリ削減
-        num_inference_steps: Math.min(options.steps, 20), // 30から20に削減
-        guidance_scale: Math.min(options.guidanceScale, 5), // 7.5から5に削減
-        prompt_strength: options.strength,
+        num_inference_steps: Math.min(options.steps, 15), // 20から15に削減
+        guidance_scale: Math.min(options.guidanceScale, 3.5), // 5から3.5に削減
+        prompt_strength: Math.min(options.strength, 0.8), // 強度を0.8に制限
         num_outputs: 1,
-        scheduler: 'DPMSolverMultistep',
+        scheduler: 'DPMSolverMultistep', // 高速かつメモリ効率的
         negative_prompt: options.negativePrompt || '',
         apply_watermark: false, // 透かし無効化でメモリ削減
+        // メモリ最適化オプション
+        enable_attention_slicing: true,
+        enable_vae_slicing: true,
+        enable_sequential_cpu_offload: true,
       };
 
     default:
@@ -196,14 +203,18 @@ export async function generateWithReplicate(
             currentGuidance: modifiableOptions.guidanceScale,
           });
 
-          // パラメータを段階的に削減
-          modifiableOptions.steps = Math.max(10, Math.floor(modifiableOptions.steps * 0.7));
-          modifiableOptions.guidanceScale = Math.max(3, modifiableOptions.guidanceScale - 1.5);
+          // パラメータを段階的に削減（より積極的に）
+          modifiableOptions.steps = Math.max(8, Math.floor(modifiableOptions.steps * 0.6));
+          modifiableOptions.guidanceScale = Math.max(2, modifiableOptions.guidanceScale - 2);
+          modifiableOptions.strength = Math.max(0.3, modifiableOptions.strength - 0.2);
 
-          // SDXLの場合は解像度も削減
-          if (modelId === 'sdxl-img2img' && retryCount === 2) {
-            modifiableOptions.width = 512;
-            modifiableOptions.height = 512;
+          // 解像度も段階的に削減
+          if (retryCount === 1) {
+            modifiableOptions.width = Math.min(modifiableOptions.width, 640);
+            modifiableOptions.height = Math.min(modifiableOptions.height, 640);
+          } else if (retryCount === 2) {
+            modifiableOptions.width = Math.min(modifiableOptions.width, 512);
+            modifiableOptions.height = Math.min(modifiableOptions.height, 512);
           }
 
           // リトライ間隔（指数バックオフ）
@@ -255,20 +266,30 @@ async function executeGenerationAttempt(
     const sizeInBytes = (base64Data.length * 3) / 4;
     const sizeInMB = sizeInBytes / (1024 * 1024);
 
-    // 画像サイズが大きすぎる場合の警告とエラー
-    if (sizeInMB > 10) {
+    // より厳格な画像サイズ制限
+    if (sizeInMB > 5) {
       logger.error('Input image is too large, may cause CUDA OOM', {
         sizeInMB: sizeInMB.toFixed(2),
         modelId: modelId,
       });
       throw new Error(
-        `画像が大きすぎます（${sizeInMB.toFixed(1)}MB）。10MB以下の画像を使用してください。`
+        `画像が大きすぎます（${sizeInMB.toFixed(1)}MB）。5MB以下の画像を使用してください。`
       );
-    } else if (sizeInMB > 5) {
+    } else if (sizeInMB > 3) {
       logger.warn('Input image is large, may cause memory issues', {
         sizeInMB: sizeInMB.toFixed(2),
         modelId: modelId,
       });
+
+      // 大きな画像の場合、パラメータを自動調整
+      if (sizeInMB > 4) {
+        options.steps = Math.min(options.steps, 15);
+        options.guidanceScale = Math.min(options.guidanceScale, 3.5);
+        logger.info('Auto-adjusting parameters for large image', {
+          steps: options.steps,
+          guidanceScale: options.guidanceScale,
+        });
+      }
     }
 
     // SDXLモデル固有の最小サイズチェック
@@ -442,7 +463,7 @@ async function executeGenerationAttempt(
 
   // 予測の完了を待つ（ポーリング）
   let finalPrediction = prediction;
-  const maxWaitTime = 60000; // 60秒
+  const maxWaitTime = 90000; // 90秒（メモリ効率的な処理のため時間を延長）
   const pollInterval = 1000; // 1秒
   const endTime = Date.now() + maxWaitTime;
 

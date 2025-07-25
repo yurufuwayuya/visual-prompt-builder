@@ -20,15 +20,15 @@ const generateImageSchema = z.object({
   // オプション設定
   options: z
     .object({
-      // 画像サイズ
-      width: z.number().min(256).max(1024).default(512),
-      height: z.number().min(256).max(1024).default(512),
+      // 画像サイズ（CUDA OOM対策でより小さく制限）
+      width: z.number().min(256).max(768).default(512),
+      height: z.number().min(256).max(768).default(512),
       // 生成強度（0.0-1.0）: 0に近いほど元画像に忠実
-      strength: z.number().min(0).max(1).default(0.75),
-      // 生成ステップ数
-      steps: z.number().min(10).max(50).default(30),
-      // ガイダンススケール
-      guidanceScale: z.number().min(1).max(20).default(7.5),
+      strength: z.number().min(0).max(0.9).default(0.7),
+      // 生成ステップ数（メモリ効率のため上限を下げる）
+      steps: z.number().min(8).max(30).default(15),
+      // ガイダンススケール（メモリ効率のため上限を下げる）
+      guidanceScale: z.number().min(1).max(10).default(5),
       // ネガティブプロンプト
       negativePrompt: z.string().optional(),
       // 出力フォーマット
@@ -62,13 +62,13 @@ export const imageRoute = new Hono<{ Bindings: Bindings }>();
 imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) => {
   const { baseImage, prompt, options = {} } = c.req.valid('json');
 
-  // デフォルト値の設定
+  // デフォルト値の設定（CUDA OOM対策でより保守的な値に）
   const finalOptions = {
     width: 512,
     height: 512,
-    strength: 0.75,
-    steps: 30,
-    guidanceScale: 7.5,
+    strength: 0.7,
+    steps: 15,
+    guidanceScale: 5,
     outputFormat: 'png' as const,
     ...options,
   };
@@ -84,13 +84,13 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
   });
 
   try {
-    // 画像サイズの検証（最大20MB）
-    if (!validateImageSize(baseImage, 20)) {
-      throw new Error('画像サイズが大きすぎます（最大20MB）');
+    // 画像サイズの検証（CUDA OOM対策で制限を厳しく）
+    if (!validateImageSize(baseImage, 5)) {
+      throw new Error('画像サイズが大きすぎます（最大5MB）');
     }
 
     // 画像サイズの検証とログ出力（実際のリサイズはクライアント側で事前実行済み）
-    const validatedImage = await validateAndLogImageSize(baseImage, 20);
+    const validatedImage = await validateAndLogImageSize(baseImage, 5);
     imageLogger.debug('Image validated:', {
       originalSize: baseImage.length,
       validatedSize: validatedImage.length,
@@ -210,6 +210,25 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
     return c.json(createSuccessResponse(response));
   } catch (error) {
     imageLogger.error('Image generation failed', error);
+
+    // CUDA OOMエラーの特別処理
+    const errorMessage = error instanceof Error ? error.message : '';
+    if (errorMessage.includes('CUDA out of memory') || errorMessage.includes('メモリが不足')) {
+      return c.json(
+        {
+          success: false,
+          error:
+            '画像生成に必要なメモリが不足しています。より小さな画像サイズを使用するか、パラメータを調整してください。',
+          suggestions: [
+            '画像サイズを512x512以下に設定',
+            'ステップ数を15以下に設定',
+            'ガイダンススケールを5以下に設定',
+            '入力画像を5MB以下にリサイズ',
+          ],
+        },
+        507 // Insufficient Storage
+      );
+    }
 
     // 本番環境では詳細なエラー情報を露出しない
     if (c.env.ENVIRONMENT === 'development') {
