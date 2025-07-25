@@ -4,7 +4,12 @@ import { usePromptStore } from '@/stores/promptStore';
 import { useToastStore } from '@/stores/toastStore';
 import { generateImage } from '@/services/imageGeneration';
 import { Button } from '@/components/common/Button';
-import { resizeImage, estimateFileSize, formatFileSize } from '@/utils/imageResize';
+import { resizeImage, estimateFileSize } from '@/utils/imageResize';
+import { optimizeImageForGeneration } from '@/utils/imageOptimizer';
+import { CudaOomErrorDialog } from '@/components/common/CudaOomErrorDialog';
+import { createSecureLogger } from '@/utils/secureLogger';
+
+const logger = createSecureLogger({ prefix: 'ImageGenerationI2I' });
 
 interface ImageGenerationI2ISectionProps {
   prompt: string;
@@ -18,8 +23,17 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
   const [selectedModel, setSelectedModel] = useState<
     'flux-fill' | 'flux-variations' | 'flux-canny'
   >('flux-variations');
-  const [strength, setStrength] = useState(0.7); // CUDA OOM対策でデフォルト値を下げる
+  const [strength, setStrength] = useState(0.5); // CUDA OOM対策でデフォルト値をさらに下げる
   const [error, setError] = useState<string | null>(null);
+  const [showCudaOomDialog, setShowCudaOomDialog] = useState(false);
+  const [, setCudaOomErrorDetails] = useState<
+    | {
+        modelUsed?: string;
+        imageSize?: number;
+        suggestions?: string[];
+      }
+    | undefined
+  >();
 
   const handleGenerateImage = async () => {
     if (!referenceImage) {
@@ -35,37 +49,75 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
     setGeneratedImage(null);
 
     try {
-      // API送信前に画像サイズを確認し、必要に応じてリサイズ
-      let processedImage = referenceImage;
-      const fileSize = estimateFileSize(referenceImage);
+      // CUDA OOM対策: スマートフォン画像を最適化
+      addToast({
+        type: 'info',
+        message: '画像をAI生成用に最適化しています...',
+      });
 
-      // CUDA OOM対策: 1MBを超える場合は必ずリサイズ
-      if (fileSize > 1 * 1024 * 1024) {
-        const formattedSize = formatFileSize(fileSize);
-        addToast({
-          type: 'info',
-          message: `画像を処理中... (サイズ: ${formattedSize})`,
+      let processedImage = referenceImage;
+
+      try {
+        // I2I用に画像を最適化
+        const optimizationResult = await optimizeImageForGeneration(referenceImage, {
+          targetUsage: 'i2i',
+          onProgress: (stage, totalStages, currentSize) => {
+            logger.info(`I2I最適化進捗: ステージ ${stage}/${totalStages}, サイズ: ${currentSize}`);
+          },
         });
 
-        try {
-          // CUDA OOMエラー対策: より厳格なサイズ制限
-          processedImage = await resizeImage(referenceImage, 768, 768, 0.6);
-          const newSize = estimateFileSize(processedImage);
-          const newFormattedSize = formatFileSize(newSize);
-          console.log(`画像リサイズ: ${formattedSize} → ${newFormattedSize}`);
+        processedImage = optimizationResult.optimizedImage;
 
-          // それでも大きい場合はさらにリサイズ
-          if (newSize > 1 * 1024 * 1024) {
-            processedImage = await resizeImage(processedImage, 512, 512, 0.5);
-            const finalSize = estimateFileSize(processedImage);
-            const finalFormattedSize = formatFileSize(finalSize);
-            console.log(`追加リサイズ: ${newFormattedSize} → ${finalFormattedSize}`);
+        // 最適化結果の表示
+        logger.info(
+          `画像最適化: ${optimizationResult.originalSize} → ${optimizationResult.finalSize}`
+        );
+
+        // スマートフォン画像の場合は特別な警告
+        if (optimizationResult.isSmartphoneImage) {
+          addToast({
+            type: 'success',
+            message: `スマートフォン画像をGPUメモリ効率的なサイズに最適化しました`,
+          });
+        }
+
+        // それでも大きすぎる場合は追加の警告
+        const optimizedSize = estimateFileSize(processedImage);
+        if (optimizedSize > 500_000) {
+          addToast({
+            type: 'warning',
+            message: '画像がまだ大きいため、生成に失敗する可能性があります',
+          });
+
+          // モデルをより軽量なものに自動変更
+          if (selectedModel === 'flux-fill' || selectedModel === 'flux-canny') {
+            setSelectedModel('flux-variations');
+            addToast({
+              type: 'info',
+              message: 'メモリ効率の良いFlux Variationsモデルに切り替えました',
+            });
           }
-        } catch (resizeError) {
-          console.error('リサイズエラー:', resizeError);
+
+          // 強度を下げる
+          if (strength > 0.5) {
+            setStrength(0.5);
+          }
+        }
+      } catch (optimizationError) {
+        logger.error('画像最適化エラー', optimizationError);
+
+        // フォールバック: 単純なリサイズ
+        try {
+          processedImage = await resizeImage(referenceImage, 512, 512, 0.5);
+          addToast({
+            type: 'warning',
+            message: '画像最適化に一部失敗しましたが、基本的なリサイズを適用しました',
+          });
+        } catch (fallbackError) {
+          logger.error('フォールバックリサイズエラー', fallbackError);
           addToast({
             type: 'error',
-            message: '画像のリサイズに失敗しました。より小さな画像を使用してください。',
+            message: '画像の処理に失敗しました。より小さな画像を使用してください。',
           });
           setIsGenerating(false);
           return;
@@ -89,20 +141,49 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
           message: result.cached ? 'キャッシュから画像を取得しました' : '画像を生成しました',
         });
       } else {
-        setError(result.error || '画像生成に失敗しました');
-        addToast({
-          type: 'error',
-          message: result.error || '画像生成に失敗しました',
-        });
+        // CUDA OOMエラーの特別処理
+        if (
+          result.error &&
+          (result.error.includes('CUDA out of memory') ||
+            result.error.includes('メモリが不足') ||
+            result.error.includes('GPUメモリ'))
+        ) {
+          setCudaOomErrorDetails({
+            modelUsed: selectedModel,
+            imageSize: estimateFileSize(processedImage),
+            suggestions: [
+              '画像サイズを小さくしてください',
+              'Flux Variationsモデルを使用してください',
+              '変換強度を下げてください',
+            ],
+          });
+          setShowCudaOomDialog(true);
+        } else {
+          setError(result.error || '画像生成に失敗しました');
+          addToast({
+            type: 'error',
+            message: result.error || '画像生成に失敗しました',
+          });
+        }
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : '画像生成中にエラーが発生しました';
-      setError(errorMessage);
-      addToast({
-        type: 'error',
-        message: errorMessage,
-      });
+
+      // CUDA OOMエラーの特別処理
+      if (errorMessage.includes('CUDA') || errorMessage.includes('メモリ')) {
+        setCudaOomErrorDetails({
+          modelUsed: selectedModel,
+          imageSize: estimateFileSize(referenceImage),
+        });
+        setShowCudaOomDialog(true);
+      } else {
+        setError(errorMessage);
+        addToast({
+          type: 'error',
+          message: errorMessage,
+        });
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -124,7 +205,7 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
         message: '画像をダウンロードしました',
       });
     } catch (error) {
-      console.error('Download failed:', error);
+      logger.error('Download failed', error);
       addToast({
         type: 'error',
         message: 'ダウンロードに失敗しました',
@@ -243,6 +324,21 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
           </div>
         )}
       </div>
+
+      {/* CUDA OOMエラーダイアログ */}
+      <CudaOomErrorDialog
+        isOpen={showCudaOomDialog}
+        onClose={() => setShowCudaOomDialog(false)}
+        onRetry={() => {
+          setShowCudaOomDialog(false);
+          setError(null);
+          // モデルを軽量なものに変更
+          setSelectedModel('flux-variations');
+          setStrength(0.3);
+          // 再試行
+          handleGenerateImage();
+        }}
+      />
     </div>
   );
 };

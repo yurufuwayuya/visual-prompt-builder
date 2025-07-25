@@ -10,6 +10,7 @@ import { createSuccessResponse, generateCacheKey } from '@visual-prompt-builder/
 import { createSecureLogger, formatImageSize } from '../utils/secureLogger';
 import { generateImageFingerprint } from '../utils/imageHash';
 import { validateAndLogImageSize, validateImageSize } from '../utils/imageProcessing';
+import { assessCudaOomRisk, applyRiskMitigation } from '../utils/imageValidator';
 
 // リクエストスキーマ
 const generateImageSchema = z.object({
@@ -87,6 +88,36 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
     // 画像サイズの検証（CUDA OOM対策で制限を厳しく）
     if (!validateImageSize(baseImage, 5)) {
       throw new Error('画像サイズが大きすぎます（最大5MB）');
+    }
+
+    // Smartphone detection is handled in the frontend optimization
+
+    // CUDA OOMリスク評価
+    const riskAssessment = await assessCudaOomRisk(
+      baseImage,
+      'sdxl-img2img',
+      {
+        steps: finalOptions.steps,
+        guidanceScale: finalOptions.guidanceScale,
+        strength: finalOptions.strength,
+        width: finalOptions.width,
+        height: finalOptions.height,
+      }
+    );
+
+    // 高リスクの場合はパラメータを自動調整
+    if (riskAssessment.riskLevel === 'very-high' || riskAssessment.riskLevel === 'high') {
+      imageLogger.warn('High CUDA OOM risk detected, adjusting parameters', {
+        riskLevel: riskAssessment.riskLevel,
+        recommendations: riskAssessment.recommendations,
+      });
+
+      // Apply risk mitigation using the utility function
+      const mitigatedOptions = applyRiskMitigation(finalOptions, riskAssessment);
+      Object.assign(finalOptions, mitigatedOptions);
+
+      // ユーザーに通知するための情報を追加
+      imageLogger.info('Parameters auto-adjusted for memory efficiency', finalOptions);
     }
 
     // 画像サイズの検証とログ出力（実際のリサイズはクライアント側で事前実行済み）
