@@ -23,11 +23,11 @@ export const ImageToImage: React.FC = () => {
     if (!file) return;
 
     // Enhanced file validation
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 10 * 1024 * 1024; // 10MB - match backend limit
     if (file.size > maxSize) {
       addToast({
         type: 'error',
-        message: 'ファイルサイズは5MB以下にしてください',
+        message: 'ファイルサイズは10MB以下にしてください',
       });
       return;
     }
@@ -63,7 +63,7 @@ export const ImageToImage: React.FC = () => {
         if (!validateImageSize(base64, 3)) {
           addToast({
             type: 'info',
-            message: '画像をリサイズしています...',
+            message: '大きな画像を最適なサイズにリサイズしています...',
           });
           // 最大2048x2048、品質0.8でリサイズ（メモリ使用量を削減）
           base64 = await resizeImage(base64, 2048, 2048, 0.8);
@@ -215,7 +215,7 @@ export const ImageToImage: React.FC = () => {
                       <Upload className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                       <p className="text-sm text-gray-600">クリックして画像をアップロード</p>
                       <p id="upload-help" className="text-xs text-gray-500 mt-2">
-                        対応形式: JPG, PNG, GIF, WebP（最大5MB）
+                        対応形式: JPG, PNG, GIF, WebP（最大10MB）
                       </p>
                     </div>
                   </label>

@@ -191,6 +191,7 @@ export async function generateWithReplicate(
     if (modelId === 'sdxl-img2img') {
       // 最小サイズのBase64画像（1x1ピクセル）は約100文字程度
       // SDXLには最低でも256x256以上の画像が必要
+      // Note: This is an approximation - actual image dimensions depend on compression
       if (base64Data.length < 10000) {
         logger.warn('Input image might be too small for SDXL model', {
           base64Length: base64Data.length,

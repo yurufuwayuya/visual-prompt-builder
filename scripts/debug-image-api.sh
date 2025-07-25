@@ -3,7 +3,11 @@
 # 本番環境のAPIエンドポイントをテストするスクリプト
 # Replicateのレスポンスが正しく処理されているか確認
 
-API_URL="https://visual-prompt-builder.yakyu.workers.dev/api/v1/image/generate"
+API_URL="${1:-https://visual-prompt-builder.yakyu.workers.dev/api/v1/image/generate}"
+
+echo "Usage: $0 [API_URL]"
+echo "Default: https://visual-prompt-builder.yakyu.workers.dev/api/v1/image/generate"
+echo ""
 
 # テスト用のリクエストボディ
 REQUEST_BODY='{
@@ -34,7 +38,8 @@ echo ""
 echo "===================="
 
 # レスポンスからJSONを抽出（HTTPステータス行を除く）
-json_response=$(echo "$response" | head -n -2)
+# Extract JSON by removing everything after the last closing brace
+json_response=$(echo "$response" | sed -n '1,/^HTTP Status:/p' | head -n -1)
 
 # JSONの解析とBase64データの確認
 if command -v jq &> /dev/null; then
