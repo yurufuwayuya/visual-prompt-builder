@@ -3,7 +3,12 @@ import { usePromptStore } from '@/stores/promptStore';
 import { useToastStore } from '@/stores/toastStore';
 import { Button } from '@/components/common/Button';
 import { Upload, X } from 'lucide-react';
-import { validateImageSize, resizeImage } from '@/services/imageGeneration';
+import {
+  resizeImage,
+  estimateFileSize,
+  formatFileSize,
+  getRecommendedSettings,
+} from '@/utils/imageResize';
 
 export function ImageStep({ onNext }: { onNext: () => void }) {
   const { setReferenceImage } = usePromptStore();
@@ -16,11 +21,11 @@ export function ImageStep({ onNext }: { onNext: () => void }) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // ファイルサイズチェック（最大5MB）
-    if (file.size > 5 * 1024 * 1024) {
+    // ファイルサイズチェック（最大20MB）
+    if (file.size > 20 * 1024 * 1024) {
       addToast({
         type: 'error',
-        message: 'ファイルサイズは5MB以下にしてください',
+        message: 'ファイルサイズは20MB以下にしてください',
       });
       return;
     }
@@ -45,13 +50,39 @@ export function ImageStep({ onNext }: { onNext: () => void }) {
             throw new Error('画像データの読み込みに失敗しました');
           }
 
-          // 画像サイズをチェックし、必要に応じてリサイズ
-          if (!validateImageSize(base64, 5)) {
+          // 画像サイズを推定して最適な設定を取得
+          const fileSize = estimateFileSize(base64);
+          const formattedSize = formatFileSize(fileSize);
+
+          // 2MBを超える場合はリサイズ推奨
+          if (fileSize > 2 * 1024 * 1024) {
+            const settings = getRecommendedSettings(fileSize);
             addToast({
               type: 'info',
-              message: '画像をリサイズしています...',
+              message: `画像をリサイズしています... (元サイズ: ${formattedSize})`,
             });
-            base64 = await resizeImage(base64, 1920, 1920, 0.85);
+
+            try {
+              base64 = await resizeImage(
+                base64,
+                settings.maxWidth,
+                settings.maxHeight,
+                settings.quality
+              );
+
+              const newSize = estimateFileSize(base64);
+              const newFormattedSize = formatFileSize(newSize);
+              addToast({
+                type: 'success',
+                message: `画像をリサイズしました (${formattedSize} → ${newFormattedSize})`,
+              });
+            } catch (resizeError) {
+              console.error('リサイズエラー:', resizeError);
+              addToast({
+                type: 'warning',
+                message: 'リサイズに失敗しましたが、元の画像で続行します',
+              });
+            }
           }
 
           setSelectedImage(base64);
@@ -140,7 +171,9 @@ export function ImageStep({ onNext }: { onNext: () => void }) {
                   />
                 </label>
               </div>
-              <p className="text-xs text-gray-500 mt-2">PNG、JPG、GIF（最大5MB）</p>
+              <p className="text-xs text-gray-500 mt-2">
+                PNG、JPG、WEBP（最大20MB、2MB以上は自動リサイズ）
+              </p>
             </div>
           </div>
         ) : (

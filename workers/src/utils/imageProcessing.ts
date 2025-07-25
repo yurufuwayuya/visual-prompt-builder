@@ -123,3 +123,38 @@ export function formatImageError(error: unknown): string {
   }
   return '画像処理中に予期しないエラーが発生しました';
 }
+
+/**
+ * 画像サイズの検証とログ出力
+ * Cloudflare Workers環境では実際のリサイズはできないため、サイズチェックのみ行う
+ * 実際のリサイズはクライアント側で事前に実行される前提
+ */
+export async function validateAndLogImageSize(
+  base64String: string,
+  maxSizeMB: number = 10
+): Promise<string> {
+  try {
+    // 画像サイズをチェック（指定サイズ以下なら処理不要）
+    if (validateImageSize(base64String, maxSizeMB)) {
+      // 指定サイズ以下の画像はそのまま返す
+      return base64String;
+    }
+
+    // 指定サイズを超える画像の警告ログ
+    // Cloudflare Workers環境ではCanvas APIが使えないため、
+    // 実際のリサイズはクライアント側で事前に行う必要がある
+    console.warn(`Large image detected (>${maxSizeMB}MB), should be resized on client side`);
+
+    // メタデータをログ出力
+    const { mimeType } = getImageMetadata(base64String);
+    console.log(`Image type: ${mimeType}, size exceeds ${maxSizeMB}MB, resize needed on client side`);
+
+    // 実際のリサイズはクライアント側で実行済みの前提で元画像を返す
+    return base64String;
+  } catch (error) {
+    console.error('Image validation error:', error);
+    // エラーが発生した場合は元の画像を返す
+    return base64String;
+  }
+}
+

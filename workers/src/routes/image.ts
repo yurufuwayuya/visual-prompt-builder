@@ -8,6 +8,7 @@ import { z } from 'zod';
 import type { Bindings } from '../types';
 import { createSuccessResponse, generateCacheKey } from '@visual-prompt-builder/shared';
 import { createLogger } from '../utils/logger';
+import { validateAndLogImageSize, validateImageSize } from '../utils/imageProcessing';
 
 // リクエストスキーマ
 const generateImageSchema = z.object({
@@ -80,6 +81,17 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
   });
 
   try {
+    // 画像サイズの検証（最大20MB）
+    if (!validateImageSize(baseImage, 20)) {
+      throw new Error('画像サイズが大きすぎます（最大20MB）');
+    }
+
+    // 画像サイズの検証とログ出力（実際のリサイズはクライアント側で事前実行済み）
+    const validatedImage = await validateAndLogImageSize(baseImage, 20);
+    imageLogger.debug('Image validated:', {
+      originalSize: baseImage.length,
+      validatedSize: validatedImage.length,
+    });
     // キャッシュキーの生成 - 画像全体のハッシュを使用してキー衝突を防ぐ
     const imageHash = await crypto.subtle
       .digest('SHA-256', new TextEncoder().encode(baseImage))
@@ -122,7 +134,7 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
     switch (provider) {
       case 'replicate':
         response = await generateWithReplicate(
-          baseImage,
+          validatedImage,
           prompt,
           finalOptions,
           c.env.IMAGE_API_KEY,
@@ -130,11 +142,16 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
         );
         break;
       case 'openai':
-        response = await generateWithOpenAI(baseImage, prompt, finalOptions, c.env.IMAGE_API_KEY);
+        response = await generateWithOpenAI(
+          validatedImage,
+          prompt,
+          finalOptions,
+          c.env.IMAGE_API_KEY
+        );
         break;
       case 'stability':
         response = await generateWithStability(
-          baseImage,
+          validatedImage,
           prompt,
           finalOptions,
           c.env.IMAGE_API_KEY
@@ -215,10 +232,13 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
     }
 
     // Production error response
-    return c.json({
-      success: false,
-      error: '画像生成に失敗しました',
-    }, 500);
+    return c.json(
+      {
+        success: false,
+        error: '画像生成に失敗しました',
+      },
+      500
+    );
   }
 });
 

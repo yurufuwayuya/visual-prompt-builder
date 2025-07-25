@@ -4,6 +4,7 @@ import { usePromptStore } from '@/stores/promptStore';
 import { useToastStore } from '@/stores/toastStore';
 import { generateImage } from '@/services/imageGeneration';
 import { Button } from '@/components/common/Button';
+import { resizeImage, estimateFileSize, formatFileSize } from '@/utils/imageResize';
 
 interface ImageGenerationI2ISectionProps {
   prompt: string;
@@ -34,9 +35,31 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
     setGeneratedImage(null);
 
     try {
+      // API送信前に画像サイズを確認し、必要に応じてリサイズ
+      let processedImage = referenceImage;
+      const fileSize = estimateFileSize(referenceImage);
+
+      // 2MBを超える場合はリサイズ
+      if (fileSize > 2 * 1024 * 1024) {
+        const formattedSize = formatFileSize(fileSize);
+        addToast({
+          type: 'info',
+          message: `画像を処理中... (サイズ: ${formattedSize})`,
+        });
+
+        try {
+          processedImage = await resizeImage(referenceImage, 1024, 1024, 0.9);
+          const newSize = estimateFileSize(processedImage);
+          const newFormattedSize = formatFileSize(newSize);
+          console.log(`画像リサイズ: ${formattedSize} → ${newFormattedSize}`);
+        } catch (resizeError) {
+          console.error('リサイズエラー:', resizeError);
+          // リサイズに失敗しても元の画像で続行
+        }
+      }
       const result = await generateImage({
         prompt,
-        referenceImage,
+        referenceImage: processedImage,
         model: selectedModel,
         strength,
       });
