@@ -107,7 +107,7 @@ describe('ImageGenerationI2ISection', () => {
       referenceImage: 'data:image/png;base64,iVBORw0KGgo...',
       prompt: mockProps.prompt,
       model: 'flux-variations',
-      strength: 0.8,
+      strength: 0.7,
     });
   });
 
