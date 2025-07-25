@@ -50,14 +50,14 @@ describe('ImageStep', () => {
     render(<ImageStep onNext={mockOnNext} />);
 
     const file = new File([''], 'test.jpg', { type: 'image/jpeg' });
-    Object.defineProperty(file, 'size', { value: 6 * 1024 * 1024 }); // 6MB
+    Object.defineProperty(file, 'size', { value: 21 * 1024 * 1024 }); // 21MB
 
     const input = screen.getByLabelText('画像を選択').closest('input') as HTMLInputElement;
     await userEvent.upload(input, file);
 
     expect(mockAddToast).toHaveBeenCalledWith({
       type: 'error',
-      message: 'ファイルサイズは5MB以下にしてください',
+      message: 'ファイルサイズは20MB以下にしてください',
     });
   });
 
