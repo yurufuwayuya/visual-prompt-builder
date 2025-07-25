@@ -10,7 +10,7 @@ import { createSuccessResponse, generateCacheKey } from '@visual-prompt-builder/
 import { createSecureLogger, formatImageSize } from '../utils/secureLogger';
 import { generateImageFingerprint } from '../utils/imageHash';
 import { validateAndLogImageSize, validateImageSize } from '../utils/imageProcessing';
-import { assessCudaOomRisk } from '../utils/imageValidator';
+import { assessCudaOomRisk, applyRiskMitigation } from '../utils/imageValidator';
 
 // リクエストスキーマ
 const generateImageSchema = z.object({
@@ -90,35 +90,34 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
       throw new Error('画像サイズが大きすぎます（最大5MB）');
     }
 
-    // スマートフォン画像の検出
-    const smartphoneDetection = detectSmartphoneImageCharacteristics(baseImage.length);
-    if (smartphoneDetection.likelySmartphone) {
-      imageLogger.info('Smartphone image detected', {
-        characteristics: smartphoneDetection.characteristics,
-      });
-    }
+    // Smartphone detection is handled in the frontend optimization
 
     // CUDA OOMリスク評価
-    const riskAssessment = assessCudaOomRisk({
-      fileSize: baseImage.length,
-      model: 'sdxl-img2img',
-      parameters: finalOptions,
-    });
+    const riskAssessment = await assessCudaOomRisk(
+      baseImage,
+      'sdxl-img2img',
+      {
+        steps: finalOptions.steps,
+        guidanceScale: finalOptions.guidanceScale,
+        strength: finalOptions.strength,
+        width: finalOptions.width,
+        height: finalOptions.height,
+      }
+    );
 
     // 高リスクの場合はパラメータを自動調整
     if (riskAssessment.riskLevel === 'very-high' || riskAssessment.riskLevel === 'high') {
       imageLogger.warn('High CUDA OOM risk detected, adjusting parameters', {
         riskLevel: riskAssessment.riskLevel,
-        recommendation: riskAssessment.recommendation,
+        recommendations: riskAssessment.recommendations,
       });
 
-      if (riskAssessment.suggestedParams) {
-        // 提案されたパラメータを適用
-        Object.assign(finalOptions, riskAssessment.suggestedParams);
+      // Apply risk mitigation using the utility function
+      const mitigatedOptions = applyRiskMitigation(finalOptions, riskAssessment);
+      Object.assign(finalOptions, mitigatedOptions);
 
-        // ユーザーに通知するための情報を追加
-        imageLogger.info('Parameters auto-adjusted for memory efficiency', finalOptions);
-      }
+      // ユーザーに通知するための情報を追加
+      imageLogger.info('Parameters auto-adjusted for memory efficiency', finalOptions);
     }
 
     // 画像サイズの検証とログ出力（実際のリサイズはクライアント側で事前実行済み）

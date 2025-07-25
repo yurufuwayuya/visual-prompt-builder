@@ -7,6 +7,9 @@ import { Button } from '@/components/common/Button';
 import { resizeImage, estimateFileSize } from '@/utils/imageResize';
 import { optimizeImageForGeneration } from '@/utils/imageOptimizer';
 import { CudaOomErrorDialog } from '@/components/common/CudaOomErrorDialog';
+import { createSecureLogger } from '@/utils/secureLogger';
+
+const logger = createSecureLogger({ prefix: 'ImageGenerationI2I' });
 
 interface ImageGenerationI2ISectionProps {
   prompt: string;
@@ -59,14 +62,14 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
         const optimizationResult = await optimizeImageForGeneration(referenceImage, {
           targetUsage: 'i2i',
           onProgress: (stage, totalStages, currentSize) => {
-            console.log(`I2I最適化進捗: ステージ ${stage}/${totalStages}, サイズ: ${currentSize}`);
+            logger.info(`I2I最適化進捗: ステージ ${stage}/${totalStages}, サイズ: ${currentSize}`);
           },
         });
 
         processedImage = optimizationResult.optimizedImage;
 
         // 最適化結果の表示
-        console.log(
+        logger.info(
           `画像最適化: ${optimizationResult.originalSize} → ${optimizationResult.finalSize}`
         );
 
@@ -101,7 +104,7 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
           }
         }
       } catch (optimizationError) {
-        console.error('画像最適化エラー:', optimizationError);
+        logger.error('画像最適化エラー', optimizationError);
 
         // フォールバック: 単純なリサイズ
         try {
@@ -111,7 +114,7 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
             message: '画像最適化に一部失敗しましたが、基本的なリサイズを適用しました',
           });
         } catch (fallbackError) {
-          console.error('フォールバックリサイズエラー:', fallbackError);
+          logger.error('フォールバックリサイズエラー', fallbackError);
           addToast({
             type: 'error',
             message: '画像の処理に失敗しました。より小さな画像を使用してください。',
@@ -202,7 +205,7 @@ export const ImageGenerationI2ISection: React.FC<ImageGenerationI2ISectionProps>
         message: '画像をダウンロードしました',
       });
     } catch (error) {
-      console.error('Download failed:', error);
+      logger.error('Download failed', error);
       addToast({
         type: 'error',
         message: 'ダウンロードに失敗しました',
