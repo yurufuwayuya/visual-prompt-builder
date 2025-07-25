@@ -95,8 +95,7 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
       originalSize: baseImage.length,
       validatedSize: validatedImage.length,
     });
-    // キャッシュキーの生成 - 高速なフィンガープリントを使用
-    const imageHash = await generateImageFingerprint(baseImage);
+    // キャッシュキーの生成 - 既に計算済みのフィンガープリントを使用
 
     const cacheKey = await generateCacheKey('image', {
       baseImage: imageHash,
@@ -323,7 +322,7 @@ async function generateWithReplicate(
       cost: result.cost,
     };
   } catch (error) {
-    const replicateLogger = createSecureLogger({ prefix: 'Replicate', env });
+    const replicateLogger = createSecureLogger({ prefix: 'Replicate', env: env || {} });
     replicateLogger.error('Replicate generation failed', error);
     throw error;
   }
