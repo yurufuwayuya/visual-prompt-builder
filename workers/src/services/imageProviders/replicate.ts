@@ -7,6 +7,7 @@ import { uploadToR2 } from '../r2Storage';
 import { uploadToR2S3, deleteFromR2S3 } from '../r2S3Upload';
 import type { Bindings } from '../../types';
 import { createLogger } from '../../utils/logger';
+import { assessCudaOomRisk, applyRiskMitigation } from '../../utils/imageValidator';
 
 // Create logger instance
 const logger = createLogger({ prefix: 'Replicate' });
@@ -257,6 +258,41 @@ async function executeGenerationAttempt(
     ? baseImage
     : createDataUrl(baseImage, 'image/png');
 
+  // CUDA OOMリスク評価
+  const riskAssessment = await assessCudaOomRisk(imageDataUrl, modelId, {
+    steps: options.steps,
+    guidanceScale: options.guidanceScale,
+    strength: options.strength,
+    width: options.width,
+    height: options.height,
+  });
+
+  logger.info('CUDA OOMリスク評価結果', {
+    modelId,
+    riskLevel: riskAssessment.riskLevel,
+    riskScore: riskAssessment.riskScore,
+    warnings: riskAssessment.warnings,
+  });
+
+  // 高リスクの場合は警告
+  if (riskAssessment.riskLevel === 'very-high') {
+    logger.warn('CUDA OOMリスクが非常に高いです', {
+      modelId,
+      factors: riskAssessment.factors,
+      recommendations: riskAssessment.recommendations,
+    });
+
+    // 代替モデルの提案がある場合
+    if (riskAssessment.recommendations.alternativeModel) {
+      logger.info(
+        `代替モデル ${riskAssessment.recommendations.alternativeModel} の使用を推奨します`
+      );
+    }
+  }
+
+  // パラメータをリスク評価に基づいて調整
+  const adjustedOptions = applyRiskMitigation(options, riskAssessment);
+
   // 入力画像のサイズチェック（全モデル共通）
   try {
     // Base64から画像のサイズを検証
@@ -413,7 +449,7 @@ async function executeGenerationAttempt(
       input: getModelSpecificInput(modelId, {
         image: imageUrl,
         prompt: prompt,
-        options: options,
+        options: adjustedOptions,
       }),
     };
   } else {
@@ -424,7 +460,7 @@ async function executeGenerationAttempt(
       input: getModelSpecificInput(modelId, {
         image: imageUrl,
         prompt: prompt,
-        options: options,
+        options: adjustedOptions,
       }),
     };
   }

@@ -3,12 +3,8 @@ import { usePromptStore } from '@/stores/promptStore';
 import { useToastStore } from '@/stores/toastStore';
 import { Button } from '@/components/common/Button';
 import { Upload, X } from 'lucide-react';
-import {
-  resizeImage,
-  estimateFileSize,
-  formatFileSize,
-  getRecommendedSettings,
-} from '@/utils/imageResize';
+import { resizeImage, estimateFileSize, formatFileSize } from '@/utils/imageResize';
+import { optimizeImageForGeneration } from '@/utils/imageOptimizer';
 import { createSecureLogger } from '@/utils/secureLogger';
 
 const logger = createSecureLogger({ prefix: 'ImageStep' });
@@ -61,38 +57,65 @@ export function ImageStep({ onNext }: { onNext: () => void }) {
         }
         let base64 = result;
 
-        // 画像サイズを推定して最適な設定を取得
+        // 画像の最適化（CUDA OOM対策）
         const fileSize = estimateFileSize(base64);
         const formattedSize = formatFileSize(fileSize);
 
-        // 2MBを超える場合はリサイズ推奨
-        if (fileSize > 2 * 1024 * 1024) {
-          const settings = getRecommendedSettings(fileSize);
-          addToast({
-            type: 'info',
-            message: `画像をリサイズしています... (元サイズ: ${formattedSize})`,
+        addToast({
+          type: 'info',
+          message: `画像を最適化しています... (元サイズ: ${formattedSize})`,
+        });
+
+        try {
+          const optimizationResult = await optimizeImageForGeneration(base64, {
+            targetUsage: 'general',
+            onProgress: (stage, totalStages, currentSize) => {
+              logger.info(`最適化進捗: ステージ ${stage}/${totalStages}, サイズ: ${currentSize}`);
+            },
           });
 
-          try {
-            base64 = await resizeImage(
-              base64,
-              settings.maxWidth,
-              settings.maxHeight,
-              settings.quality
-            );
+          base64 = optimizationResult.optimizedImage;
 
-            const newSize = estimateFileSize(base64);
-            const newFormattedSize = formatFileSize(newSize);
+          addToast({
+            type: 'success',
+            message: `画像を最適化しました (${optimizationResult.originalSize} → ${optimizationResult.finalSize})`,
+          });
+
+          // スマートフォン画像の場合は追加の通知
+          if (optimizationResult.isSmartphoneImage) {
             addToast({
-              type: 'success',
-              message: `画像をリサイズしました (${formattedSize} → ${newFormattedSize})`,
+              type: 'info',
+              message: 'スマートフォン画像を検出し、メモリ効率的なサイズに調整しました',
             });
-          } catch (resizeError) {
-            console.error('リサイズエラー:', resizeError);
+          }
+
+          // 最適化後のサイズチェック
+          const optimizedSize = estimateFileSize(base64);
+          if (optimizedSize > 1_000_000) {
             addToast({
               type: 'warning',
-              message: 'リサイズに失敗しましたが、元の画像で続行します',
+              message: '画像サイズが大きいため、生成に時間がかかる場合があります',
             });
+          }
+        } catch (optimizationError) {
+          logger.error('画像最適化エラー', optimizationError);
+
+          // フォールバック: 従来のリサイズ処理
+          const fileSize = estimateFileSize(base64);
+          if (fileSize > 1_000_000) {
+            try {
+              base64 = await resizeImage(base64, 512, 512, 0.7);
+              addToast({
+                type: 'warning',
+                message: '画像の最適化に一部失敗しましたが、基本的なリサイズを適用しました',
+              });
+            } catch (fallbackError) {
+              logger.error('フォールバックリサイズエラー', fallbackError);
+              addToast({
+                type: 'warning',
+                message: '画像の最適化に失敗しましたが、元の画像で続行します',
+              });
+            }
           }
         }
 
