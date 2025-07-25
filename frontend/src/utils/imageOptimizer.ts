@@ -62,11 +62,9 @@ export async function detectSmartphoneImage(
 ): Promise<SmartphoneImageDetection> {
   return new Promise((resolve) => {
     const img = new Image();
-    
+
     // Check for HEIC format indicators
-    const isLikelyHEIC =
-      base64String.includes('image/heic') ||
-      base64String.includes('image/heif');
+    const isLikelyHEIC = base64String.includes('image/heic') || base64String.includes('image/heif');
 
     img.onload = () => {
       const width = img.width;

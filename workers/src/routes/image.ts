@@ -93,17 +93,13 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
     // Smartphone detection is handled in the frontend optimization
 
     // CUDA OOMリスク評価
-    const riskAssessment = await assessCudaOomRisk(
-      baseImage,
-      'sdxl-img2img',
-      {
-        steps: finalOptions.steps,
-        guidanceScale: finalOptions.guidanceScale,
-        strength: finalOptions.strength,
-        width: finalOptions.width,
-        height: finalOptions.height,
-      }
-    );
+    const riskAssessment = await assessCudaOomRisk(baseImage, 'sdxl-img2img', {
+      steps: finalOptions.steps,
+      guidanceScale: finalOptions.guidanceScale,
+      strength: finalOptions.strength,
+      width: finalOptions.width,
+      height: finalOptions.height,
+    });
 
     // 高リスクの場合はパラメータを自動調整
     if (riskAssessment.riskLevel === 'very-high' || riskAssessment.riskLevel === 'high') {

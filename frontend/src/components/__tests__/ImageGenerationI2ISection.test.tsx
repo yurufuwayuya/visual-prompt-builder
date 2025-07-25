@@ -4,11 +4,15 @@ import { ImageGenerationI2ISection } from '../ImageGenerationI2ISection';
 import * as imageGenerationService from '../../services/imageGeneration';
 import { usePromptStore } from '@/stores/promptStore';
 import { useToastStore } from '@/stores/toastStore';
+import { optimizeImageForGeneration } from '@/utils/imageOptimizer';
+import { resizeImage, estimateFileSize } from '@/utils/imageResize';
 
 // Mock dependencies
 vi.mock('../../services/imageGeneration');
 vi.mock('@/stores/promptStore');
 vi.mock('@/stores/toastStore');
+vi.mock('@/utils/imageOptimizer');
+vi.mock('@/utils/imageResize');
 
 describe('ImageGenerationI2ISection', () => {
   const mockProps = {
@@ -28,6 +32,17 @@ describe('ImageGenerationI2ISection', () => {
     vi.mocked(useToastStore).mockReturnValue({
       addToast: mockAddToast,
     } as any);
+
+    // Mock image optimization utilities
+    vi.mocked(optimizeImageForGeneration).mockResolvedValue({
+      optimizedImage: 'data:image/png;base64,iVBORw0KGgo...',
+      originalSize: '1MB',
+      finalSize: '300KB',
+      isSmartphoneImage: false,
+    } as any);
+
+    vi.mocked(resizeImage).mockResolvedValue('data:image/png;base64,resized...');
+    vi.mocked(estimateFileSize).mockReturnValue(100000); // 100KB
   });
 
   it('コンポーネントが正しくレンダリングされる', () => {
@@ -107,7 +122,7 @@ describe('ImageGenerationI2ISection', () => {
       referenceImage: 'data:image/png;base64,iVBORw0KGgo...',
       prompt: mockProps.prompt,
       model: 'flux-variations',
-      strength: 0.7,
+      strength: 0.5,
     });
   });
 

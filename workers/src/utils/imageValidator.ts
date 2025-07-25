@@ -50,11 +50,11 @@ function calculateMegapixels(base64String: string): Promise<number> {
     try {
       // Note: This is a heuristic estimation due to Cloudflare Workers environment limitations
       // where DOM APIs like Image are not available for accurate dimension parsing.
-      
+
       // Clean base64 string and get byte size
       const cleanBase64 = base64String.replace(/^data:image\/[^;]+;base64,/, '');
       const sizeInBytes = (cleanBase64.length * 3) / 4;
-      
+
       // Detect image format for better compression ratio estimation
       let compressionRatio = 10; // Default JPEG ratio
       if (base64String.includes('data:image/png')) {
@@ -62,23 +62,23 @@ function calculateMegapixels(base64String: string): Promise<number> {
       } else if (base64String.includes('data:image/webp')) {
         compressionRatio = 15; // WebP is more compressed
       }
-      
+
       // Conservative estimation: assume higher quality/less compression
       const estimatedPixels = (sizeInBytes * compressionRatio) / 3; // RGB 3 bytes per pixel
       const megapixels = estimatedPixels / 1_000_000;
-      
+
       // Apply reasonable bounds and bias toward higher estimates for safety
       const boundedMegapixels = Math.max(
         Math.min(megapixels * 1.2, 50), // 20% safety margin, max 50MP
         0.1 // Minimum 0.1MP
       );
-      
+
       logger.debug('Megapixel estimation', {
         fileSize: sizeInBytes,
         compressionRatio,
-        estimatedMegapixels: boundedMegapixels
+        estimatedMegapixels: boundedMegapixels,
       });
-      
+
       resolve(boundedMegapixels);
     } catch (error) {
       logger.error('メガピクセル計算エラー', error);
