@@ -479,10 +479,9 @@ async function executeGenerationAttempt(
     if (finalPrediction.error?.includes('CUDA out of memory')) {
       throw new Error(
         '画像生成に必要なメモリが不足しています。' +
-          'より小さい画像サイズを使用するか、FluxモデルやDELL-E 3をお試しください。'
+          'より小さい画像サイズを使用するか、FluxモデルやDALL-E 3をお試しください。'
       );
     }
-
     throw new Error(`Image generation failed: ${finalPrediction.error || 'Unknown error'}`);
   }
 
