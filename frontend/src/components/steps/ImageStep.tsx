@@ -9,6 +9,9 @@ import {
   formatFileSize,
   getRecommendedSettings,
 } from '@/utils/imageResize';
+import { createSecureLogger } from '@/utils/secureLogger';
+
+const logger = createSecureLogger({ prefix: 'ImageStep' });
 
 export function ImageStep({ onNext }: { onNext: () => void }) {
   const { setReferenceImage } = usePromptStore();
@@ -40,82 +43,101 @@ export function ImageStep({ onNext }: { onNext: () => void }) {
     }
 
     setIsLoading(true);
-    try {
-      // 画像をBase64に変換
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          let base64 = e.target?.result as string;
-          if (!base64) {
-            throw new Error('画像データの読み込みに失敗しました');
-          }
 
-          // 画像サイズを推定して最適な設定を取得
-          const fileSize = estimateFileSize(base64);
-          const formattedSize = formatFileSize(fileSize);
+    const reader = new FileReader();
 
-          // 2MBを超える場合はリサイズ推奨
-          if (fileSize > 2 * 1024 * 1024) {
-            const settings = getRecommendedSettings(fileSize);
-            addToast({
-              type: 'info',
-              message: `画像をリサイズしています... (元サイズ: ${formattedSize})`,
-            });
+    // エラーハンドリングとクリーンアップ
+    const cleanup = () => {
+      reader.onload = null;
+      reader.onerror = null;
+      reader.onabort = null;
+    };
 
-            try {
-              base64 = await resizeImage(
-                base64,
-                settings.maxWidth,
-                settings.maxHeight,
-                settings.quality
-              );
-
-              const newSize = estimateFileSize(base64);
-              const newFormattedSize = formatFileSize(newSize);
-              addToast({
-                type: 'success',
-                message: `画像をリサイズしました (${formattedSize} → ${newFormattedSize})`,
-              });
-            } catch (resizeError) {
-              console.error('リサイズエラー:', resizeError);
-              addToast({
-                type: 'warning',
-                message: 'リサイズに失敗しましたが、元の画像で続行します',
-              });
-            }
-          }
-
-          setSelectedImage(base64);
-          setReferenceImage(base64);
-          addToast({
-            type: 'success',
-            message: '画像をアップロードしました',
-          });
-        } catch (error) {
-          console.error('画像処理エラー:', error);
-          addToast({
-            type: 'error',
-            message: '画像の処理に失敗しました',
-          });
-        } finally {
-          setIsLoading(false);
+    reader.onload = async (e) => {
+      try {
+        const result = e.target?.result;
+        if (typeof result !== 'string') {
+          throw new Error('画像データの読み込みに失敗しました');
         }
-      };
-      reader.onerror = () => {
-        console.error('FileReader error');
+        let base64 = result;
+
+        // 画像サイズを推定して最適な設定を取得
+        const fileSize = estimateFileSize(base64);
+        const formattedSize = formatFileSize(fileSize);
+
+        // 2MBを超える場合はリサイズ推奨
+        if (fileSize > 2 * 1024 * 1024) {
+          const settings = getRecommendedSettings(fileSize);
+          addToast({
+            type: 'info',
+            message: `画像をリサイズしています... (元サイズ: ${formattedSize})`,
+          });
+
+          try {
+            base64 = await resizeImage(
+              base64,
+              settings.maxWidth,
+              settings.maxHeight,
+              settings.quality
+            );
+
+            const newSize = estimateFileSize(base64);
+            const newFormattedSize = formatFileSize(newSize);
+            addToast({
+              type: 'success',
+              message: `画像をリサイズしました (${formattedSize} → ${newFormattedSize})`,
+            });
+          } catch (resizeError) {
+            console.error('リサイズエラー:', resizeError);
+            addToast({
+              type: 'warning',
+              message: 'リサイズに失敗しましたが、元の画像で続行します',
+            });
+          }
+        }
+
+        setSelectedImage(base64);
+        setReferenceImage(base64);
+        addToast({
+          type: 'success',
+          message: '画像をアップロードしました',
+        });
+      } catch (error) {
+        logger.error('画像処理エラー', error);
         addToast({
           type: 'error',
-          message: '画像の読み込みに失敗しました',
+          message: '画像の処理に失敗しました',
         });
+      } finally {
+        cleanup();
         setIsLoading(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      console.error('画像の読み込みに失敗しました:', error);
+      }
+    };
+
+    reader.onerror = () => {
+      logger.error('FileReader error', new Error('Failed to read file'));
       addToast({
         type: 'error',
         message: '画像の読み込みに失敗しました',
       });
+      cleanup();
+      setIsLoading(false);
+    };
+
+    reader.onabort = () => {
+      cleanup();
+      setIsLoading(false);
+    };
+
+    try {
+      reader.readAsDataURL(file);
+    } catch (error) {
+      logger.error('画像の読み込みに失敗しました', error);
+      addToast({
+        type: 'error',
+        message: '画像の読み込みに失敗しました',
+      });
+      cleanup();
       setIsLoading(false);
     }
   };

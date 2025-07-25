@@ -53,10 +53,11 @@ export const ImageToImage: React.FC = () => {
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        let base64 = e.target?.result as string;
-        if (!base64) {
+        const result = e.target?.result;
+        if (typeof result !== 'string') {
           throw new Error('画像データの読み込みに失敗しました');
         }
+        let base64 = result;
 
         // 画像サイズをチェックし、必要に応じてリサイズ
         // Replicateのメモリ制限を考慮して、より小さいサイズにリサイズ

@@ -168,5 +168,6 @@ function getLightingText(lighting: ApiSelectionItem, language: 'ja' | 'en'): str
 }
 
 function getQualityKeywords(quality: 'draft' | 'standard' | 'high'): string[] {
-  return [...(QUALITY_KEYWORDS[quality] || [])] as string[];
+  const keywords = QUALITY_KEYWORDS[quality];
+  return keywords ? [...keywords] : [];
 }

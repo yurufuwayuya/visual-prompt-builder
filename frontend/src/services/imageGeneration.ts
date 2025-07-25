@@ -1,4 +1,7 @@
 import { API_ENDPOINTS } from '@/config/api';
+import { createSecureLogger } from '@/utils/secureLogger';
+
+const logger = createSecureLogger({ prefix: 'ImageGeneration' });
 
 export interface ImageGenerationOptions {
   prompt: string;
@@ -75,10 +78,10 @@ export async function generateImage(
       imageKey: data.imageKey,
     };
   } catch (error) {
-    console.error('画像生成エラー:', error);
+    logger.error('画像生成エラー', error);
     // ネットワークエラーの詳細情報を提供
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      console.error('APIエンドポイント:', API_ENDPOINTS.generateImage);
+      logger.debug('APIエンドポイント', { endpoint: API_ENDPOINTS.generateImage });
       return {
         success: false,
         error: 'APIサーバーに接続できません。ワーカーが起動していることを確認してください。',
@@ -168,7 +171,7 @@ export async function resizeImage(
         const resizedBase64 = canvas.toDataURL('image/jpeg', quality);
         resolve(resizedBase64);
       } catch (error) {
-        console.error('画像リサイズエラー:', error);
+        logger.error('画像リサイズエラー', error);
         reject(error);
       }
     };
