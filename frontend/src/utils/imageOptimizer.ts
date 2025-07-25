@@ -18,6 +18,7 @@ interface SmartphoneImageDetection {
     resolution?: number;
     aspectRatio?: string;
     fileSize?: number;
+    format?: string;
   };
 }
 
@@ -62,6 +63,9 @@ export async function detectSmartphoneImage(
   return new Promise((resolve) => {
     const img = new Image();
 
+    // Check for HEIC format indicators
+    const isLikelyHEIC = base64String.includes('image/heic') || base64String.includes('image/heif');
+
     img.onload = () => {
       const width = img.width;
       const height = img.height;
@@ -87,14 +91,16 @@ export async function detectSmartphoneImage(
       if (features.highResolution) confidence += 40;
       if (features.mobileAspectRatio) confidence += 30;
       if (features.largeFileSize) confidence += 30;
+      if (isLikelyHEIC) confidence += 20;
 
       resolve({
-        isSmartphone: confidence >= 60,
+        isSmartphone: confidence >= 60 || isLikelyHEIC,
         confidence,
         details: {
           resolution,
           aspectRatio: `${width}:${height}`,
           fileSize,
+          format: isLikelyHEIC ? 'HEIC' : 'Unknown',
         },
       });
     };
@@ -120,8 +126,15 @@ export async function stripMetadata(base64String: string): Promise<string> {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d', { alpha: false });
 
+    const cleanup = () => {
+      img.src = ''; // Clear image source
+      canvas.width = 0;
+      canvas.height = 0;
+    };
+
     img.onload = () => {
       if (!ctx) {
+        cleanup();
         resolve(base64String);
         return;
       }
@@ -138,6 +151,7 @@ export async function stripMetadata(base64String: string): Promise<string> {
       canvas.toBlob(
         (blob) => {
           if (!blob) {
+            cleanup();
             resolve(base64String);
             return;
           }
@@ -145,8 +159,10 @@ export async function stripMetadata(base64String: string): Promise<string> {
           const reader = new FileReader();
           reader.onloadend = () => {
             if (typeof reader.result === 'string') {
+              cleanup();
               resolve(reader.result);
             } else {
+              cleanup();
               resolve(base64String);
             }
           };
@@ -157,7 +173,11 @@ export async function stripMetadata(base64String: string): Promise<string> {
       );
     };
 
-    img.onerror = () => resolve(base64String);
+    img.onerror = () => {
+      cleanup();
+      resolve(base64String);
+    };
+
     img.src = base64String;
   });
 }

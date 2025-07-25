@@ -48,15 +48,41 @@ const MODEL_MEMORY_FACTORS: Record<string, number> = {
 function calculateMegapixels(base64String: string): Promise<number> {
   return new Promise((resolve) => {
     try {
-      // Base64から画像サイズを推定（簡易的な方法）
-      const sizeInBytes = (base64String.length * 3) / 4;
-      // 一般的な圧縮率から逆算（JPEG: 10:1程度）
-      const estimatedPixels = (sizeInBytes * 10) / 3; // RGB 3bytes per pixel
+      // Note: This is a heuristic estimation due to Cloudflare Workers environment limitations
+      // where DOM APIs like Image are not available for accurate dimension parsing.
+
+      // Clean base64 string and get byte size
+      const cleanBase64 = base64String.replace(/^data:image\/[^;]+;base64,/, '');
+      const sizeInBytes = (cleanBase64.length * 3) / 4;
+
+      // Detect image format for better compression ratio estimation
+      let compressionRatio = 10; // Default JPEG ratio
+      if (base64String.includes('data:image/png')) {
+        compressionRatio = 3; // PNG is less compressed
+      } else if (base64String.includes('data:image/webp')) {
+        compressionRatio = 15; // WebP is more compressed
+      }
+
+      // Conservative estimation: assume higher quality/less compression
+      const estimatedPixels = (sizeInBytes * compressionRatio) / 3; // RGB 3 bytes per pixel
       const megapixels = estimatedPixels / 1_000_000;
-      resolve(Math.min(megapixels, 50)); // 最大50MPに制限
+
+      // Apply reasonable bounds and bias toward higher estimates for safety
+      const boundedMegapixels = Math.max(
+        Math.min(megapixels * 1.2, 50), // 20% safety margin, max 50MP
+        0.1 // Minimum 0.1MP
+      );
+
+      logger.debug('Megapixel estimation', {
+        fileSize: sizeInBytes,
+        compressionRatio,
+        estimatedMegapixels: boundedMegapixels,
+      });
+
+      resolve(boundedMegapixels);
     } catch (error) {
       logger.error('メガピクセル計算エラー', error);
-      resolve(8); // デフォルト8MP
+      resolve(8); // Conservative fallback: 8MP
     }
   });
 }

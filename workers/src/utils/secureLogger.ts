@@ -97,7 +97,7 @@ class SecureLogger {
     // Truncate long strings
     if (sanitized.length > this.sanitizeOptions.maxStringLength) {
       const truncated = sanitized.substring(0, this.sanitizeOptions.maxStringLength);
-      return `${truncated}... [TRUNCATED ${str.length - this.sanitizeOptions.maxStringLength} chars]`;
+      return `${truncated}... [TRUNCATED ${sanitized.length - this.sanitizeOptions.maxStringLength} chars]`;
     }
 
     return sanitized;
@@ -127,7 +127,7 @@ class SecureLogger {
     // Handle custom error properties
     for (const key of Object.keys(error)) {
       if (key !== 'name' && key !== 'message' && key !== 'stack') {
-        const errorObj = error as Record<string, unknown>;
+        const errorObj = error as unknown as Record<string, unknown>;
         sanitized[key] = this.sanitizeValue(errorObj[key], key);
       }
     }

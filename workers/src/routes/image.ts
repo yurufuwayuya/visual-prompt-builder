@@ -10,7 +10,7 @@ import { createSuccessResponse, generateCacheKey } from '@visual-prompt-builder/
 import { createSecureLogger, formatImageSize } from '../utils/secureLogger';
 import { generateImageFingerprint } from '../utils/imageHash';
 import { validateAndLogImageSize, validateImageSize } from '../utils/imageProcessing';
-import { assessCudaOomRisk } from '../utils/imageValidator';
+import { assessCudaOomRisk, applyRiskMitigation } from '../utils/imageValidator';
 
 // リクエストスキーマ
 const generateImageSchema = z.object({
@@ -90,20 +90,15 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
       throw new Error('画像サイズが大きすぎます（最大5MB）');
     }
 
-    // スマートフォン画像の検出
-    // TODO: implement detectSmartphoneImageCharacteristics
-    // const smartphoneDetection = detectSmartphoneImageCharacteristics(baseImage.length);
-    // if (smartphoneDetection.likelySmartphone) {
-    //   imageLogger.info('Smartphone image detected', {
-    //     characteristics: smartphoneDetection.characteristics,
-    //   });
-    // }
+    // Smartphone detection is handled in the frontend optimization
 
     // CUDA OOMリスク評価
-    const riskAssessment = assessCudaOomRisk({
-      fileSize: baseImage.length,
-      model: 'sdxl-img2img',
-      parameters: finalOptions,
+    const riskAssessment = await assessCudaOomRisk(baseImage, 'sdxl-img2img', {
+      steps: finalOptions.steps,
+      guidanceScale: finalOptions.guidanceScale,
+      strength: finalOptions.strength,
+      width: finalOptions.width,
+      height: finalOptions.height,
     });
 
     // 高リスクの場合はパラメータを自動調整
@@ -113,22 +108,12 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
         recommendations: riskAssessment.recommendations,
       });
 
-      if (riskAssessment.recommendations.shouldOptimize) {
-        // 提案されたパラメータを適用
-        finalOptions.width = Math.min(
-          finalOptions.width,
-          riskAssessment.recommendations.suggestedMaxSize
-        );
-        finalOptions.height = Math.min(
-          finalOptions.height,
-          riskAssessment.recommendations.suggestedMaxSize
-        );
-        finalOptions.steps = riskAssessment.recommendations.suggestedSteps;
-        finalOptions.guidanceScale = riskAssessment.recommendations.suggestedGuidance;
+      // Apply risk mitigation using the utility function
+      const mitigatedOptions = applyRiskMitigation(finalOptions, riskAssessment);
+      Object.assign(finalOptions, mitigatedOptions);
 
-        // ユーザーに通知するための情報を追加
-        imageLogger.info('Parameters auto-adjusted for memory efficiency', finalOptions);
-      }
+      // ユーザーに通知するための情報を追加
+      imageLogger.info('Parameters auto-adjusted for memory efficiency', finalOptions);
     }
 
     // 画像サイズの検証とログ出力（実際のリサイズはクライアント側で事前実行済み）
@@ -137,8 +122,7 @@ imageRoute.post('/generate', zValidator('json', generateImageSchema), async (c) 
       originalSize: baseImage.length,
       validatedSize: validatedImage.length,
     });
-    // キャッシュキーの生成 - 高速なフィンガープリントを使用
-    const imageHash = await generateImageFingerprint(baseImage);
+    // キャッシュキーの生成 - 既に計算済みのフィンガープリントを使用
 
     const cacheKey = await generateCacheKey('image', {
       baseImage: imageHash,
@@ -384,7 +368,7 @@ async function generateWithReplicate(
       cost: result.cost,
     };
   } catch (error) {
-    const replicateLogger = createSecureLogger({ prefix: 'Replicate', env });
+    const replicateLogger = createSecureLogger({ prefix: 'Replicate', env: env || {} });
     replicateLogger.error('Replicate generation failed', error);
     throw error;
   }
