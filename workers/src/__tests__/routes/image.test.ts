@@ -277,8 +277,8 @@ describe('Image API Routes', () => {
         TEST_IMAGE,
         'test prompt',
         {
-          width: 768,
-          height: 768,
+          width: 512,
+          height: 512,
           strength: 0.8,
           steps: 20,
           guidanceScale: 8.0,
